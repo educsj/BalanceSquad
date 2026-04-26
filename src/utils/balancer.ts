@@ -81,6 +81,7 @@ export function rematchTwoTeams(teamA: Team, teamB: Team): [Team, Team] {
 }
 
 export function balanceTeams(present: Player[], numTeams: number, playersPerTeam: number): Team[] {
+  const maxMainPlayers = numTeams * playersPerTeam;
   const totalTeams = Math.ceil(present.length / playersPerTeam);
 
   const teams: Team[] = Array.from({ length: totalTeams }, (_, i) => ({
@@ -90,15 +91,19 @@ export function balanceTeams(present: Player[], numTeams: number, playersPerTeam
     totalStars: 0,
   }));
 
-  // Sort all players strongest-first (5★ → 4★ → 3★ → 2★ → 1★).
-  // Players within the same level are shuffled to avoid name-order bias.
-  // Processing strongest players first lets the greedy distribute high-value
-  // players across teams before filling in weaker ones, maximising star balance.
-  // (Separating elite/base into their own phases and inserting 1★ before 2-4★
-  //  caused weak players to pile up in the team that lacked an elite starter,
-  //  creating an unrecoverable star-sum deficit in that team.)
+  // Shuffle the full list so overflow candidates are chosen at random —
+  // anyone can end up in the sobra team, regardless of their level.
+  const randomised = shuffle(present);
+  const overflowPlayers = randomised.slice(maxMainPlayers);
+  const mainPlayers    = randomised.slice(0, maxMainPlayers);
+
+  // Pre-fill the overflow team (last slot) with the randomly chosen players.
+  overflowPlayers.forEach(p => addToTeam(teams, totalTeams - 1, p));
+
+  // Distribute the remaining players across the main teams using the
+  // strongest-first greedy so star sums stay as balanced as possible.
   const sorted = ([5, 4, 3, 2, 1] as const).flatMap(lvl =>
-    shuffle(present.filter(p => p.level === lvl)),
+    shuffle(mainPlayers.filter(p => p.level === lvl)),
   );
 
   sorted.forEach(player => {
