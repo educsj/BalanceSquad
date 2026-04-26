@@ -1,6 +1,6 @@
 # BalanceSquad
 
-Aplicativo mobile para sortear times de futebol equilibrados, eliminando a concentração de jogadores fortes ou fracos no mesmo time.
+Aplicativo mobile para sortear times equilibrados, eliminando a concentração de jogadores fortes ou fracos no mesmo time.
 
 Desenvolvido com **React Native + Expo** (TypeScript).
 
