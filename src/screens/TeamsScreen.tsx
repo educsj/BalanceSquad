@@ -12,10 +12,19 @@ type RouteProps = RouteProp<RootStackParamList, 'Teams'>;
 
 const TEAM_COLORS = ['#1E3A5F', '#2563EB', '#0F766E', '#7C3AED', '#B91C1C'];
 
+function shuffled<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function formatTeamsForShare(teams: Team[]): string {
   return teams.map(team => {
-    const players = team.players.map(p => `  ${p.name} (${'★'.repeat(p.level)})`).join('\n');
-    return `${team.name} (${team.totalStars}⭐)\n${players}`;
+    const players = shuffled(team.players).map(p => `  ${p.name}`).join('\n');
+    return `${team.name}\n${players}`;
   }).join('\n\n');
 }
 
