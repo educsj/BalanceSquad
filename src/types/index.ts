@@ -6,13 +6,6 @@ export interface Player {
   level: StarLevel;
 }
 
-export interface Pelada {
-  id: string;
-  name: string;
-  playersPerTeam: number;
-  players: Player[];
-}
-
 export interface Team {
   id: number;
   name: string;
@@ -20,10 +13,18 @@ export interface Team {
   totalStars: number;
 }
 
+export interface Pelada {
+  id: string;
+  name: string;
+  playersPerTeam: number;
+  players: Player[];
+  lastDraw?: Team[];
+}
+
 export type RootStackParamList = {
   Home: undefined;
   PeladaTabs: { peladaId: string };
-  Teams: { teams: Team[] };
+  Teams: { teams: Team[]; peladaId: string };
 };
 
 export type BottomTabParamList = {

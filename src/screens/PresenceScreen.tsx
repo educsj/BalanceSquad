@@ -5,8 +5,8 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { Player, RootStackParamList, BottomTabParamList } from '../types';
-import { getPeladaById } from '../storage';
+import { Player, Team, RootStackParamList, BottomTabParamList } from '../types';
+import { getPeladaById, updatePelada } from '../storage';
 import { balanceTeams } from '../utils/balancer';
 import StarRating from '../components/StarRating';
 
@@ -24,6 +24,7 @@ export default function PresenceScreen() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [numTeams, setNumTeams] = useState(2);
   const [playersPerTeam, setPlayersPerTeam] = useState(5);
+  const [lastDraw, setLastDraw] = useState<Team[] | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -32,6 +33,7 @@ export default function PresenceScreen() {
         const list = pelada.players;
         setPlayers(list);
         setPlayersPerTeam(pelada.playersPerTeam);
+        setLastDraw(pelada.lastDraw ?? null);
         setSelected(prev => {
           const valid = new Set(list.map(p => p.id));
           return new Set([...prev].filter(id => valid.has(id)));
@@ -55,18 +57,41 @@ export default function PresenceScreen() {
     );
   }
 
-  function handleDraw() {
+  async function handleDraw() {
     const present = players.filter(p => selected.has(p.id));
     if (present.length < numTeams * 2) {
       Alert.alert('Jogadores insuficientes', `São necessários ao menos ${numTeams * 2} jogadores para ${numTeams} times.`);
       return;
     }
     const teams = balanceTeams(present, numTeams, playersPerTeam);
-    navigation.navigate('Teams', { teams });
+
+    // Persist the draw so it survives app restarts
+    const pelada = await getPeladaById(peladaId);
+    if (pelada) await updatePelada({ ...pelada, lastDraw: teams });
+    setLastDraw(teams);
+
+    navigation.navigate('Teams', { teams, peladaId });
+  }
+
+  function viewSavedDraw() {
+    if (lastDraw) navigation.navigate('Teams', { teams: lastDraw, peladaId });
   }
 
   return (
     <View style={styles.container}>
+      {/* Saved draw banner */}
+      {lastDraw && lastDraw.length > 0 && (
+        <TouchableOpacity style={styles.savedBanner} onPress={viewSavedDraw} activeOpacity={0.85}>
+          <View style={styles.savedBannerLeft}>
+            <Text style={styles.savedBannerTitle}>Sorteio salvo</Text>
+            <Text style={styles.savedBannerMeta}>
+              {lastDraw.length} time{lastDraw.length !== 1 ? 's' : ''} · toque para ver e mesclar
+            </Text>
+          </View>
+          <Text style={styles.savedBannerArrow}>›</Text>
+        </TouchableOpacity>
+      )}
+
       <View style={styles.configRow}>
         <Text style={styles.configLabel}>Número de times:</Text>
         <View style={styles.teamOptions}>
@@ -137,6 +162,24 @@ export default function PresenceScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F4FF', padding: 16 },
+
+  savedBanner: {
+    backgroundColor: '#1E3A5F',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#1E3A5F',
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+  },
+  savedBannerLeft: { flex: 1 },
+  savedBannerTitle: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  savedBannerMeta: { color: '#93C5FD', fontSize: 12, marginTop: 2 },
+  savedBannerArrow: { color: '#fff', fontSize: 22, fontWeight: '300' },
+
   configRow: {
     backgroundColor: '#fff',
     borderRadius: 12,

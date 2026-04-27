@@ -7,6 +7,7 @@ import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { RootStackParamList, Team } from '../types';
 import StarRating from '../components/StarRating';
 import { rematchTwoTeams } from '../utils/balancer';
+import { getPeladaById, updatePelada } from '../storage';
 
 type RouteProps = RouteProp<RootStackParamList, 'Teams'>;
 
@@ -58,7 +59,7 @@ export default function TeamsScreen() {
     });
   }
 
-  function handleMergeConfirm() {
+  async function handleMergeConfirm() {
     if (selectedIds.size !== 2) return;
     const [idA, idB] = [...selectedIds];
     const teamA = currentTeams.find(t => t.id === idA);
@@ -66,13 +67,17 @@ export default function TeamsScreen() {
     if (!teamA || !teamB) return;
 
     const [newA, newB] = rematchTwoTeams(teamA, teamB);
-    setCurrentTeams(currentTeams.map(t => {
+    const updatedTeams = currentTeams.map(t => {
       if (t.id === idA) return newA;
       if (t.id === idB) return newB;
       return t;
-    }));
+    });
+    setCurrentTeams(updatedTeams);
     setSelectedIds(new Set());
     setMergeVisible(false);
+
+    const pelada = await getPeladaById(params.peladaId);
+    if (pelada) await updatePelada({ ...pelada, lastDraw: updatedTeams });
   }
 
   function openMergeModal() {

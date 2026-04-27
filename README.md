@@ -18,9 +18,10 @@ Nas peladas informais, o sorteio manual costuma gerar times desequilibrados — 
 - **Cadastro de jogadores** — nome + nível de 1 a 5 estrelas, com edição e remoção
 - **Seleção de presença** — marque quem está no racha do dia antes de sortear
 - **Sorteio equilibrado** — algoritmo greedy que garante times com somas de estrelas próximas
-- **Time de sobra** — se o número de jogadores não for múltiplo exato, um time extra recebe os excedentes
-- **Mesclar Times** — selecione 2 times para redistribuir os jogadores (útil quando um time vence muito)
-- **Compartilhar** — envie o resultado via WhatsApp ou qualquer app de mensagens
+- **Time de sobra** — se o número de jogadores não for múltiplo exato, um time extra recebe os excedentes; qualquer jogador pode ser sorteado para a sobra (seleção aleatória)
+- **Sorteio persistido** — o último sorteio é salvo automaticamente e sobrevive ao fechamento do app; um banner na tela de presença e um badge na home indicam quando há um sorteio salvo
+- **Mesclar Times** — selecione 2 times para redistribuir os jogadores (útil quando um time vence muito); o resultado mesclado também é salvo automaticamente
+- **Compartilhar** — envie o resultado via WhatsApp ou qualquer app de mensagens (sem estrelas, ordem dos jogadores embaralhada)
 
 ---
 

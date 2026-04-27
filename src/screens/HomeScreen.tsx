@@ -20,7 +20,7 @@ export default function HomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
-  const [newPlayersPerTeam, setNewPlayersPerTeam] = useState('5');
+  const [newPlayersPerTeam, setNewPlayersPerTeam] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -31,7 +31,7 @@ export default function HomeScreen() {
   function openCreateModal() {
     setEditingId(null);
     setNewName('');
-    setNewPlayersPerTeam('5');
+    setNewPlayersPerTeam('');
     setModalVisible(true);
   }
 
@@ -106,7 +106,14 @@ export default function HomeScreen() {
             activeOpacity={0.8}
           >
             <View style={styles.cardLeft}>
-              <Text style={styles.cardName}>{item.name}</Text>
+              <View style={styles.cardNameRow}>
+                <Text style={styles.cardName}>{item.name}</Text>
+                {item.lastDraw && item.lastDraw.length > 0 && (
+                  <View style={styles.drawBadge}>
+                    <Text style={styles.drawBadgeText}>sorteio salvo</Text>
+                  </View>
+                )}
+              </View>
               <Text style={styles.cardMeta}>
                 {item.players.length} jogador{item.players.length !== 1 ? 'es' : ''} · {item.playersPerTeam} por time
               </Text>
@@ -192,7 +199,15 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   cardLeft: { flex: 1 },
+  cardNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   cardName: { fontSize: 16, fontWeight: '700', color: '#1E3A5F' },
+  drawBadge: {
+    backgroundColor: '#DBEAFE',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  drawBadgeText: { fontSize: 10, fontWeight: '700', color: '#1E3A5F', letterSpacing: 0.3 },
   cardMeta: { fontSize: 12, color: '#64748B', marginTop: 3 },
   cardActions: { flexDirection: 'row', gap: 4 },
   actionBtn: { padding: 6 },
