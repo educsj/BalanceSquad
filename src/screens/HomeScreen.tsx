@@ -120,7 +120,7 @@ export default function HomeScreen() {
           return (
             <TouchableOpacity
               style={styles.card}
-              onPress={() => navigation.navigate('PeladaTabs', { peladaId: item.id })}
+              onPress={() => navigation.navigate('PeladaHub', { peladaId: item.id })}
               activeOpacity={0.8}
             >
               <View style={styles.cardLeft}>

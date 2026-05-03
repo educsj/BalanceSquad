@@ -29,12 +29,16 @@ export interface Pelada {
 
 export type RootStackParamList = {
   Home: undefined;
-  PeladaTabs: { peladaId: string };
+  PeladaHub: { peladaId: string };
+  PlayerRegister: { peladaId: string; editPlayerId?: string };
+  PlayerList: { peladaId: string };
+  DrawConfig: { peladaId: string; selectedPlayerIds: string[] };
   Teams: { teams: Team[]; peladaId: string; historyIndex?: number };
   ManualTeams: { players: Player[]; numTeams: number; peladaId: string; playersPerTeam: number };
   DrawHistory: { peladaId: string };
 };
 
+// Kept for backward compatibility with legacy screen files
 export type BottomTabParamList = {
   Players: { peladaId: string };
   Presence: { peladaId: string };
