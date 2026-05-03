@@ -17,10 +17,12 @@ Nas peladas informais, o sorteio manual costuma gerar times desequilibrados — 
 - **Múltiplas Peladas** — crie quantas peladas quiser, cada uma com sua própria lista de jogadores
 - **Cadastro de jogadores** — nome + nível de 1 a 5 estrelas, com edição e remoção
 - **Seleção de presença** — marque quem está no racha do dia antes de sortear
-- **Sorteio equilibrado** — algoritmo greedy que garante times com somas de estrelas próximas
-- **Time de sobra** — se o número de jogadores não for múltiplo exato, um time extra recebe os excedentes; qualquer jogador pode ser sorteado para a sobra (seleção aleatória)
-- **Sorteio persistido** — o último sorteio é salvo automaticamente e sobrevive ao fechamento do app; um banner na tela de presença e um badge na home indicam quando há um sorteio salvo
-- **Mesclar Times** — selecione 2 times para redistribuir os jogadores (útil quando um time vence muito); o resultado mesclado também é salvo automaticamente
+- **Sorteio automático equilibrado** — algoritmo greedy que garante times com somas de estrelas próximas
+- **Sorteio manual** — monte os times você mesmo, atribuindo cada jogador a um time; o app valida que todos foram distribuídos antes de confirmar
+- **Time de sobra** — se o número de jogadores não for múltiplo exato, um time extra recebe os excedentes
+- **Histórico de sorteios** — os 5 últimos sorteios ficam salvos com data e hora (auditoria); um banner na tela de presença mostra o mais recente e um botão acessa o histórico completo
+- **Mesclar Times** — selecione 2 times para redistribuir os jogadores; o resultado é salvo automaticamente no histórico
+- **Ocultar notas individuais** — botão na home permite esconder as estrelas dos jogadores nas telas de sorteio e times, mantendo apenas a nota geral de cada time; útil para preservar privacidade durante a exibição dos resultados
 - **Compartilhar** — envie o resultado via WhatsApp ou qualquer app de mensagens (sem estrelas, ordem dos jogadores embaralhada)
 
 ---
@@ -52,18 +54,20 @@ O resultado típico para 18 jogadores em 3 times de 6: somas **17 / 17 / 17**.
 
 ```
 src/
-├── types/index.ts          # Player, Pelada, Team, tipos de navegação
-├── storage/index.ts        # CRUD de Peladas no AsyncStorage
-├── utils/balancer.ts       # Algoritmo de sorteio e mescla
+├── types/index.ts              # Player, Pelada, Team, DrawRecord, tipos de navegação
+├── storage/index.ts            # CRUD de Peladas, histórico de sorteios, preferências
+├── utils/balancer.ts           # Algoritmo de sorteio e mescla
 ├── navigation/
-│   └── AppNavigator.tsx    # Stack (Home → PeladaTabs → Teams)
+│   └── AppNavigator.tsx        # Stack (Home → PeladaTabs → Teams / ManualTeams / DrawHistory)
 ├── screens/
-│   ├── HomeScreen.tsx      # Lista de Peladas + criação/edição
-│   ├── PlayersScreen.tsx   # CRUD de jogadores por Pelada
-│   ├── PresenceScreen.tsx  # Checklist de presença + configuração
-│   └── TeamsScreen.tsx     # Resultado, compartilhamento e mescla
+│   ├── HomeScreen.tsx          # Lista de Peladas + criação/edição + toggle de notas
+│   ├── PlayersScreen.tsx       # CRUD de jogadores por Pelada
+│   ├── PresenceScreen.tsx      # Checklist de presença + sorteio automático e manual
+│   ├── TeamsScreen.tsx         # Resultado, compartilhamento e mescla
+│   ├── ManualTeamsScreen.tsx   # Distribuição manual de jogadores por time
+│   └── DrawHistoryScreen.tsx   # Histórico dos 5 últimos sorteios com timestamps
 └── components/
-    └── StarRating.tsx      # Seletor de 1–5 estrelas reutilizável
+    └── StarRating.tsx          # Seletor de 1–5 estrelas reutilizável
 ```
 
 ---

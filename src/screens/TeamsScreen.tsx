@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, Share, Modal,
 } from 'react-native';
-import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
+import { RouteProp, useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList, Team } from '../types';
 import StarRating from '../components/StarRating';
 import { rematchTwoTeams } from '../utils/balancer';
-import { getPeladaById, updatePelada } from '../storage';
+import { updateLatestDrawRecord, getHideRatings } from '../storage';
 
 type RouteProps = RouteProp<RootStackParamList, 'Teams'>;
 
@@ -36,6 +36,13 @@ export default function TeamsScreen() {
   const [currentTeams, setCurrentTeams] = useState<Team[]>(params.teams);
   const [mergeVisible, setMergeVisible] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [hideRatings, setHideRatings] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      getHideRatings().then(setHideRatings);
+    }, [])
+  );
 
   async function handleShare() {
     const text = `⚽ Times Sorteados — BalanceSquad\n\n${formatTeamsForShare(currentTeams)}`;
@@ -48,7 +55,6 @@ export default function TeamsScreen() {
       if (next.has(id)) {
         next.delete(id);
       } else {
-        // If already 2 selected, drop the oldest (first inserted) and add new one
         if (next.size === 2) {
           const [first] = next;
           next.delete(first);
@@ -76,8 +82,7 @@ export default function TeamsScreen() {
     setSelectedIds(new Set());
     setMergeVisible(false);
 
-    const pelada = await getPeladaById(params.peladaId);
-    if (pelada) await updatePelada({ ...pelada, lastDraw: updatedTeams });
+    await updateLatestDrawRecord(params.peladaId, updatedTeams);
   }
 
   function openMergeModal() {
@@ -99,7 +104,7 @@ export default function TeamsScreen() {
             {team.players.map(player => (
               <View key={player.id} style={styles.playerRow}>
                 <Text style={styles.playerName}>{player.name}</Text>
-                <StarRating value={player.level} readonly size={14} />
+                {!hideRatings && <StarRating value={player.level} readonly size={14} />}
               </View>
             ))}
           </View>
@@ -205,7 +210,6 @@ const styles = StyleSheet.create({
   },
   playerName: { fontSize: 14, color: '#334155', fontWeight: '500' },
 
-  // Footer
   footer: {
     position: 'absolute',
     bottom: 24,
@@ -242,7 +246,6 @@ const styles = StyleSheet.create({
   },
   btnMergeText: { color: '#1E3A5F', fontWeight: '700', fontSize: 15 },
 
-  // Modal
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',

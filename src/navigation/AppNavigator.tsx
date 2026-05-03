@@ -9,6 +9,8 @@ import HomeScreen from '../screens/HomeScreen';
 import PlayersScreen from '../screens/PlayersScreen';
 import PresenceScreen from '../screens/PresenceScreen';
 import TeamsScreen from '../screens/TeamsScreen';
+import ManualTeamsScreen from '../screens/ManualTeamsScreen';
+import DrawHistoryScreen from '../screens/DrawHistoryScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -64,6 +66,8 @@ export default function AppNavigator() {
           options={{ headerShown: false }}
         />
         <Stack.Screen name="Teams" component={TeamsScreen} options={{ title: 'Times Sorteados' }} />
+        <Stack.Screen name="ManualTeams" component={ManualTeamsScreen} options={{ title: 'Montar Times' }} />
+        <Stack.Screen name="DrawHistory" component={DrawHistoryScreen} options={{ title: 'Histórico de Sorteios' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

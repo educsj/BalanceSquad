@@ -6,7 +6,7 @@ import {
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Pelada, RootStackParamList } from '../types';
-import { loadPeladas, savePeladas } from '../storage';
+import { loadPeladas, savePeladas, getHideRatings, setHideRatings } from '../storage';
 
 type Nav = StackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -21,12 +21,20 @@ export default function HomeScreen() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [newPlayersPerTeam, setNewPlayersPerTeam] = useState('');
+  const [hideRatings, setHideRatingsState] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       loadPeladas().then(setPeladas);
+      getHideRatings().then(setHideRatingsState);
     }, [])
   );
+
+  async function toggleHideRatings() {
+    const next = !hideRatings;
+    setHideRatingsState(next);
+    await setHideRatings(next);
+  }
 
   function openCreateModal() {
     setEditingId(null);
@@ -87,9 +95,17 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Balance Squad</Text>
-        <Text style={styles.headerSub}>By Eduardo Coutinho</Text>
-        <Text style={styles.headerLink}>github.com/educsj</Text>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.headerTitle}>Balance Squad</Text>
+            <Text style={styles.headerSub}>By Eduardo Coutinho</Text>
+            <Text style={styles.headerLink}>github.com/educsj</Text>
+          </View>
+          <TouchableOpacity style={styles.ratingToggle} onPress={toggleHideRatings} activeOpacity={0.8}>
+            <Text style={styles.ratingToggleIcon}>{hideRatings ? '🙈' : '👁'}</Text>
+            <Text style={styles.ratingToggleText}>{hideRatings ? 'Notas\nocultas' : 'Notas\nvisíveis'}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <Text style={styles.sectionTitle}>
@@ -99,35 +115,40 @@ export default function HomeScreen() {
       <FlatList
         data={peladas}
         keyExtractor={p => p.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => navigation.navigate('PeladaTabs', { peladaId: item.id })}
-            activeOpacity={0.8}
-          >
-            <View style={styles.cardLeft}>
-              <View style={styles.cardNameRow}>
-                <Text style={styles.cardName}>{item.name}</Text>
-                {item.lastDraw && item.lastDraw.length > 0 && (
-                  <View style={styles.drawBadge}>
-                    <Text style={styles.drawBadgeText}>sorteio salvo</Text>
-                  </View>
-                )}
+        renderItem={({ item }) => {
+          const drawCount = item.drawHistory?.length ?? 0;
+          return (
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => navigation.navigate('PeladaTabs', { peladaId: item.id })}
+              activeOpacity={0.8}
+            >
+              <View style={styles.cardLeft}>
+                <View style={styles.cardNameRow}>
+                  <Text style={styles.cardName}>{item.name}</Text>
+                  {drawCount > 0 && (
+                    <View style={styles.drawBadge}>
+                      <Text style={styles.drawBadgeText}>
+                        {drawCount === 1 ? 'sorteio salvo' : `${drawCount} sorteios`}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.cardMeta}>
+                  {item.players.length} jogador{item.players.length !== 1 ? 'es' : ''} · {item.playersPerTeam} por time
+                </Text>
               </View>
-              <Text style={styles.cardMeta}>
-                {item.players.length} jogador{item.players.length !== 1 ? 'es' : ''} · {item.playersPerTeam} por time
-              </Text>
-            </View>
-            <View style={styles.cardActions}>
-              <TouchableOpacity onPress={() => openEditModal(item)} style={styles.actionBtn}>
-                <Text style={styles.actionIcon}>✏️</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.actionBtn}>
-                <Text style={styles.actionIcon}>🗑️</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        )}
+              <View style={styles.cardActions}>
+                <TouchableOpacity onPress={() => openEditModal(item)} style={styles.actionBtn}>
+                  <Text style={styles.actionIcon}>✏️</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.actionBtn}>
+                  <Text style={styles.actionIcon}>🗑️</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          );
+        }}
         contentContainerStyle={{ paddingBottom: 100 }}
         ListEmptyComponent={
           <Text style={styles.empty}>Toque no botão + para criar sua primeira pelada.</Text>
@@ -181,9 +202,20 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     paddingHorizontal: 20,
   },
+  headerTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   headerTitle: { color: '#fff', fontSize: 26, fontWeight: '800', letterSpacing: 0.5 },
   headerSub: { color: '#93C5FD', fontSize: 13, marginTop: 4 },
   headerLink: { color: '#60A5FA', fontSize: 12, marginTop: 2 },
+  ratingToggle: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 3,
+  },
+  ratingToggleIcon: { fontSize: 20 },
+  ratingToggleText: { color: '#93C5FD', fontSize: 10, fontWeight: '600', textAlign: 'center', lineHeight: 13 },
   sectionTitle: { color: '#64748B', fontSize: 13, fontWeight: '500', margin: 16, marginBottom: 8 },
   card: {
     backgroundColor: '#fff',

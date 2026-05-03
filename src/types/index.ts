@@ -13,18 +13,26 @@ export interface Team {
   totalStars: number;
 }
 
+export interface DrawRecord {
+  teams: Team[];
+  timestamp: string; // ISO 8601
+}
+
 export interface Pelada {
   id: string;
   name: string;
   playersPerTeam: number;
   players: Player[];
-  lastDraw?: Team[];
+  lastDraw?: Team[]; // legacy — migrated to drawHistory on load
+  drawHistory?: DrawRecord[];
 }
 
 export type RootStackParamList = {
   Home: undefined;
   PeladaTabs: { peladaId: string };
   Teams: { teams: Team[]; peladaId: string };
+  ManualTeams: { players: Player[]; numTeams: number; peladaId: string };
+  DrawHistory: { peladaId: string };
 };
 
 export type BottomTabParamList = {
