@@ -45,12 +45,12 @@ export async function addDrawRecord(peladaId: string, teams: Team[]): Promise<vo
   await updatePelada({ ...pelada, drawHistory: history });
 }
 
-export async function updateLatestDrawRecord(peladaId: string, teams: Team[]): Promise<void> {
+export async function updateDrawRecord(peladaId: string, teams: Team[], index = 0): Promise<void> {
   const pelada = await getPeladaById(peladaId);
   if (!pelada) return;
   const history = pelada.drawHistory ?? [];
-  if (history.length === 0) return;
-  const updated: DrawRecord[] = [{ ...history[0], teams }, ...history.slice(1)];
+  if (index >= history.length) return;
+  const updated: DrawRecord[] = history.map((r, i) => i === index ? { ...r, teams } : r);
   await updatePelada({ ...pelada, drawHistory: updated });
 }
 

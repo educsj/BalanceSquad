@@ -2,11 +2,13 @@ import React, { useState, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, FlatList, StyleSheet, Share,
 } from 'react-native';
-import { RouteProp, useRoute, useFocusEffect } from '@react-navigation/native';
+import { RouteProp, useRoute, useFocusEffect, useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList, DrawRecord, Team } from '../types';
 import { getPeladaById } from '../storage';
 
 type RouteProps = RouteProp<RootStackParamList, 'DrawHistory'>;
+type Nav = StackNavigationProp<RootStackParamList>;
 
 const TEAM_COLORS = ['#1E3A5F', '#2563EB', '#0F766E', '#7C3AED', '#B91C1C'];
 
@@ -28,12 +30,26 @@ function formatTeamsForShare(teams: Team[]): string {
   }).join('\n\n');
 }
 
-function DrawEntry({ record, index }: { record: DrawRecord; index: number }) {
+function DrawEntry({
+  record,
+  index,
+  peladaId,
+  navigation,
+}: {
+  record: DrawRecord;
+  index: number;
+  peladaId: string;
+  navigation: Nav;
+}) {
   const [expanded, setExpanded] = useState(index === 0);
 
   async function handleShare() {
     const text = `⚽ Times — BalanceSquad\n${formatTimestamp(record.timestamp)}\n\n${formatTeamsForShare(record.teams)}`;
     await Share.share({ message: text });
+  }
+
+  function handleMerge() {
+    navigation.navigate('Teams', { teams: record.teams, peladaId, historyIndex: index });
   }
 
   const totalPlayers = record.teams.reduce((s, t) => s + t.players.length, 0);
@@ -70,9 +86,15 @@ function DrawEntry({ record, index }: { record: DrawRecord; index: number }) {
               ))}
             </View>
           ))}
-          <TouchableOpacity style={styles.shareBtn} onPress={handleShare} activeOpacity={0.8}>
-            <Text style={styles.shareBtnText}>📤  Compartilhar este sorteio</Text>
-          </TouchableOpacity>
+
+          <View style={styles.entryActions}>
+            <TouchableOpacity style={styles.mergeBtn} onPress={handleMerge} activeOpacity={0.8}>
+              <Text style={styles.mergeBtnText}>🔀  Mesclar Times</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.shareBtn} onPress={handleShare} activeOpacity={0.8}>
+              <Text style={styles.shareBtnText}>📤  Compartilhar</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
     </View>
@@ -81,6 +103,7 @@ function DrawEntry({ record, index }: { record: DrawRecord; index: number }) {
 
 export default function DrawHistoryScreen() {
   const { params } = useRoute<RouteProps>();
+  const navigation = useNavigation<Nav>();
   const [history, setHistory] = useState<DrawRecord[]>([]);
 
   useFocusEffect(
@@ -96,7 +119,14 @@ export default function DrawHistoryScreen() {
       <FlatList
         data={history}
         keyExtractor={(_, i) => String(i)}
-        renderItem={({ item, index }) => <DrawEntry record={item} index={index} />}
+        renderItem={({ item, index }) => (
+          <DrawEntry
+            record={item}
+            index={index}
+            peladaId={params.peladaId}
+            navigation={navigation}
+          />
+        )}
         contentContainerStyle={{ paddingBottom: 32 }}
         ListEmptyComponent={
           <Text style={styles.empty}>Nenhum sorteio registrado ainda.</Text>
@@ -160,8 +190,17 @@ const styles = StyleSheet.create({
   teamStars: { fontSize: 12, color: '#64748B', fontWeight: '600' },
   playerRow: { fontSize: 13, color: '#475569', paddingLeft: 12 },
 
+  entryActions: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  mergeBtn: {
+    flex: 1,
+    backgroundColor: '#1E3A5F',
+    borderRadius: 8,
+    padding: 11,
+    alignItems: 'center',
+  },
+  mergeBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   shareBtn: {
-    marginTop: 8,
+    flex: 1,
     backgroundColor: '#F0F4FF',
     borderRadius: 8,
     padding: 11,

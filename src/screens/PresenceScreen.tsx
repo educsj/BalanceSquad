@@ -91,7 +91,7 @@ export default function PresenceScreen() {
       Alert.alert('Jogadores insuficientes', `São necessários ao menos ${numTeams * 2} jogadores para ${numTeams} times.`);
       return;
     }
-    navigation.navigate('ManualTeams', { players: present, numTeams, peladaId });
+    navigation.navigate('ManualTeams', { players: present, numTeams, peladaId, playersPerTeam });
   }
 
   function viewLatestDraw() {

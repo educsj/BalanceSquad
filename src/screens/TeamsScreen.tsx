@@ -7,7 +7,7 @@ import { RouteProp, useRoute, useNavigation, useFocusEffect } from '@react-navig
 import { RootStackParamList, Team } from '../types';
 import StarRating from '../components/StarRating';
 import { rematchTwoTeams } from '../utils/balancer';
-import { updateLatestDrawRecord, getHideRatings } from '../storage';
+import { updateDrawRecord, getHideRatings } from '../storage';
 
 type RouteProps = RouteProp<RootStackParamList, 'Teams'>;
 
@@ -82,7 +82,7 @@ export default function TeamsScreen() {
     setSelectedIds(new Set());
     setMergeVisible(false);
 
-    await updateLatestDrawRecord(params.peladaId, updatedTeams);
+    await updateDrawRecord(params.peladaId, updatedTeams, params.historyIndex ?? 0);
   }
 
   function openMergeModal() {

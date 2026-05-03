@@ -12,18 +12,25 @@ type Nav = StackNavigationProp<RootStackParamList>;
 
 const TEAM_COLORS = ['#1E3A5F', '#2563EB', '#0F766E', '#7C3AED', '#B91C1C'];
 
-function teamLabel(index: number): string {
-  return `T${index + 1}`;
-}
-
 export default function ManualTeamsScreen() {
   const { params } = useRoute<RouteProps>();
-  const { players, numTeams, peladaId } = params;
+  const { players, numTeams, peladaId, playersPerTeam } = params;
   const navigation = useNavigation<Nav>();
 
-  // playerId → team index (0-based), or null if unassigned
+  // playerId → team index (0-based) | null = unassigned
   const [assignments, setAssignments] = useState<Record<string, number | null>>(
     Object.fromEntries(players.map(p => [p.id, null]))
+  );
+
+  const teamCounts = Array.from({ length: numTeams }, (_, i) =>
+    Object.values(assignments).filter(v => v === i).length
+  );
+
+  const allTeamsFull = teamCounts.every(count => count >= playersPerTeam);
+
+  const slotsNeeded = teamCounts.reduce(
+    (acc, count) => acc + Math.max(0, playersPerTeam - count),
+    0
   );
 
   function assign(playerId: string, teamIndex: number) {
@@ -32,9 +39,6 @@ export default function ManualTeamsScreen() {
       [playerId]: prev[playerId] === teamIndex ? null : teamIndex,
     }));
   }
-
-  const assignedCount = Object.values(assignments).filter(v => v !== null).length;
-  const allAssigned = assignedCount === players.length;
 
   function buildTeams(): Team[] {
     const teamPlayers: Player[][] = Array.from({ length: numTeams }, () => []);
@@ -58,28 +62,38 @@ export default function ManualTeamsScreen() {
     navigation.navigate('Teams', { teams, peladaId });
   }
 
-  const teamCounts = Array.from({ length: numTeams }, (_, i) =>
-    Object.values(assignments).filter(v => v === i).length
-  );
-
   return (
     <View style={styles.container}>
-      {/* Team summary row */}
+      {/* Team summary chips */}
       <View style={styles.summaryRow}>
-        {Array.from({ length: numTeams }, (_, i) => (
-          <View key={i} style={[styles.summaryChip, { borderColor: TEAM_COLORS[i % TEAM_COLORS.length] }]}>
-            <Text style={[styles.summaryChipLabel, { color: TEAM_COLORS[i % TEAM_COLORS.length] }]}>
-              Time {i + 1}
-            </Text>
-            <Text style={[styles.summaryChipCount, { color: TEAM_COLORS[i % TEAM_COLORS.length] }]}>
-              {teamCounts[i]}
-            </Text>
-          </View>
-        ))}
+        {Array.from({ length: numTeams }, (_, i) => {
+          const count = teamCounts[i];
+          const full = count >= playersPerTeam;
+          const color = TEAM_COLORS[i % TEAM_COLORS.length];
+          return (
+            <View
+              key={i}
+              style={[
+                styles.summaryChip,
+                { borderColor: color },
+                full && { backgroundColor: color },
+              ]}
+            >
+              <Text style={[styles.summaryChipLabel, { color: full ? '#fff' : color }]}>
+                T{i + 1}
+              </Text>
+              <Text style={[styles.summaryChipCount, { color: full ? '#fff' : color }]}>
+                {count}/{playersPerTeam}
+              </Text>
+            </View>
+          );
+        })}
       </View>
 
       <Text style={styles.counter}>
-        {assignedCount}/{players.length} jogadores distribuídos
+        {allTeamsFull
+          ? 'Todos os times completos — pode confirmar'
+          : `Faltam ${slotsNeeded} vaga${slotsNeeded !== 1 ? 's' : ''} para completar os times`}
       </Text>
 
       <FlatList
@@ -93,20 +107,27 @@ export default function ManualTeamsScreen() {
               <View style={styles.teamBtns}>
                 {Array.from({ length: numTeams }, (_, i) => {
                   const active = assigned === i;
+                  const teamFull = teamCounts[i] >= playersPerTeam;
+                  // disable if team is full and this player isn't in it
+                  const disabled = teamFull && !active;
                   const color = TEAM_COLORS[i % TEAM_COLORS.length];
                   return (
                     <TouchableOpacity
                       key={i}
                       style={[
                         styles.teamBtn,
-                        { borderColor: color },
+                        { borderColor: disabled ? '#CBD5E1' : color },
                         active && { backgroundColor: color },
                       ]}
-                      onPress={() => assign(item.id, i)}
-                      activeOpacity={0.75}
+                      onPress={() => !disabled && assign(item.id, i)}
+                      activeOpacity={disabled ? 1 : 0.75}
                     >
-                      <Text style={[styles.teamBtnText, active && styles.teamBtnTextActive]}>
-                        {teamLabel(i)}
+                      <Text style={[
+                        styles.teamBtnText,
+                        { color: disabled ? '#CBD5E1' : color },
+                        active && styles.teamBtnTextActive,
+                      ]}>
+                        T{i + 1}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -119,12 +140,14 @@ export default function ManualTeamsScreen() {
       />
 
       <TouchableOpacity
-        style={[styles.confirmBtn, !allAssigned && styles.confirmBtnDisabled]}
+        style={[styles.confirmBtn, !allTeamsFull && styles.confirmBtnDisabled]}
         onPress={handleConfirm}
-        disabled={!allAssigned}
+        disabled={!allTeamsFull}
       >
         <Text style={styles.confirmBtnText}>
-          {allAssigned ? '✓  Confirmar Times' : `Faltam ${players.length - assignedCount} jogadores`}
+          {allTeamsFull
+            ? '✓  Confirmar Times'
+            : `Faltam ${slotsNeeded} vaga${slotsNeeded !== 1 ? 's' : ''} nos times`}
         </Text>
       </TouchableOpacity>
     </View>
@@ -151,7 +174,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   summaryChipLabel: { fontSize: 13, fontWeight: '700' },
-  summaryChipCount: { fontSize: 18, fontWeight: '800' },
+  summaryChipCount: { fontSize: 16, fontWeight: '800' },
 
   counter: {
     color: '#64748B',
@@ -183,7 +206,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  teamBtnText: { fontSize: 12, fontWeight: '700', color: '#64748B' },
+  teamBtnText: { fontSize: 12, fontWeight: '700' },
   teamBtnTextActive: { color: '#fff' },
 
   confirmBtn: {

@@ -30,8 +30,8 @@ export interface Pelada {
 export type RootStackParamList = {
   Home: undefined;
   PeladaTabs: { peladaId: string };
-  Teams: { teams: Team[]; peladaId: string };
-  ManualTeams: { players: Player[]; numTeams: number; peladaId: string };
+  Teams: { teams: Team[]; peladaId: string; historyIndex?: number };
+  ManualTeams: { players: Player[]; numTeams: number; peladaId: string; playersPerTeam: number };
   DrawHistory: { peladaId: string };
 };
 
