@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <clipPath id="L">
+      <rect x="0" y="0" width="256" height="512"/>
+    </clipPath>
+    <clipPath id="R">
+      <rect x="256" y="0" width="256" height="512"/>
+    </clipPath>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="115" fill="#1E3A5F"/>
+
+  <!-- Subtle inner highlight on background -->
+  <rect width="512" height="512" rx="115" fill="url(#none)" opacity="0"/>
+
+  <!-- Left half: solid gold -->
+  <path
+    d="M256,61 L300.08,195.32 L441.46,195.74 L327.33,279.18 L370.62,413.76 L256,331 L141.38,413.76 L184.67,279.18 L70.54,195.74 L211.92,195.32 Z"
+    fill="#F5C518"
+    clip-path="url(#L)"
+    filter="url(#glow)"
+  />
+
+  <!-- Right half: bold outline only -->
+  <path
+    d="M256,61 L300.08,195.32 L441.46,195.74 L327.33,279.18 L370.62,413.76 L256,331 L141.38,413.76 L184.67,279.18 L70.54,195.74 L211.92,195.32 Z"
+    fill="none"
+    stroke="#F5C518"
+    stroke-width="22"
+    stroke-linejoin="miter"
+    stroke-miterlimit="10"
+    clip-path="url(#R)"
+  />
+
+  <!-- Center dividing line: navy on top to create crisp gap between halves -->
+  <line x1="256" y1="61" x2="256" y2="331" stroke="#1E3A5F" stroke-width="4"/>
+
+  <!-- Center dividing line: gold to show the cut axis -->
+  <line x1="256" y1="61" x2="256" y2="331" stroke="#F5C518" stroke-width="1.5" opacity="0.5"/>
+</svg>

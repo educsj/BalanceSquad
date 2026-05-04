@@ -1,21 +1,12 @@
-import React, { useState, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity,
+  View, Text, ScrollView, TouchableOpacity, Animated,
   StyleSheet, Share, Modal,
 } from 'react-native';
 import { RouteProp, useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
-import Animated, {
-  FadeInDown,
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  runOnJS,
-} from 'react-native-reanimated';
-import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { RootStackParamList, Team } from '../types';
 import StarRating from '../components/StarRating';
 import { rematchTwoTeams } from '../utils/balancer';
@@ -27,11 +18,7 @@ import { useTheme, ThemeColors } from '../theme';
 
 type RouteProps = RouteProp<RootStackParamList, 'Teams'>;
 
-type DragInfo = {
-  srcTeam: number;
-  srcPlayer: number;
-  name: string;
-} | null;
+type SwapSelection = { teamIndex: number; playerIndex: number } | null;
 
 function shuffled<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -49,10 +36,6 @@ function formatTeamsForShare(teams: Team[]): string {
   }).join('\n\n');
 }
 
-function heavyHaptic() {
-  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
-}
-
 export default function TeamsScreen() {
   const { params } = useRoute<RouteProps>();
   const navigation = useNavigation();
@@ -65,30 +48,25 @@ export default function TeamsScreen() {
   const [mergeVisible, setMergeVisible] = useState(params.openMergeModal ?? false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [hideRatings, setHideRatings] = useState(false);
-  const [dragInfo, setDragInfo] = useState<DragInfo>(null);
-  const [hoverTeamIdx, setHoverTeamIdx] = useState<number | null>(null);
+  const [swapSelection, setSwapSelection] = useState<SwapSelection>(null);
 
   const shareCardRef = useRef<View>(null);
   const insets = useSafeAreaInsets();
-  const scrollRef = useRef<ScrollView>(null);
-  const scrollY = useRef(0);
-  const scrollContainerY = useRef(0);
-  const teamLayouts = useRef<Array<{ y: number; height: number } | null>>([]);
 
-  // Reanimated values for drag overlay
-  const dragX = useSharedValue(0);
-  const dragY = useSharedValue(0);
-  const dragScale = useSharedValue(1);
-  const dragOpacity = useSharedValue(0);
+  // Entrance animations — one Animated.Value per team card, initialised once
+  const teamAnims = useRef<Animated.Value[]>([]);
+  if (teamAnims.current.length === 0) {
+    teamAnims.current = params.teams.map(() => new Animated.Value(0));
+  }
 
-  const dragOverlayStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: dragX.value - 80 },
-      { translateY: dragY.value - 24 },
-      { scale: dragScale.value },
-    ],
-    opacity: dragOpacity.value,
-  }));
+  useEffect(() => {
+    Animated.stagger(
+      100,
+      teamAnims.current.map(anim =>
+        Animated.timing(anim, { toValue: 1, duration: 350, useNativeDriver: true })
+      ),
+    ).start();
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -96,38 +74,25 @@ export default function TeamsScreen() {
     }, [])
   );
 
-  function measureScrollContainer() {
-    (scrollRef.current as any)?.measure(
-      (_x: number, _y: number, _w: number, _h: number, _px: number, pageY: number) => {
-        scrollContainerY.current = pageY;
-      }
-    );
-  }
-
-  function findTargetTeam(absoluteY: number): number | null {
-    const relY = absoluteY - scrollContainerY.current + scrollY.current;
-    for (let i = 0; i < currentTeams.length; i++) {
-      const l = teamLayouts.current[i];
-      if (l && relY >= l.y && relY <= l.y + l.height) return i;
+  function handlePlayerTap(teamIndex: number, playerIndex: number) {
+    if (!swapSelection) {
+      setSwapSelection({ teamIndex, playerIndex });
+      Haptics.selectionAsync().catch(() => {});
+      return;
     }
-    return null;
-  }
 
-  function updateHover(absoluteY: number) {
-    setHoverTeamIdx(findTargetTeam(absoluteY));
-  }
+    if (swapSelection.teamIndex === teamIndex && swapSelection.playerIndex === playerIndex) {
+      setSwapSelection(null);
+      return;
+    }
 
-  function executeDrop(srcTeam: number, srcPlayer: number, absoluteY: number) {
-    const targetTeam = findTargetTeam(absoluteY);
-    if (targetTeam === null || targetTeam === srcTeam) return;
-    const targetPlayerIdx = Math.min(srcPlayer, currentTeams[targetTeam].players.length - 1);
-    performSwap(srcTeam, srcPlayer, targetTeam, targetPlayerIdx);
-  }
+    if (swapSelection.teamIndex === teamIndex) {
+      setSwapSelection({ teamIndex, playerIndex });
+      return;
+    }
 
-  function endDrag(srcTeam: number, srcPlayer: number, absoluteY: number) {
-    executeDrop(srcTeam, srcPlayer, absoluteY);
-    setDragInfo(null);
-    setHoverTeamIdx(null);
+    performSwap(swapSelection.teamIndex, swapSelection.playerIndex, teamIndex, playerIndex);
+    setSwapSelection(null);
   }
 
   async function performSwap(
@@ -161,7 +126,7 @@ export default function TeamsScreen() {
         await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: t('teams.shareImageTitle') });
       }
     } catch {
-      // silently fail
+      // silently ignore share failures
     }
   }
 
@@ -207,92 +172,67 @@ export default function TeamsScreen() {
     setMergeVisible(true);
   }
 
+  const selectedPlayerName = swapSelection
+    ? currentTeams[swapSelection.teamIndex]?.players[swapSelection.playerIndex]?.name ?? ''
+    : '';
+
   return (
     <View style={styles.container}>
-      {/* Drag hint */}
-      {!dragInfo && (
-        <Text style={styles.dragHint}>
-          <Feather name="move" size={12} color={colors.textMuted} /> {t('teams.dragHint')}
-        </Text>
+      {swapSelection ? (
+        <View style={styles.swapBanner}>
+          <Text style={styles.swapBannerText} numberOfLines={1}>
+            {t('teams.swapHintActive', { name: selectedPlayerName })}
+          </Text>
+          <TouchableOpacity onPress={() => setSwapSelection(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.swapBannerCancel}>{t('teams.cancelSwap')}</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <Text style={styles.hint}>{t('teams.swapHintIdle')}</Text>
       )}
 
-      <ScrollView
-        ref={scrollRef}
-        contentContainerStyle={{ paddingBottom: 180 }}
-        onScroll={e => { scrollY.current = e.nativeEvent.contentOffset.y; }}
-        scrollEventThrottle={16}
-        onLayout={measureScrollContainer}
-        scrollEnabled={dragInfo === null}
-      >
+      <ScrollView contentContainerStyle={{ paddingBottom: 180 }}>
         {currentTeams.map((team, teamIndex) => {
           const color = TEAM_COLORS[teamIndex % TEAM_COLORS.length];
-          const isHovered = hoverTeamIdx === teamIndex && dragInfo !== null;
+          const anim = teamAnims.current[teamIndex] ?? new Animated.Value(1);
+          const cardAnimStyle = {
+            opacity: anim,
+            transform: [{
+              translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }),
+            }],
+          };
+
           return (
             <Animated.View
               key={team.id}
-              entering={FadeInDown.delay(teamIndex * 100).springify().damping(14)}
-              onLayout={e => {
-                teamLayouts.current[teamIndex] = {
-                  y: e.nativeEvent.layout.y,
-                  height: e.nativeEvent.layout.height,
-                };
-              }}
-              style={[
-                styles.card,
-                { borderLeftColor: color },
-                isHovered && { backgroundColor: colors.primaryLight, borderColor: color },
-              ]}
+              style={[styles.card, { borderLeftColor: color }, cardAnimStyle]}
             >
               <View style={styles.cardHeader}>
                 <Text style={[styles.teamName, { color }]}>{team.name}</Text>
                 <Text style={styles.totalStars}>{team.totalStars} ★</Text>
               </View>
-              {team.players.map((player, playerIndex) => {
-                const isDragging = dragInfo?.srcTeam === teamIndex && dragInfo?.srcPlayer === playerIndex;
 
-                const gesture = Gesture.Pan()
-                  .activateAfterLongPress(400)
-                  .onBegin(e => {
-                    dragX.value = e.absoluteX;
-                    dragY.value = e.absoluteY;
-                    dragScale.value = withSpring(1.06);
-                    dragOpacity.value = withTiming(1, { duration: 150 });
-                    runOnJS(heavyHaptic)();
-                    runOnJS(setDragInfo)({ srcTeam: teamIndex, srcPlayer: playerIndex, name: player.name });
-                  })
-                  .onChange(e => {
-                    dragX.value = e.absoluteX;
-                    dragY.value = e.absoluteY;
-                    runOnJS(updateHover)(e.absoluteY);
-                  })
-                  .onEnd(e => {
-                    dragOpacity.value = withTiming(0, { duration: 120 });
-                    dragScale.value = withSpring(1);
-                    runOnJS(endDrag)(teamIndex, playerIndex, e.absoluteY);
-                  })
-                  .onFinalize(() => {
-                    dragOpacity.value = withTiming(0, { duration: 120 });
-                    dragScale.value = withSpring(1);
-                    runOnJS(setDragInfo)(null);
-                    runOnJS(setHoverTeamIdx)(null);
-                  });
+              {team.players.map((player, playerIndex) => {
+                const isSelected =
+                  swapSelection?.teamIndex === teamIndex &&
+                  swapSelection?.playerIndex === playerIndex;
 
                 return (
-                  <GestureDetector key={player.id} gesture={gesture}>
-                    <Animated.View
-                      style={[
-                        styles.playerRow,
-                        isDragging && styles.playerRowDragging,
-                        isHovered && !isDragging && styles.playerRowHoverTarget,
-                      ]}
-                    >
-                      <Text style={[styles.playerName, isDragging && styles.playerNameDragging]}>
-                        {player.name}
-                      </Text>
-                      {!hideRatings && <StarRating value={player.level} readonly size={14} />}
-                      <Feather name="menu" size={14} color={colors.border} style={{ marginLeft: 4 }} />
-                    </Animated.View>
-                  </GestureDetector>
+                  <TouchableOpacity
+                    key={player.id}
+                    style={[styles.playerRow, isSelected && styles.playerRowSelected]}
+                    onPress={() => handlePlayerTap(teamIndex, playerIndex)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.playerName, isSelected && styles.playerNameSelected]}>
+                      {player.name}
+                    </Text>
+                    {!hideRatings && <StarRating value={player.level} readonly size={14} />}
+                    {isSelected
+                      ? <Feather name="check-circle" size={14} color={colors.primary} style={{ marginLeft: 4 }} />
+                      : <Feather name="chevron-right" size={14} color={colors.border} style={{ marginLeft: 4 }} />
+                    }
+                  </TouchableOpacity>
                 );
               })}
             </Animated.View>
@@ -300,14 +240,7 @@ export default function TeamsScreen() {
         })}
       </ScrollView>
 
-      {/* Floating drag overlay */}
-      {dragInfo && (
-        <Animated.View style={[styles.dragOverlay, dragOverlayStyle]} pointerEvents="none">
-          <Text style={styles.dragOverlayText}>{dragInfo.name}</Text>
-        </Animated.View>
-      )}
-
-      {/* Hidden image capture view */}
+      {/* Hidden card for image share */}
       <View ref={shareCardRef} style={styles.shareCard} collapsable={false}>
         <View style={styles.shareCardInner}>
           <Text style={styles.shareCardTitle}>{t('teams.shareCardTitle')}</Text>
@@ -345,7 +278,6 @@ export default function TeamsScreen() {
         </View>
       </View>
 
-      {/* Rebalance Modal */}
       <Modal visible={mergeVisible} transparent animationType="fade" onRequestClose={() => setMergeVisible(false)}>
         <View style={styles.overlay}>
           <View style={styles.modal}>
@@ -365,9 +297,7 @@ export default function TeamsScreen() {
                   >
                     <View style={[styles.teamOptionDot, { backgroundColor: isSelected ? color : colors.border }]} />
                     <View style={styles.teamOptionInfo}>
-                      <Text style={[styles.teamOptionName, isSelected && { color }]}>
-                        {team.name}
-                      </Text>
+                      <Text style={[styles.teamOptionName, isSelected && { color }]}>{team.name}</Text>
                       <Text style={styles.teamOptionMeta}>
                         {t('teams.teamInfo', { count: team.players.length, stars: team.totalStars })}
                       </Text>
@@ -401,13 +331,22 @@ function createStyles(c: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.background },
 
-    dragHint: {
+    hint: {
       fontSize: 11,
       color: c.textMuted,
       textAlign: 'center',
       paddingVertical: 6,
-      paddingHorizontal: 16,
     },
+    swapBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      backgroundColor: c.primaryLight,
+      gap: 8,
+    },
+    swapBannerText: { flex: 1, color: c.primary, fontWeight: '600', fontSize: 13 },
+    swapBannerCancel: { color: c.primary, fontWeight: '700', fontSize: 13 },
 
     card: {
       backgroundColor: c.surface,
@@ -442,33 +381,14 @@ function createStyles(c: ThemeColors) {
       borderTopColor: c.borderLight,
       borderRadius: 6,
     },
-    playerRowDragging: {
-      opacity: 0.35,
-      backgroundColor: c.primaryLight,
-    },
-    playerRowHoverTarget: {
+    playerRowSelected: {
       backgroundColor: c.primaryLight,
       borderTopColor: 'transparent',
     },
     playerName: { fontSize: 14, color: c.text, fontWeight: '500', flex: 1 },
-    playerNameDragging: { color: c.textMuted },
+    playerNameSelected: { color: c.primary, fontWeight: '700' },
 
-    dragOverlay: {
-      position: 'absolute',
-      backgroundColor: c.primary,
-      borderRadius: 10,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      zIndex: 999,
-      elevation: 12,
-      shadowColor: '#000',
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      width: 160,
-    },
-    dragOverlayText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-
-    footer: { position: 'absolute', bottom: 24, left: 16, right: 16, gap: 8 },
+    footer: { position: 'absolute', left: 16, right: 16, gap: 8 },
     footerRow: { flexDirection: 'row', gap: 8 },
     btnPrimary: {
       flex: 2,
