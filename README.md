@@ -27,7 +27,7 @@ In casual pickup games, manual team draws almost always create unbalanced sides 
 - ⚽ Star-based skill ratings keep teams nearly equal every draw
 - 🎲 Fast automatic draw with zero arguments — or go fully manual
 - 📤 One-tap sharing to WhatsApp without revealing individual ratings
-- 📅 History of the last 5 draws with timestamps and merge support
+- 📅 History of the last 5 draws with timestamps, manual adjustments and auto-rebalancing
 
 ---
 
@@ -48,7 +48,7 @@ Home (pelada list)
         │               ├── ⚽ Auto draw → Sorted Teams
         │               └── ✋ Manual draw → Sorted Teams
         └── 📅 Draw History
-                └── View, merge and share previous draws
+                └── View, adjust, rebalance and share previous draws
 ```
 
 ---
@@ -75,12 +75,13 @@ Home (pelada list)
 
 ### History
 - The last 5 draws are saved with date and time for reference
-- Each record can be expanded, merged, or shared individually
-- Merge is available both on the current draw and on past history records
+- Each record can be expanded to view teams, then adjusted or rebalanced directly from history
+- Sharing is available individually for each record
 
-### Merge Teams
-- Select 2 teams to redistribute their players (useful after a team wins several games in a row)
-- The merged result is automatically saved to history
+### Adjust & Rebalance Teams
+- **Adjust** — tap individual players to swap them between teams manually
+- **Rebalance** — select 2 teams to automatically redistribute their players using the balancing algorithm (useful after a team wins several games in a row)
+- All changes are automatically saved to history
 
 ### Share
 - Send teams via WhatsApp or any messaging app

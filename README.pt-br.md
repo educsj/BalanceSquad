@@ -27,7 +27,7 @@ Nas peladas informais, o sorteio manual costuma gerar times desequilibrados — 
 - ⚽ Níveis em estrelas garantem times praticamente iguais em todo sorteio
 - 🎲 Sorteio automático rápido e sem discussão — ou monte manualmente
 - 📤 Compartilhamento em um toque para WhatsApp sem revelar notas individuais
-- 📅 Histórico dos últimos 5 sorteios com data, hora e suporte a mescla
+- 📅 Histórico dos últimos 5 sorteios com data, hora, ajuste manual e rebalanceamento automático
 
 ---
 
@@ -48,7 +48,7 @@ Home (lista de peladas)
         │               ├── ⚽ Sortear automaticamente → Times Sorteados
         │               └── ✋ Montar manualmente → Times Sorteados
         └── 📅 Histórico de Sorteios
-                └── Ver, mesclar e compartilhar sorteios anteriores
+                └── Ver, ajustar, rebalancear e compartilhar sorteios anteriores
 ```
 
 ---
@@ -75,12 +75,13 @@ Home (lista de peladas)
 
 ### Histórico
 - Os 5 últimos sorteios ficam salvos com data e hora para auditoria
-- Cada registro pode ser expandido para ver os times, mesclado ou compartilhado individualmente
-- Mescla disponível tanto no sorteio atual quanto em registros anteriores do histórico
+- Cada registro pode ser expandido para ver os times e então ajustado ou rebalanceado diretamente pelo histórico
+- Compartilhamento disponível individualmente para cada registro
 
-### Mesclar Times
-- Selecione 2 times para redistribuir os jogadores entre eles (útil quando um time vence consecutivamente)
-- O resultado mesclado é salvo automaticamente no histórico
+### Ajustar e Rebalancear Times
+- **Ajustar** — toque em jogadores individuais para trocá-los entre times manualmente
+- **Rebalancear** — selecione 2 times para redistribuir automaticamente os jogadores usando o algoritmo de balanceamento (útil quando um time vence consecutivamente)
+- Todas as alterações são salvas automaticamente no histórico
 
 ### Compartilhar
 - Envie os times via WhatsApp ou qualquer app de mensagens

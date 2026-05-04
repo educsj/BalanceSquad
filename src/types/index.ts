@@ -32,8 +32,8 @@ export type RootStackParamList = {
   PeladaHub: { peladaId: string };
   PlayerRegister: { peladaId: string; editPlayerId?: string };
   PlayerList: { peladaId: string };
-  DrawConfig: { peladaId: string; selectedPlayerIds: string[] };
-  Teams: { teams: Team[]; peladaId: string; historyIndex?: number };
+  DrawConfig: { peladaId: string; selectedPlayerIds: string[]; guestPlayers?: Player[] };
+  Teams: { teams: Team[]; peladaId: string; historyIndex?: number; openMergeModal?: boolean };
   ManualTeams: { players: Player[]; numTeams: number; peladaId: string; playersPerTeam: number };
   DrawHistory: { peladaId: string };
 };

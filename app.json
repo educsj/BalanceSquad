@@ -32,6 +32,9 @@
         "projectId": "6e5f9c6a-9e88-475b-a5f3-fcdf54798a96"
       }
     },
-    "owner": "educsjr"
+    "owner": "educsjr",
+    "plugins": [
+      "expo-localization"
+    ]
   }
 }

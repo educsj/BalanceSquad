@@ -4,6 +4,10 @@ import {
 } from 'react-native';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { Feather } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { Player, Team, RootStackParamList } from '../types';
 import { addDrawRecord } from '../storage';
 
@@ -16,8 +20,9 @@ export default function ManualTeamsScreen() {
   const { params } = useRoute<RouteProps>();
   const { players, numTeams, peladaId, playersPerTeam } = params;
   const navigation = useNavigation<Nav>();
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
-  // playerId → team index (0-based) | null = unassigned
   const [assignments, setAssignments] = useState<Record<string, number | null>>(
     Object.fromEntries(players.map(p => [p.id, null]))
   );
@@ -34,6 +39,7 @@ export default function ManualTeamsScreen() {
   );
 
   function assign(playerId: string, teamIndex: number) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setAssignments(prev => ({
       ...prev,
       [playerId]: prev[playerId] === teamIndex ? null : teamIndex,
@@ -57,6 +63,7 @@ export default function ManualTeamsScreen() {
   }
 
   async function handleConfirm() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     const teams = buildTeams();
     await addDrawRecord(peladaId, teams);
     navigation.navigate('Teams', { teams, peladaId });
@@ -64,7 +71,6 @@ export default function ManualTeamsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Team summary chips */}
       <View style={styles.summaryRow}>
         {Array.from({ length: numTeams }, (_, i) => {
           const count = teamCounts[i];
@@ -80,10 +86,10 @@ export default function ManualTeamsScreen() {
               ]}
             >
               <Text style={[styles.summaryChipLabel, { color: full ? '#fff' : color }]}>
-                T{i + 1}
+                {t('manualTeams.teamBtn', { num: i + 1 })}
               </Text>
               <Text style={[styles.summaryChipCount, { color: full ? '#fff' : color }]}>
-                {count}/{playersPerTeam}
+                {t('manualTeams.teamCount', { count, max: playersPerTeam })}
               </Text>
             </View>
           );
@@ -92,8 +98,8 @@ export default function ManualTeamsScreen() {
 
       <Text style={styles.counter}>
         {allTeamsFull
-          ? 'Todos os times completos — pode confirmar'
-          : `Faltam ${slotsNeeded} vaga${slotsNeeded !== 1 ? 's' : ''} para completar os times`}
+          ? t('manualTeams.allComplete')
+          : t('manualTeams.slotsNeeded', { count: slotsNeeded })}
       </Text>
 
       <FlatList
@@ -108,7 +114,6 @@ export default function ManualTeamsScreen() {
                 {Array.from({ length: numTeams }, (_, i) => {
                   const active = assigned === i;
                   const teamFull = teamCounts[i] >= playersPerTeam;
-                  // disable if team is full and this player isn't in it
                   const disabled = teamFull && !active;
                   const color = TEAM_COLORS[i % TEAM_COLORS.length];
                   return (
@@ -127,7 +132,7 @@ export default function ManualTeamsScreen() {
                         { color: disabled ? '#CBD5E1' : color },
                         active && styles.teamBtnTextActive,
                       ]}>
-                        T{i + 1}
+                        {t('manualTeams.teamBtn', { num: i + 1 })}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -140,15 +145,19 @@ export default function ManualTeamsScreen() {
       />
 
       <TouchableOpacity
-        style={[styles.confirmBtn, !allTeamsFull && styles.confirmBtnDisabled]}
+        style={[styles.confirmBtn, !allTeamsFull && styles.confirmBtnDisabled, { bottom: 24 + insets.bottom }]}
         onPress={handleConfirm}
         disabled={!allTeamsFull}
       >
-        <Text style={styles.confirmBtnText}>
-          {allTeamsFull
-            ? '✓  Confirmar Times'
-            : `Faltam ${slotsNeeded} vaga${slotsNeeded !== 1 ? 's' : ''} nos times`}
-        </Text>
+        {allTeamsFull
+          ? (
+            <View style={styles.confirmBtnContent}>
+              <Feather name="check" size={18} color="#fff" />
+              <Text style={styles.confirmBtnText}>{t('manualTeams.confirmBtn')}</Text>
+            </View>
+          )
+          : <Text style={styles.confirmBtnText}>{t('manualTeams.slotsFooter', { count: slotsNeeded })}</Text>
+        }
       </TouchableOpacity>
     </View>
   );
@@ -157,12 +166,7 @@ export default function ManualTeamsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F4FF', padding: 16 },
 
-  summaryRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 10,
-    flexWrap: 'wrap',
-  },
+  summaryRow: { flexDirection: 'row', gap: 8, marginBottom: 10, flexWrap: 'wrap' },
   summaryChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -176,12 +180,7 @@ const styles = StyleSheet.create({
   summaryChipLabel: { fontSize: 13, fontWeight: '700' },
   summaryChipCount: { fontSize: 16, fontWeight: '800' },
 
-  counter: {
-    color: '#64748B',
-    fontSize: 13,
-    fontWeight: '500',
-    marginBottom: 10,
-  },
+  counter: { color: '#64748B', fontSize: 13, fontWeight: '500', marginBottom: 10 },
 
   playerCard: {
     backgroundColor: '#fff',
@@ -223,6 +222,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 8,
   },
-  confirmBtnDisabled: { backgroundColor: '#94A3B8' },
+  confirmBtnDisabled: { backgroundColor: '#CBD5E1', elevation: 0, shadowOpacity: 0 },
+  confirmBtnContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   confirmBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
 });

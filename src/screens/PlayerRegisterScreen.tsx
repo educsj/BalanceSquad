@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useTranslation } from 'react-i18next';
 import { Player, StarLevel, RootStackParamList } from '../types';
 import { getPeladaById, updatePelada } from '../storage';
 import StarRating from '../components/StarRating';
@@ -20,6 +21,7 @@ export default function PlayerRegisterScreen() {
   const { params } = useRoute<RouteProps>();
   const { peladaId, editPlayerId } = params;
   const navigation = useNavigation<Nav>();
+  const { t } = useTranslation();
   const isEditing = !!editPlayerId;
 
   const [name, setName] = useState('');
@@ -28,7 +30,6 @@ export default function PlayerRegisterScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      navigation.setOptions({ title: isEditing ? 'Editar Jogador' : 'Cadastrar Jogador' });
       getPeladaById(peladaId).then(pelada => {
         if (!pelada) return;
         setPlayerCount(pelada.players.length);
@@ -67,16 +68,16 @@ export default function PlayerRegisterScreen() {
       <View style={styles.container}>
         {!isEditing && (
           <Text style={styles.counter}>
-            {playerCount} jogador{playerCount !== 1 ? 'es' : ''} cadastrado{playerCount !== 1 ? 's' : ''}
+            {t('playerRegister.playersCount', { count: playerCount })}
           </Text>
         )}
 
         <View style={styles.form}>
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Nome</Text>
+            <Text style={styles.label}>{t('playerRegister.nameLabel')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Nome do jogador"
+              placeholder={t('playerRegister.namePlaceholder')}
               placeholderTextColor="#94A3B8"
               value={name}
               onChangeText={setName}
@@ -85,7 +86,7 @@ export default function PlayerRegisterScreen() {
             />
           </View>
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Nível</Text>
+            <Text style={styles.label}>{t('playerRegister.levelLabel')}</Text>
             <StarRating value={level} onChange={setLevel} />
           </View>
         </View>
@@ -96,7 +97,7 @@ export default function PlayerRegisterScreen() {
           disabled={!name.trim()}
         >
           <Text style={styles.saveBtnText}>
-            {isEditing ? '✓  Salvar Alterações' : '+  Adicionar Jogador'}
+            {isEditing ? t('playerRegister.saveChanges') : t('playerRegister.addPlayer')}
           </Text>
         </TouchableOpacity>
       </View>

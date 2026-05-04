@@ -4,6 +4,10 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { Feather } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { Player, RootStackParamList } from '../types';
 import { getPeladaById, addDrawRecord } from '../storage';
 import { balanceTeams } from '../utils/balancer';
@@ -15,8 +19,10 @@ const TEAM_OPTIONS = [2, 3, 4];
 
 export default function DrawConfigScreen() {
   const { params } = useRoute<RouteProps>();
-  const { peladaId, selectedPlayerIds } = params;
+  const { peladaId, selectedPlayerIds, guestPlayers } = params;
   const navigation = useNavigation<Nav>();
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   const [players, setPlayers] = useState<Player[]>([]);
   const [numTeams, setNumTeams] = useState(2);
@@ -27,7 +33,7 @@ export default function DrawConfigScreen() {
       getPeladaById(peladaId).then(pelada => {
         if (!pelada) return;
         const present = pelada.players.filter(p => selectedPlayerIds.includes(p.id));
-        setPlayers(present);
+        setPlayers([...present, ...(guestPlayers ?? [])]);
         setPlayersPerTeam(pelada.playersPerTeam);
       });
     }, [peladaId])
@@ -37,15 +43,18 @@ export default function DrawConfigScreen() {
   const overflow = players.length - totalSlots;
 
   function slotInfo(): string {
-    if (overflow === 0) return `${numTeams} times de ${playersPerTeam} — distribuição perfeita`;
-    if (overflow > 0) return `${numTeams} times de ${playersPerTeam} · ${overflow} jogador${overflow !== 1 ? 'es' : ''} na sobra`;
+    if (overflow === 0) return t('drawConfig.perfectDist', { teams: numTeams, perTeam: playersPerTeam });
+    if (overflow > 0) return t('drawConfig.overflowDist', { count: overflow, teams: numTeams, perTeam: playersPerTeam, overflow });
     const free = -overflow;
-    return `${numTeams} times de ${playersPerTeam} · ${free} vaga${free !== 1 ? 's' : ''} livre${free !== 1 ? 's' : ''}`;
+    return t('drawConfig.slotsDist', { count: free, teams: numTeams, perTeam: playersPerTeam, free });
   }
 
   function validate(): boolean {
     if (players.length < numTeams * 2) {
-      Alert.alert('Jogadores insuficientes', `São necessários ao menos ${numTeams * 2} jogadores para ${numTeams} times.`);
+      Alert.alert(
+        t('drawConfig.notEnoughPlayers'),
+        t('drawConfig.notEnoughPlayersMsg', { min: numTeams * 2, teams: numTeams })
+      );
       return false;
     }
     return true;
@@ -53,6 +62,7 @@ export default function DrawConfigScreen() {
 
   async function handleDraw() {
     if (!validate()) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     const teams = balanceTeams(players, numTeams, playersPerTeam);
     await addDrawRecord(peladaId, teams);
     navigation.navigate('Teams', { teams, peladaId });
@@ -65,15 +75,13 @@ export default function DrawConfigScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Player info banner */}
       <View style={styles.infoCard}>
-        <Text style={styles.infoTitle}>{players.length} jogadores selecionados</Text>
+        <Text style={styles.infoTitle}>{t('drawConfig.playersSelected', { count: players.length })}</Text>
         <Text style={styles.infoSub}>{slotInfo()}</Text>
       </View>
 
-      {/* Number of teams */}
       <View style={styles.configCard}>
-        <Text style={styles.configLabel}>Número de times</Text>
+        <Text style={styles.configLabel}>{t('drawConfig.teamsLabel')}</Text>
         <View style={styles.teamOptions}>
           {TEAM_OPTIONS.map(n => (
             <TouchableOpacity
@@ -89,34 +97,34 @@ export default function DrawConfigScreen() {
         </View>
       </View>
 
-      {/* Players per team */}
       <View style={styles.configCard}>
-        <Text style={styles.configLabel}>Jogadores por time</Text>
+        <Text style={styles.configLabel}>{t('drawConfig.playersPerTeam')}</Text>
         <View style={styles.stepper}>
           <TouchableOpacity
             style={[styles.stepBtn, playersPerTeam <= 1 && styles.stepBtnDisabled]}
             onPress={() => setPlayersPerTeam(v => Math.max(1, v - 1))}
             disabled={playersPerTeam <= 1}
           >
-            <Text style={styles.stepBtnText}>−</Text>
+            <Feather name="minus" size={20} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.stepValue}>{playersPerTeam}</Text>
           <TouchableOpacity
             style={styles.stepBtn}
             onPress={() => setPlayersPerTeam(v => v + 1)}
           >
-            <Text style={styles.stepBtnText}>+</Text>
+            <Feather name="plus" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Action buttons */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { bottom: 24 + insets.bottom }]}>
         <TouchableOpacity style={styles.manualBtn} onPress={handleManual}>
-          <Text style={styles.manualBtnText}>✋  Montar Manualmente</Text>
+          <Feather name="edit-3" size={16} color="#1E3A5F" />
+          <Text style={styles.manualBtnText}>{t('drawConfig.manualDraw')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.drawBtn} onPress={handleDraw}>
-          <Text style={styles.drawBtnText}>⚽  Sortear Times</Text>
+          <Feather name="zap" size={18} color="#fff" />
+          <Text style={styles.drawBtnText}>{t('drawConfig.autoDraw')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -178,31 +186,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   stepBtnDisabled: { backgroundColor: '#CBD5E1' },
-  stepBtnText: { color: '#fff', fontSize: 22, fontWeight: '700', lineHeight: 26 },
   stepValue: { fontSize: 22, fontWeight: '800', color: '#1E3A5F', minWidth: 34, textAlign: 'center' },
 
-  footer: {
-    position: 'absolute',
-    bottom: 24,
-    left: 16,
-    right: 16,
-    gap: 10,
-  },
+  footer: { position: 'absolute', bottom: 24, left: 16, right: 16, gap: 10 },
   manualBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 15,
-    alignItems: 'center',
     borderWidth: 2,
     borderColor: '#1E3A5F',
     elevation: 2,
   },
   manualBtnText: { color: '#1E3A5F', fontWeight: '700', fontSize: 15 },
   drawBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     backgroundColor: '#1E3A5F',
     borderRadius: 12,
     padding: 16,
-    alignItems: 'center',
     elevation: 6,
     shadowColor: '#1E3A5F',
     shadowOpacity: 0.4,

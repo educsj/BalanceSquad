@@ -3,6 +3,7 @@ import { Pelada, DrawRecord, Team } from '../types';
 
 const PELADAS_KEY = '@balancesquad:peladas';
 const HIDE_RATINGS_KEY = '@balancesquad:hideRatings';
+const LANGUAGE_KEY = '@balancesquad:language';
 
 function migratePelada(pelada: Pelada): Pelada {
   if (pelada.lastDraw && pelada.lastDraw.length > 0 && !pelada.drawHistory) {
@@ -61,4 +62,28 @@ export async function getHideRatings(): Promise<boolean> {
 
 export async function setHideRatings(value: boolean): Promise<void> {
   await AsyncStorage.setItem(HIDE_RATINGS_KEY, value ? 'true' : 'false');
+}
+
+export async function getLanguage(): Promise<string | null> {
+  return AsyncStorage.getItem(LANGUAGE_KEY);
+}
+
+export async function setLanguage(lang: string): Promise<void> {
+  await AsyncStorage.setItem(LANGUAGE_KEY, lang);
+}
+
+export async function exportData(): Promise<string> {
+  const peladas = await loadPeladas();
+  const hideRatings = await getHideRatings();
+  return JSON.stringify({ peladas, hideRatings, exportedAt: new Date().toISOString() }, null, 2);
+}
+
+export async function importData(jsonString: string): Promise<void> {
+  const data = JSON.parse(jsonString);
+  if (Array.isArray(data.peladas)) {
+    await savePeladas(data.peladas.map(migratePelada));
+  }
+  if (typeof data.hideRatings === 'boolean') {
+    await setHideRatings(data.hideRatings);
+  }
 }

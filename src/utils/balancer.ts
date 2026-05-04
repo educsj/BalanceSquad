@@ -80,6 +80,49 @@ export function rematchTwoTeams(teamA: Team, teamB: Team): [Team, Team] {
   return [pair[0], pair[1]];
 }
 
+// Local-search post-optimizer: repeatedly swaps players between main teams
+// if the swap reduces the spread (max − min) of totalStars. Runs in O(n²)
+// passes until convergence — typically 0–3 passes for real-world squad sizes.
+function optimizeBalance(teams: Team[], numTeams: number): Team[] {
+  const result = teams.map(t => ({ ...t, players: [...t.players] }));
+
+  let improved = true;
+  while (improved) {
+    improved = false;
+    outer:
+    for (let ti = 0; ti < numTeams - 1; ti++) {
+      for (let tj = ti + 1; tj < numTeams; tj++) {
+        for (let pi = 0; pi < result[ti].players.length; pi++) {
+          for (let pj = 0; pj < result[tj].players.length; pj++) {
+            const lvlI = result[ti].players[pi].level;
+            const lvlJ = result[tj].players[pj].level;
+            if (lvlI === lvlJ) continue;
+
+            const mainStars = result.slice(0, numTeams).map(t => t.totalStars);
+            const currentSpread = Math.max(...mainStars) - Math.min(...mainStars);
+
+            const newI = result[ti].totalStars - lvlI + lvlJ;
+            const newJ = result[tj].totalStars - lvlJ + lvlI;
+            const newStars = mainStars.map((s, k) => k === ti ? newI : k === tj ? newJ : s);
+            const newSpread = Math.max(...newStars) - Math.min(...newStars);
+
+            if (newSpread < currentSpread) {
+              [result[ti].players[pi], result[tj].players[pj]] =
+                [result[tj].players[pj], result[ti].players[pi]];
+              result[ti].totalStars = newI;
+              result[tj].totalStars = newJ;
+              improved = true;
+              break outer;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
 export function balanceTeams(present: Player[], numTeams: number, playersPerTeam: number): Team[] {
   const maxMainPlayers = numTeams * playersPerTeam;
   const totalTeams = Math.ceil(present.length / playersPerTeam);
@@ -110,5 +153,5 @@ export function balanceTeams(present: Player[], numTeams: number, playersPerTeam
     addToTeam(teams, getEligibleTeam(teams, numTeams, playersPerTeam), player);
   });
 
-  return teams;
+  return optimizeBalance(teams, numTeams);
 }

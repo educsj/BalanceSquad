@@ -2,6 +2,8 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { Feather } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../types';
 import { getPeladaById } from '../storage';
 
@@ -15,13 +17,23 @@ function formatShortDate(iso: string): string {
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const hours = String(d.getHours()).padStart(2, '0');
   const mins = String(d.getMinutes()).padStart(2, '0');
-  return `${day}/${month} às ${hours}:${mins}`;
+  return `${day}/${month} ${hours}:${mins}`;
 }
+
+type Action = {
+  featherIcon: keyof typeof Feather.glyphMap;
+  iconBg: string;
+  iconColor: string;
+  title: string;
+  subtitle: string;
+  onPress: () => void;
+};
 
 export default function PeladaHubScreen() {
   const { params } = useRoute<RouteProps>();
   const { peladaId } = params;
   const navigation = useNavigation<Nav>();
+  const { t } = useTranslation();
 
   const [playerCount, setPlayerCount] = useState(0);
   const [drawCount, setDrawCount] = useState(0);
@@ -40,27 +52,33 @@ export default function PeladaHubScreen() {
     }, [peladaId])
   );
 
-  const actions = [
+  const actions: Action[] = [
     {
-      icon: '👤',
-      title: 'Cadastrar Jogador(a)',
-      subtitle: `${playerCount} jogador${playerCount !== 1 ? 'es' : ''} cadastrado${playerCount !== 1 ? 's' : ''}`,
+      featherIcon: 'user-plus',
+      iconBg: '#EEF2FF',
+      iconColor: '#1E3A5F',
+      title: t('peladaHub.registerPlayer'),
+      subtitle: t('peladaHub.playersCount', { count: playerCount }),
       onPress: () => navigation.navigate('PlayerRegister', { peladaId }),
     },
     {
-      icon: '📋',
-      title: 'Lista de Jogadores',
+      featherIcon: 'users',
+      iconBg: '#DBEAFE',
+      iconColor: '#2563EB',
+      title: t('peladaHub.playerList'),
       subtitle: playerCount > 0
-        ? 'Selecionar presença e sortear'
-        : 'Nenhum jogador cadastrado ainda',
+        ? t('peladaHub.playerListDesc')
+        : t('peladaHub.playerListEmpty'),
       onPress: () => navigation.navigate('PlayerList', { peladaId }),
     },
     {
-      icon: '📅',
-      title: 'Histórico de Sorteios',
+      featherIcon: 'clock',
+      iconBg: '#CCFBF1',
+      iconColor: '#0F766E',
+      title: t('peladaHub.history'),
       subtitle: lastDrawDate
-        ? `Último: ${formatShortDate(lastDrawDate)} · ${drawCount} registro${drawCount !== 1 ? 's' : ''}`
-        : 'Nenhum sorteio realizado ainda',
+        ? t('peladaHub.lastDraw', { date: formatShortDate(lastDrawDate), count: drawCount })
+        : t('peladaHub.noDraw'),
       onPress: () => navigation.navigate('DrawHistory', { peladaId }),
     },
   ];
@@ -75,12 +93,14 @@ export default function PeladaHubScreen() {
             onPress={action.onPress}
             activeOpacity={0.8}
           >
-            <Text style={styles.cardIcon}>{action.icon}</Text>
+            <View style={[styles.iconCircle, { backgroundColor: action.iconBg }]}>
+              <Feather name={action.featherIcon} size={22} color={action.iconColor} />
+            </View>
             <View style={styles.cardText}>
               <Text style={styles.cardTitle}>{action.title}</Text>
               <Text style={styles.cardSubtitle}>{action.subtitle}</Text>
             </View>
-            <Text style={styles.cardArrow}>›</Text>
+            <Feather name="chevron-right" size={20} color="#CBD5E1" />
           </TouchableOpacity>
         ))}
       </View>
@@ -94,7 +114,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     borderRadius: 14,
-    padding: 20,
+    padding: 18,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
@@ -103,9 +123,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.07,
     shadowRadius: 6,
   },
-  cardIcon: { fontSize: 28 },
-  cardText: { flex: 1, gap: 4 },
+  iconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  cardText: { flex: 1, gap: 3 },
   cardTitle: { fontSize: 16, fontWeight: '700', color: '#1E3A5F' },
   cardSubtitle: { fontSize: 13, color: '#64748B' },
-  cardArrow: { fontSize: 26, color: '#94A3B8', fontWeight: '300' },
 });
