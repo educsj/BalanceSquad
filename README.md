@@ -33,14 +33,14 @@ In casual pickup games, manual team draws almost always create unbalanced sides 
 
 ## Usage Flow
 
-1. Open the app and select or create a **Pelada** (your group)
+1. Open the app and select or create a **Squad**
 2. Register players with a name and a 1–5 star skill level
 3. Mark who's present today and choose **Auto Draw** or **Manual Draw**
 4. View the sorted teams, merge or share them, and save to history
 
 ```
-Home (pelada list)
-└── Pelada Hub
+Home (squad list)
+└── Squad Hub
         ├── 👤 Register Player
         │     └── Form with name and level (1–5 ★)
         ├── 📋 Player List
@@ -55,8 +55,8 @@ Home (pelada list)
 
 ## Features
 
-### Peladas (Groups)
-- Create and manage multiple peladas, each with its own player list and history
+### Squads
+- Create and manage multiple squads, each with its own player list and history
 
 ### Players
 - Register players with a name and a 1–5 star level
@@ -116,13 +116,13 @@ Typical result for 18 players across 3 teams of 6: totals **17 / 17 / 17**.
 
 ```
 src/
-├── types/index.ts              # Player, Pelada, Team, DrawRecord, navigation types
-├── storage/index.ts            # Pelada CRUD, draw history, preferences
+├── types/index.ts              # Player, Squad, Team, DrawRecord, navigation types
+├── storage/index.ts            # Squad CRUD, draw history, preferences
 ├── utils/balancer.ts           # Draw and merge algorithm
 ├── navigation/
 │   └── AppNavigator.tsx        # Stack navigator (all screens)
 ├── screens/
-│   ├── HomeScreen.tsx          # Pelada list + create/edit + rating toggle
+│   ├── HomeScreen.tsx          # Squad list + create/edit + rating toggle
 │   ├── PeladaHubScreen.tsx     # Hub with 3 actions: register, list, history
 │   ├── PlayerRegisterScreen.tsx# Player registration and edit form
 │   ├── PlayerListScreen.tsx    # Attendance selection + inline edit/remove
