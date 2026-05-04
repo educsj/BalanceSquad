@@ -3,11 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { I18nextProvider } from 'react-i18next';
 import AppNavigator from './src/navigation/AppNavigator';
 import AnimatedSplash from './src/components/AnimatedSplash';
 import i18n, { initI18n } from './src/i18n';
 import { getLanguage } from './src/storage';
+import { ThemeProvider } from './src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -26,12 +28,16 @@ export default function App() {
   if (!i18nReady) return null;
 
   return (
-    <I18nextProvider i18n={i18n}>
-      <SafeAreaProvider>
-        <StatusBar style="light" />
-        <AppNavigator />
-        {!splashDone && <AnimatedSplash onFinish={() => setSplashDone(true)} />}
-      </SafeAreaProvider>
-    </I18nextProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <I18nextProvider i18n={i18n}>
+          <SafeAreaProvider>
+            <StatusBar style="auto" />
+            <AppNavigator />
+            {!splashDone && <AnimatedSplash onFinish={() => setSplashDone(true)} />}
+          </SafeAreaProvider>
+        </I18nextProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, FlatList, StyleSheet, Share,
 } from 'react-native';
@@ -9,11 +9,10 @@ import { useTranslation } from 'react-i18next';
 import { RootStackParamList, DrawRecord, Team } from '../types';
 import { getPeladaById } from '../storage';
 import EmptyState from '../components/EmptyState';
+import { useTheme, ThemeColors } from '../theme';
 
 type RouteProps = RouteProp<RootStackParamList, 'DrawHistory'>;
 type Nav = StackNavigationProp<RootStackParamList>;
-
-const TEAM_COLORS = ['#1E3A5F', '#2563EB', '#0F766E', '#7C3AED', '#B91C1C'];
 
 function formatTimestamp(iso: string, noDate: string, dateAt: string): string {
   if (!iso) return noDate;
@@ -38,11 +37,15 @@ function DrawEntry({
   index,
   peladaId,
   navigation,
+  colors,
+  styles,
 }: {
   record: DrawRecord;
   index: number;
   peladaId: string;
   navigation: Nav;
+  colors: ThemeColors;
+  styles: ReturnType<typeof createStyles>;
 }) {
   const [expanded, setExpanded] = useState(index === 0);
   const { t } = useTranslation();
@@ -79,15 +82,15 @@ function DrawEntry({
             </Text>
           </View>
         </View>
-        <Feather name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color="#94A3B8" />
+        <Feather name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMuted} />
       </TouchableOpacity>
 
       {expanded && (
         <View style={styles.entryBody}>
           {record.teams.map((team, ti) => (
             <View key={team.id} style={styles.teamSection}>
-              <View style={[styles.teamHeader, { borderLeftColor: TEAM_COLORS[ti % TEAM_COLORS.length] }]}>
-                <Text style={[styles.teamName, { color: TEAM_COLORS[ti % TEAM_COLORS.length] }]}>
+              <View style={[styles.teamHeader, { borderLeftColor: colors.teamColors[ti % colors.teamColors.length] }]}>
+                <Text style={[styles.teamName, { color: colors.teamColors[ti % colors.teamColors.length] }]}>
                   {team.name}
                 </Text>
                 <Text style={styles.teamStars}>{team.totalStars} ★</Text>
@@ -108,7 +111,7 @@ function DrawEntry({
               <Text style={styles.rebalanceBtnText}>{t('drawHistory.rebalance')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.shareBtn} onPress={handleShare} activeOpacity={0.8}>
-              <Feather name="send" size={14} color="#1E3A5F" />
+              <Feather name="send" size={14} color={colors.primary} />
               <Text style={styles.shareBtnText}>{t('drawHistory.share')}</Text>
             </TouchableOpacity>
           </View>
@@ -122,6 +125,8 @@ export default function DrawHistoryScreen() {
   const { params } = useRoute<RouteProps>();
   const navigation = useNavigation<Nav>();
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [history, setHistory] = useState<DrawRecord[]>([]);
 
   useFocusEffect(
@@ -143,6 +148,8 @@ export default function DrawHistoryScreen() {
             index={index}
             peladaId={params.peladaId}
             navigation={navigation}
+            colors={colors}
+            styles={styles}
           />
         )}
         contentContainerStyle={{ paddingBottom: 32 }}
@@ -165,87 +172,86 @@ export default function DrawHistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F4FF', padding: 16 },
-  hint: { color: '#64748B', fontSize: 13, marginBottom: 12, fontWeight: '500' },
-
-  entry: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 12,
-    overflow: 'hidden',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-  },
-  entryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-  },
-  entryHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  indexBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#1E3A5F',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  indexBadgeText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  entryTimestamp: { fontSize: 14, fontWeight: '700', color: '#1E3A5F' },
-  entrySummary: { fontSize: 12, color: '#64748B', marginTop: 2 },
-
-  entryBody: { paddingHorizontal: 16, paddingBottom: 16, gap: 10 },
-  teamSection: { gap: 4 },
-  teamHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderLeftWidth: 4,
-    paddingLeft: 8,
-    marginBottom: 4,
-  },
-  teamName: { fontSize: 14, fontWeight: '700' },
-  teamStars: { fontSize: 12, color: '#64748B', fontWeight: '600' },
-  playerRow: { fontSize: 13, color: '#475569', paddingLeft: 12 },
-
-  entryActions: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  adjustBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: '#1E3A5F',
-    borderRadius: 8,
-    padding: 11,
-  },
-  adjustBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  rebalanceBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: '#0F766E',
-    borderRadius: 8,
-    padding: 11,
-  },
-  rebalanceBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  shareBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: '#F0F4FF',
-    borderRadius: 8,
-    padding: 11,
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-  },
-  shareBtnText: { color: '#1E3A5F', fontWeight: '600', fontSize: 13 },
-});
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background, padding: 16 },
+    hint: { color: c.textSecondary, fontSize: 13, marginBottom: 12, fontWeight: '500' },
+    entry: {
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      marginBottom: 12,
+      overflow: 'hidden',
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOpacity: 0.07,
+      shadowRadius: 6,
+    },
+    entryHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: 16,
+    },
+    entryHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+    indexBadge: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: c.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    indexBadgeText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+    entryTimestamp: { fontSize: 14, fontWeight: '700', color: c.text },
+    entrySummary: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
+    entryBody: { paddingHorizontal: 16, paddingBottom: 16, gap: 10 },
+    teamSection: { gap: 4 },
+    teamHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      borderLeftWidth: 4,
+      paddingLeft: 8,
+      marginBottom: 4,
+    },
+    teamName: { fontSize: 14, fontWeight: '700' },
+    teamStars: { fontSize: 12, color: c.textSecondary, fontWeight: '600' },
+    playerRow: { fontSize: 13, color: c.textSecondary, paddingLeft: 12 },
+    entryActions: { flexDirection: 'row', gap: 8, marginTop: 4 },
+    adjustBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      backgroundColor: c.primary,
+      borderRadius: 8,
+      padding: 11,
+    },
+    adjustBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+    rebalanceBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      backgroundColor: '#0F766E',
+      borderRadius: 8,
+      padding: 11,
+    },
+    rebalanceBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+    shareBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      backgroundColor: c.background,
+      borderRadius: 8,
+      padding: 11,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    shareBtnText: { color: c.primary, fontWeight: '600', fontSize: 13 },
+  });
+}

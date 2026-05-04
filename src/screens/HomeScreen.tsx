@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, FlatList, StyleSheet,
   Modal, TextInput, Alert, KeyboardAvoidingView, Platform,
@@ -18,6 +18,7 @@ import {
 } from '../storage';
 import EmptyState from '../components/EmptyState';
 import i18n, { SUPPORTED_LANGUAGES, SupportedLanguage } from '../i18n';
+import { useTheme, ThemeColors } from '../theme';
 
 type Nav = StackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -29,6 +30,9 @@ export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [peladas, setPeladas] = useState<Pelada[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -164,35 +168,22 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <View style={styles.headerTop}>
-          <View>
+          <View style={styles.headerTitles}>
             <Text style={styles.headerTitle}>{t('home.title')}</Text>
             <Text style={styles.headerSub}>{t('home.subtitle')}</Text>
-            <Text style={styles.headerLink}>{t('home.github')}</Text>
           </View>
-          <View style={styles.headerButtons}>
-            <TouchableOpacity
-              style={styles.headerBtn}
-              onPress={() => setLangModalVisible(true)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.ratingToggleIcon}>{currentLang.flag}</Text>
-              <Text style={styles.headerBtnText}>{currentLang.code.toUpperCase()}</Text>
+          <View style={styles.headerIcons}>
+            <TouchableOpacity style={styles.iconBtn} onPress={() => setLangModalVisible(true)} activeOpacity={0.8}>
+              <Text style={styles.flagEmoji}>{currentLang.flag}</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.headerBtn}
-              onPress={() => setBackupModalVisible(true)}
-              activeOpacity={0.8}
-            >
-              <Feather name="settings" size={18} color="#93C5FD" />
-              <Text style={styles.headerBtnText}>{t('home.backup')}</Text>
+            <TouchableOpacity style={styles.iconBtn} onPress={() => setBackupModalVisible(true)} activeOpacity={0.8}>
+              <Feather name="settings" size={20} color={colors.headerSub} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.headerBtn} onPress={toggleHideRatings} activeOpacity={0.8}>
-              <Text style={styles.ratingToggleIcon}>{hideRatings ? '🙈' : '👁'}</Text>
-              <Text style={styles.headerBtnText}>
-                {hideRatings ? t('home.ratingsHidden') : t('home.ratingsVisible')}
-              </Text>
+            <TouchableOpacity style={styles.iconBtn} onPress={toggleHideRatings} activeOpacity={0.8}>
+              <Feather name={hideRatings ? 'eye-off' : 'eye'} size={20} color={colors.headerSub} />
             </TouchableOpacity>
           </View>
         </View>
@@ -232,10 +223,10 @@ export default function HomeScreen() {
               </View>
               <View style={styles.cardActions}>
                 <TouchableOpacity onPress={() => openEditModal(item)} style={styles.actionBtn} hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}>
-                  <Feather name="edit-2" size={17} color="#64748B" />
+                  <Feather name="edit-2" size={17} color={colors.textSecondary} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.actionBtn} hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}>
-                  <Feather name="trash-2" size={17} color="#B91C1C" />
+                  <Feather name="trash-2" size={17} color={colors.danger} />
                 </TouchableOpacity>
               </View>
             </TouchableOpacity>
@@ -257,7 +248,7 @@ export default function HomeScreen() {
         <Feather name="plus" size={28} color="#fff" />
       </TouchableOpacity>
 
-      {/* Create / Edit pelada modal */}
+      {/* Create / Edit modal */}
       <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={closeModal}>
         <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.modal}>
@@ -265,7 +256,7 @@ export default function HomeScreen() {
             <TextInput
               style={styles.input}
               placeholder={t('home.peladaNamePlaceholder')}
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={colors.textMuted}
               value={newName}
               onChangeText={setNewName}
               autoFocus
@@ -273,7 +264,7 @@ export default function HomeScreen() {
             <TextInput
               style={styles.input}
               placeholder={t('home.playersPerTeamPlaceholder')}
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={colors.textMuted}
               value={newPlayersPerTeam}
               onChangeText={setNewPlayersPerTeam}
               keyboardType="number-pad"
@@ -291,17 +282,11 @@ export default function HomeScreen() {
       </Modal>
 
       {/* Backup modal */}
-      <Modal
-        visible={backupModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setBackupModalVisible(false)}
-      >
+      <Modal visible={backupModalVisible} transparent animationType="fade" onRequestClose={() => setBackupModalVisible(false)}>
         <View style={styles.overlay}>
           <View style={styles.modal}>
             <Text style={styles.modalTitle}>{t('home.backupTitle')}</Text>
             <Text style={styles.modalSub}>{t('home.backupDesc')}</Text>
-
             <TouchableOpacity style={styles.backupBtn} onPress={handleExport}>
               <Feather name="upload" size={22} color="#fff" />
               <View>
@@ -309,15 +294,13 @@ export default function HomeScreen() {
                 <Text style={styles.backupBtnSub}>{t('home.exportDataDesc')}</Text>
               </View>
             </TouchableOpacity>
-
             <TouchableOpacity style={[styles.backupBtn, styles.backupBtnSecondary]} onPress={handleImport}>
-              <Feather name="download" size={22} color="#1E3A5F" />
+              <Feather name="download" size={22} color={colors.primary} />
               <View>
-                <Text style={[styles.backupBtnTitle, styles.backupBtnTitleDark]}>{t('home.importDataLabel')}</Text>
-                <Text style={[styles.backupBtnSub, styles.backupBtnSubDark]}>{t('home.importDataDesc')}</Text>
+                <Text style={[styles.backupBtnTitle, { color: colors.text }]}>{t('home.importDataLabel')}</Text>
+                <Text style={[styles.backupBtnSub, { color: colors.textSecondary }]}>{t('home.importDataDesc')}</Text>
               </View>
             </TouchableOpacity>
-
             <TouchableOpacity style={styles.btnSecondary} onPress={() => setBackupModalVisible(false)}>
               <Text style={styles.btnSecondaryText}>{t('common.close')}</Text>
             </TouchableOpacity>
@@ -325,13 +308,8 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
-      {/* Language selector modal */}
-      <Modal
-        visible={langModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setLangModalVisible(false)}
-      >
+      {/* Language modal */}
+      <Modal visible={langModalVisible} transparent animationType="fade" onRequestClose={() => setLangModalVisible(false)}>
         <View style={styles.overlay}>
           <View style={styles.modal}>
             <Text style={styles.modalTitle}>🌐 Language / Idioma</Text>
@@ -346,7 +324,7 @@ export default function HomeScreen() {
                 >
                   <Text style={styles.langFlag}>{lang.flag}</Text>
                   <Text style={[styles.langLabel, isActive && styles.langLabelActive]}>{lang.label}</Text>
-                  {isActive && <Feather name="check" size={18} color="#1E3A5F" />}
+                  {isActive && <Feather name="check" size={18} color={colors.primary} />}
                 </TouchableOpacity>
               );
             })}
@@ -360,135 +338,134 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F4FF' },
-  header: {
-    backgroundColor: '#1E3A5F',
-    paddingTop: 48,
-    paddingBottom: 24,
-    paddingHorizontal: 20,
-  },
-  headerTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  headerTitle: { color: '#fff', fontSize: 26, fontWeight: '800', letterSpacing: 0.5 },
-  headerSub: { color: '#93C5FD', fontSize: 13, marginTop: 4 },
-  headerLink: { color: '#60A5FA', fontSize: 12, marginTop: 2 },
-  headerButtons: { flexDirection: 'row', gap: 8 },
-  headerBtn: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    gap: 4,
-  },
-  ratingToggleIcon: { fontSize: 18 },
-  headerBtnText: { color: '#93C5FD', fontSize: 10, fontWeight: '600', textAlign: 'center', lineHeight: 13 },
-  sectionTitle: { color: '#64748B', fontSize: 13, fontWeight: '500', margin: 16, marginBottom: 8 },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-  },
-  cardLeft: { flex: 1 },
-  cardNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  cardName: { fontSize: 16, fontWeight: '700', color: '#1E3A5F' },
-  drawBadge: {
-    backgroundColor: '#DBEAFE',
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  drawBadgeText: { fontSize: 10, fontWeight: '700', color: '#1E3A5F', letterSpacing: 0.3 },
-  cardMeta: { fontSize: 12, color: '#64748B', marginTop: 3 },
-  cardActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  actionBtn: { padding: 4 },
-  fab: {
-    position: 'absolute',
-    bottom: 28,
-    right: 24,
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: '#1E3A5F',
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 8,
-    shadowColor: '#1E3A5F',
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modal: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    gap: 14,
-  },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: '#1E3A5F' },
-  modalSub: { fontSize: 13, color: '#64748B', marginTop: -6 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderRadius: 8,
-    padding: 11,
-    fontSize: 15,
-    color: '#1E3A5F',
-  },
-  modalButtons: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  btnPrimary: {
-    flex: 1,
-    backgroundColor: '#1E3A5F',
-    borderRadius: 8,
-    padding: 13,
-    alignItems: 'center',
-  },
-  btnPrimaryText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-  btnSecondary: {
-    flex: 1,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 8,
-    padding: 13,
-    alignItems: 'center',
-  },
-  btnSecondaryText: { color: '#1E3A5F', fontWeight: '600', fontSize: 15 },
-  backupBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    backgroundColor: '#1E3A5F',
-    borderRadius: 12,
-    padding: 16,
-  },
-  backupBtnSecondary: { backgroundColor: '#E2E8F0' },
-  backupBtnTitle: { fontSize: 15, fontWeight: '700', color: '#fff' },
-  backupBtnTitleDark: { color: '#1E3A5F' },
-  backupBtnSub: { fontSize: 12, color: '#93C5FD', marginTop: 2 },
-  backupBtnSubDark: { color: '#64748B' },
-  langOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC',
-  },
-  langOptionActive: { borderColor: '#1E3A5F', backgroundColor: '#EEF2FF' },
-  langFlag: { fontSize: 22 },
-  langLabel: { flex: 1, fontSize: 16, fontWeight: '600', color: '#64748B' },
-  langLabelActive: { color: '#1E3A5F' },
-});
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background },
+    header: {
+      backgroundColor: c.headerBg,
+      paddingBottom: 20,
+      paddingHorizontal: 20,
+    },
+    headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    headerTitles: { flex: 1 },
+    headerTitle: { color: c.headerText, fontSize: 26, fontWeight: '800', letterSpacing: 0.5 },
+    headerSub: { color: c.headerSub, fontSize: 13, marginTop: 3 },
+    headerIcons: { flexDirection: 'row', gap: 6, alignItems: 'center' },
+    iconBtn: {
+      width: 40,
+      height: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.headerBtnBg,
+      borderRadius: 10,
+    },
+    flagEmoji: { fontSize: 20 },
+    sectionTitle: { color: c.textSecondary, fontSize: 13, fontWeight: '500', margin: 16, marginBottom: 8 },
+    card: {
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      padding: 16,
+      marginHorizontal: 16,
+      marginBottom: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOpacity: 0.07,
+      shadowRadius: 6,
+    },
+    cardLeft: { flex: 1 },
+    cardNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+    cardName: { fontSize: 16, fontWeight: '700', color: c.text },
+    drawBadge: {
+      backgroundColor: c.badgeBg,
+      borderRadius: 6,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+    },
+    drawBadgeText: { fontSize: 10, fontWeight: '700', color: c.badgeText, letterSpacing: 0.3 },
+    cardMeta: { fontSize: 12, color: c.textSecondary, marginTop: 3 },
+    cardActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+    actionBtn: { padding: 4 },
+    fab: {
+      position: 'absolute',
+      bottom: 28,
+      right: 24,
+      width: 58,
+      height: 58,
+      borderRadius: 29,
+      backgroundColor: c.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      elevation: 8,
+      shadowColor: c.primary,
+      shadowOpacity: 0.45,
+      shadowRadius: 10,
+    },
+    overlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.45)',
+      justifyContent: 'center',
+      padding: 24,
+    },
+    modal: {
+      backgroundColor: c.surface,
+      borderRadius: 16,
+      padding: 24,
+      gap: 14,
+    },
+    modalTitle: { fontSize: 18, fontWeight: '700', color: c.text },
+    modalSub: { fontSize: 13, color: c.textSecondary, marginTop: -6 },
+    input: {
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 8,
+      padding: 11,
+      fontSize: 15,
+      color: c.inputText,
+      backgroundColor: c.inputBg,
+    },
+    modalButtons: { flexDirection: 'row', gap: 10, marginTop: 4 },
+    btnPrimary: {
+      flex: 1,
+      backgroundColor: c.primary,
+      borderRadius: 8,
+      padding: 13,
+      alignItems: 'center',
+    },
+    btnPrimaryText: { color: c.textOnPrimary, fontWeight: '700', fontSize: 15 },
+    btnSecondary: {
+      flex: 1,
+      backgroundColor: c.borderLight,
+      borderRadius: 8,
+      padding: 13,
+      alignItems: 'center',
+    },
+    btnSecondaryText: { color: c.text, fontWeight: '600', fontSize: 15 },
+    backupBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+      backgroundColor: c.primary,
+      borderRadius: 12,
+      padding: 16,
+    },
+    backupBtnSecondary: { backgroundColor: c.borderLight },
+    backupBtnTitle: { fontSize: 15, fontWeight: '700', color: '#fff' },
+    backupBtnSub: { fontSize: 12, color: c.headerSub, marginTop: 2 },
+    langOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      padding: 14,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: c.borderLight,
+      backgroundColor: c.surfaceVariant,
+    },
+    langOptionActive: { borderColor: c.primary, backgroundColor: c.primaryLight },
+    langFlag: { fontSize: 22 },
+    langLabel: { flex: 1, fontSize: 16, fontWeight: '600', color: c.textSecondary },
+    langLabelActive: { color: c.text },
+  });
+}

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -6,6 +6,7 @@ import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../types';
 import { getPeladaById } from '../storage';
+import { useTheme, ThemeColors } from '../theme';
 
 type RouteProps = RouteProp<RootStackParamList, 'PeladaHub'>;
 type Nav = StackNavigationProp<RootStackParamList>;
@@ -34,6 +35,8 @@ export default function PeladaHubScreen() {
   const { peladaId } = params;
   const navigation = useNavigation<Nav>();
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [playerCount, setPlayerCount] = useState(0);
   const [drawCount, setDrawCount] = useState(0);
@@ -55,8 +58,8 @@ export default function PeladaHubScreen() {
   const actions: Action[] = [
     {
       featherIcon: 'user-plus',
-      iconBg: '#EEF2FF',
-      iconColor: '#1E3A5F',
+      iconBg: colors.primaryLight,
+      iconColor: colors.primary,
       title: t('peladaHub.registerPlayer'),
       subtitle: t('peladaHub.playersCount', { count: playerCount }),
       onPress: () => navigation.navigate('PlayerRegister', { peladaId }),
@@ -87,12 +90,7 @@ export default function PeladaHubScreen() {
     <View style={styles.container}>
       <View style={styles.actions}>
         {actions.map((action, i) => (
-          <TouchableOpacity
-            key={i}
-            style={styles.card}
-            onPress={action.onPress}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity key={i} style={styles.card} onPress={action.onPress} activeOpacity={0.8}>
             <View style={[styles.iconCircle, { backgroundColor: action.iconBg }]}>
               <Feather name={action.featherIcon} size={22} color={action.iconColor} />
             </View>
@@ -100,7 +98,7 @@ export default function PeladaHubScreen() {
               <Text style={styles.cardTitle}>{action.title}</Text>
               <Text style={styles.cardSubtitle}>{action.subtitle}</Text>
             </View>
-            <Feather name="chevron-right" size={20} color="#CBD5E1" />
+            <Feather name="chevron-right" size={20} color={colors.border} />
           </TouchableOpacity>
         ))}
       </View>
@@ -108,30 +106,32 @@ export default function PeladaHubScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F4FF', padding: 20 },
-  actions: { gap: 14, marginTop: 8 },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-  },
-  iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  cardText: { flex: 1, gap: 3 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: '#1E3A5F' },
-  cardSubtitle: { fontSize: 13, color: '#64748B' },
-});
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background, padding: 20 },
+    actions: { gap: 14, marginTop: 8 },
+    card: {
+      backgroundColor: c.surface,
+      borderRadius: 14,
+      padding: 18,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 16,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOpacity: 0.07,
+      shadowRadius: 6,
+    },
+    iconCircle: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    cardText: { flex: 1, gap: 3 },
+    cardTitle: { fontSize: 16, fontWeight: '700', color: c.text },
+    cardSubtitle: { fontSize: 13, color: c.textSecondary },
+  });
+}

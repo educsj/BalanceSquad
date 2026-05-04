@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Alert,
 } from 'react-native';
@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { Player, RootStackParamList } from '../types';
 import { getPeladaById, addDrawRecord } from '../storage';
 import { balanceTeams } from '../utils/balancer';
+import { useTheme, ThemeColors } from '../theme';
 
 type RouteProps = RouteProp<RootStackParamList, 'DrawConfig'>;
 type Nav = StackNavigationProp<RootStackParamList>;
@@ -23,6 +24,8 @@ export default function DrawConfigScreen() {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [players, setPlayers] = useState<Player[]>([]);
   const [numTeams, setNumTeams] = useState(2);
@@ -108,10 +111,7 @@ export default function DrawConfigScreen() {
             <Feather name="minus" size={20} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.stepValue}>{playersPerTeam}</Text>
-          <TouchableOpacity
-            style={styles.stepBtn}
-            onPress={() => setPlayersPerTeam(v => v + 1)}
-          >
+          <TouchableOpacity style={styles.stepBtn} onPress={() => setPlayersPerTeam(v => v + 1)}>
             <Feather name="plus" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -119,7 +119,7 @@ export default function DrawConfigScreen() {
 
       <View style={[styles.footer, { bottom: 24 + insets.bottom }]}>
         <TouchableOpacity style={styles.manualBtn} onPress={handleManual}>
-          <Feather name="edit-3" size={16} color="#1E3A5F" />
+          <Feather name="edit-3" size={16} color={colors.primary} />
           <Text style={styles.manualBtnText}>{t('drawConfig.manualDraw')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.drawBtn} onPress={handleDraw}>
@@ -131,89 +131,86 @@ export default function DrawConfigScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F4FF', padding: 16 },
-
-  infoCard: {
-    backgroundColor: '#1E3A5F',
-    borderRadius: 12,
-    padding: 18,
-    marginBottom: 14,
-    elevation: 3,
-    shadowColor: '#1E3A5F',
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-  },
-  infoTitle: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  infoSub: { color: '#93C5FD', fontSize: 13, marginTop: 4 },
-
-  configCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 18,
-    marginBottom: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-  },
-  configLabel: { color: '#1E3A5F', fontWeight: '600', fontSize: 14 },
-
-  teamOptions: { flexDirection: 'row', gap: 8 },
-  teamBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: '#CBD5E1',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  teamBtnActive: { borderColor: '#1E3A5F', backgroundColor: '#1E3A5F' },
-  teamBtnText: { color: '#64748B', fontWeight: '700', fontSize: 16 },
-  teamBtnTextActive: { color: '#fff' },
-
-  stepper: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  stepBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#1E3A5F',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepBtnDisabled: { backgroundColor: '#CBD5E1' },
-  stepValue: { fontSize: 22, fontWeight: '800', color: '#1E3A5F', minWidth: 34, textAlign: 'center' },
-
-  footer: { position: 'absolute', bottom: 24, left: 16, right: 16, gap: 10 },
-  manualBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
-    borderWidth: 2,
-    borderColor: '#1E3A5F',
-    elevation: 2,
-  },
-  manualBtnText: { color: '#1E3A5F', fontWeight: '700', fontSize: 15 },
-  drawBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#1E3A5F',
-    borderRadius: 12,
-    padding: 16,
-    elevation: 6,
-    shadowColor: '#1E3A5F',
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-  },
-  drawBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-});
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background, padding: 16 },
+    infoCard: {
+      backgroundColor: c.primary,
+      borderRadius: 12,
+      padding: 18,
+      marginBottom: 14,
+      elevation: 3,
+      shadowColor: c.primary,
+      shadowOpacity: 0.25,
+      shadowRadius: 6,
+    },
+    infoTitle: { color: '#fff', fontSize: 17, fontWeight: '700' },
+    infoSub: { color: c.headerSub, fontSize: 13, marginTop: 4 },
+    configCard: {
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      padding: 18,
+      marginBottom: 14,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+    },
+    configLabel: { color: c.text, fontWeight: '600', fontSize: 14 },
+    teamOptions: { flexDirection: 'row', gap: 8 },
+    teamBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      borderWidth: 2,
+      borderColor: c.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    teamBtnActive: { borderColor: c.primary, backgroundColor: c.primary },
+    teamBtnText: { color: c.textSecondary, fontWeight: '700', fontSize: 16 },
+    teamBtnTextActive: { color: '#fff' },
+    stepper: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+    stepBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: c.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    stepBtnDisabled: { backgroundColor: c.disabled },
+    stepValue: { fontSize: 22, fontWeight: '800', color: c.text, minWidth: 34, textAlign: 'center' },
+    footer: { position: 'absolute', bottom: 24, left: 16, right: 16, gap: 10 },
+    manualBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      padding: 15,
+      borderWidth: 2,
+      borderColor: c.primary,
+      elevation: 2,
+    },
+    manualBtnText: { color: c.primary, fontWeight: '700', fontSize: 15 },
+    drawBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: c.primary,
+      borderRadius: 12,
+      padding: 16,
+      elevation: 6,
+      shadowColor: c.primary,
+      shadowOpacity: 0.4,
+      shadowRadius: 8,
+    },
+    drawBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  });
+}

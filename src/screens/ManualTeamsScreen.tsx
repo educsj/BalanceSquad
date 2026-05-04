@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, FlatList, StyleSheet,
 } from 'react-native';
@@ -10,11 +10,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Player, Team, RootStackParamList } from '../types';
 import { addDrawRecord } from '../storage';
+import { useTheme, ThemeColors } from '../theme';
 
 type RouteProps = RouteProp<RootStackParamList, 'ManualTeams'>;
 type Nav = StackNavigationProp<RootStackParamList>;
-
-const TEAM_COLORS = ['#1E3A5F', '#2563EB', '#0F766E', '#7C3AED', '#B91C1C'];
 
 export default function ManualTeamsScreen() {
   const { params } = useRoute<RouteProps>();
@@ -22,6 +21,10 @@ export default function ManualTeamsScreen() {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const TEAM_COLORS = colors.teamColors;
 
   const [assignments, setAssignments] = useState<Record<string, number | null>>(
     Object.fromEntries(players.map(p => [p.id, null]))
@@ -121,7 +124,7 @@ export default function ManualTeamsScreen() {
                       key={i}
                       style={[
                         styles.teamBtn,
-                        { borderColor: disabled ? '#CBD5E1' : color },
+                        { borderColor: disabled ? colors.border : color },
                         active && { backgroundColor: color },
                       ]}
                       onPress={() => !disabled && assign(item.id, i)}
@@ -129,7 +132,7 @@ export default function ManualTeamsScreen() {
                     >
                       <Text style={[
                         styles.teamBtnText,
-                        { color: disabled ? '#CBD5E1' : color },
+                        { color: disabled ? colors.border : color },
                         active && styles.teamBtnTextActive,
                       ]}>
                         {t('manualTeams.teamBtn', { num: i + 1 })}
@@ -163,66 +166,64 @@ export default function ManualTeamsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F4FF', padding: 16 },
-
-  summaryRow: { flexDirection: 'row', gap: 8, marginBottom: 10, flexWrap: 'wrap' },
-  summaryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderWidth: 2,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#fff',
-  },
-  summaryChipLabel: { fontSize: 13, fontWeight: '700' },
-  summaryChipCount: { fontSize: 16, fontWeight: '800' },
-
-  counter: { color: '#64748B', fontSize: 13, fontWeight: '500', marginBottom: 10 },
-
-  playerCard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-  },
-  playerName: { fontSize: 15, fontWeight: '600', color: '#1E3A5F', flex: 1 },
-  teamBtns: { flexDirection: 'row', gap: 6 },
-  teamBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  teamBtnText: { fontSize: 12, fontWeight: '700' },
-  teamBtnTextActive: { color: '#fff' },
-
-  confirmBtn: {
-    position: 'absolute',
-    bottom: 24,
-    left: 16,
-    right: 16,
-    backgroundColor: '#1E3A5F',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    elevation: 6,
-    shadowColor: '#1E3A5F',
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-  },
-  confirmBtnDisabled: { backgroundColor: '#CBD5E1', elevation: 0, shadowOpacity: 0 },
-  confirmBtnContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  confirmBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-});
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background, padding: 16 },
+    summaryRow: { flexDirection: 'row', gap: 8, marginBottom: 10, flexWrap: 'wrap' },
+    summaryChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      borderWidth: 2,
+      borderRadius: 20,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      backgroundColor: c.surface,
+    },
+    summaryChipLabel: { fontSize: 13, fontWeight: '700' },
+    summaryChipCount: { fontSize: 16, fontWeight: '800' },
+    counter: { color: c.textSecondary, fontSize: 13, fontWeight: '500', marginBottom: 10 },
+    playerCard: {
+      backgroundColor: c.surface,
+      borderRadius: 10,
+      padding: 14,
+      marginBottom: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOpacity: 0.04,
+      shadowRadius: 4,
+    },
+    playerName: { fontSize: 15, fontWeight: '600', color: c.text, flex: 1 },
+    teamBtns: { flexDirection: 'row', gap: 6 },
+    teamBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      borderWidth: 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    teamBtnText: { fontSize: 12, fontWeight: '700' },
+    teamBtnTextActive: { color: '#fff' },
+    confirmBtn: {
+      position: 'absolute',
+      bottom: 24,
+      left: 16,
+      right: 16,
+      backgroundColor: c.primary,
+      borderRadius: 12,
+      padding: 16,
+      alignItems: 'center',
+      elevation: 6,
+      shadowColor: c.primary,
+      shadowOpacity: 0.4,
+      shadowRadius: 8,
+    },
+    confirmBtnDisabled: { backgroundColor: c.disabled, elevation: 0, shadowOpacity: 0 },
+    confirmBtnContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    confirmBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  });
+}

@@ -115,7 +115,8 @@
     "modalSubtitle": "Selecione 2 times para redistribuir os jogadores",
     "teamInfo": "{{count}} jogadores · {{stars}}★",
     "cancelBtn": "Cancelar",
-    "redistributeBtn": "Redistribuir"
+    "redistributeBtn": "Redistribuir",
+    "dragHint": "Segure e arraste jogadores entre os times"
   },
   "manualTeams": {
     "teamBtn": "T{{num}}",

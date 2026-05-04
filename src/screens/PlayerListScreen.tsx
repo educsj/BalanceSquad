@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, FlatList, StyleSheet, Alert,
   Modal, TextInput, KeyboardAvoidingView, Platform,
@@ -13,6 +13,7 @@ import { Player, StarLevel, RootStackParamList } from '../types';
 import { getPeladaById, updatePelada, getHideRatings } from '../storage';
 import StarRating from '../components/StarRating';
 import EmptyState from '../components/EmptyState';
+import { useTheme, ThemeColors } from '../theme';
 
 type RouteProps = RouteProp<RootStackParamList, 'PlayerList'>;
 type Nav = StackNavigationProp<RootStackParamList>;
@@ -27,6 +28,8 @@ export default function PlayerListScreen() {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [players, setPlayers] = useState<Player[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -126,7 +129,7 @@ export default function PlayerListScreen() {
         </Text>
         <View style={styles.headerActions}>
           <TouchableOpacity onPress={openGuestModal} style={styles.guestBtn}>
-            <Feather name="user-plus" size={13} color="#1E3A5F" />
+            <Feather name="user-plus" size={13} color={colors.primary} />
             <Text style={styles.guestBtnText}>{t('playerList.guest')}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={toggleAll}>
@@ -147,12 +150,16 @@ export default function PlayerListScreen() {
           const isSelected = selected.has(item.id);
           return (
             <TouchableOpacity
-              style={[styles.card, isSelected && styles.cardSelected, isGuest && styles.cardGuest]}
+              style={[
+                styles.card,
+                isSelected && styles.cardSelected,
+                isGuest && styles.cardGuest,
+              ]}
               onPress={() => toggle(item.id)}
               activeOpacity={0.8}
             >
               <View style={[styles.checkCircle, isGuest && styles.checkCircleGuest]}>
-                {isSelected && <Feather name="check" size={13} color={isGuest ? '#7C3AED' : '#1E3A5F'} />}
+                {isSelected && <Feather name="check" size={13} color={isGuest ? '#7C3AED' : colors.primary} />}
               </View>
               <View style={styles.cardInfo}>
                 <View style={styles.nameRow}>
@@ -174,7 +181,7 @@ export default function PlayerListScreen() {
                     style={styles.actionBtn}
                     hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                   >
-                    <Feather name="trash-2" size={16} color="#B91C1C" />
+                    <Feather name="trash-2" size={16} color={colors.danger} />
                   </TouchableOpacity>
                 ) : (
                   <>
@@ -183,14 +190,14 @@ export default function PlayerListScreen() {
                       style={styles.actionBtn}
                       hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                     >
-                      <Feather name="edit-2" size={16} color="#64748B" />
+                      <Feather name="edit-2" size={16} color={colors.textSecondary} />
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => handleDelete(item.id)}
                       style={styles.actionBtn}
                       hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                     >
-                      <Feather name="trash-2" size={16} color="#B91C1C" />
+                      <Feather name="trash-2" size={16} color={colors.danger} />
                     </TouchableOpacity>
                   </>
                 )}
@@ -222,34 +229,22 @@ export default function PlayerListScreen() {
         </Text>
       </TouchableOpacity>
 
-      <Modal
-        visible={guestModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setGuestModalVisible(false)}
-      >
-        <KeyboardAvoidingView
-          style={styles.overlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
+      <Modal visible={guestModalVisible} transparent animationType="fade" onRequestClose={() => setGuestModalVisible(false)}>
+        <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.modal}>
             <Text style={styles.modalTitle}>{t('playerList.addGuest')}</Text>
             <Text style={styles.modalSub}>{t('playerList.guestDesc')}</Text>
             <TextInput
               style={styles.input}
               placeholder={t('playerList.guestName')}
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={colors.textMuted}
               value={newGuestName}
               onChangeText={setNewGuestName}
               autoFocus
             />
             <View style={styles.levelRow}>
               <Text style={styles.levelLabel}>{t('playerList.levelLabel')}</Text>
-              <StarRating
-                value={newGuestLevel}
-                onChange={lvl => setNewGuestLevel(lvl)}
-                size={28}
-              />
+              <StarRating value={newGuestLevel} onChange={lvl => setNewGuestLevel(lvl)} size={28} />
             </View>
             <View style={styles.modalButtons}>
               <TouchableOpacity style={styles.btnSecondary} onPress={() => setGuestModalVisible(false)}>
@@ -266,120 +261,101 @@ export default function PlayerListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F4FF', padding: 16 },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  sectionTitle: { color: '#64748B', fontSize: 13, fontWeight: '500' },
-  toggleAll: { color: '#1E3A5F', fontSize: 13, fontWeight: '600' },
-  guestBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: '#EEF2FF',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: '#C7D2FE',
-  },
-  guestBtnText: { color: '#1E3A5F', fontSize: 12, fontWeight: '700' },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  cardSelected: { borderColor: '#1E3A5F', backgroundColor: '#EEF2FF' },
-  cardGuest: { borderStyle: 'dashed', borderColor: '#7C3AED' },
-  checkCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#1E3A5F',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  checkCircleGuest: { borderColor: '#7C3AED' },
-  cardInfo: { flex: 1, gap: 3 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  cardName: { fontSize: 15, fontWeight: '600', color: '#475569' },
-  cardNameSelected: { color: '#1E3A5F' },
-  guestBadge: {
-    backgroundColor: '#EDE9FE',
-    borderRadius: 5,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-  },
-  guestBadgeText: { fontSize: 10, fontWeight: '700', color: '#7C3AED' },
-  cardActions: { flexDirection: 'row', gap: 8, flexShrink: 0, alignItems: 'center' },
-  actionBtn: { padding: 4 },
-  continueBtn: {
-    position: 'absolute',
-    bottom: 24,
-    left: 16,
-    right: 16,
-    backgroundColor: '#1E3A5F',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    elevation: 6,
-    shadowColor: '#1E3A5F',
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-  },
-  continueBtnDisabled: { backgroundColor: '#CBD5E1', elevation: 0, shadowOpacity: 0 },
-  continueBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modal: { backgroundColor: '#fff', borderRadius: 16, padding: 24, gap: 14 },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: '#1E3A5F' },
-  modalSub: { fontSize: 12, color: '#64748B', marginTop: -6 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderRadius: 8,
-    padding: 11,
-    fontSize: 15,
-    color: '#1E3A5F',
-  },
-  levelRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  levelLabel: { fontSize: 14, fontWeight: '600', color: '#1E3A5F' },
-  modalButtons: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  btnPrimary: {
-    flex: 1,
-    backgroundColor: '#1E3A5F',
-    borderRadius: 8,
-    padding: 13,
-    alignItems: 'center',
-  },
-  btnPrimaryText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-  btnSecondary: {
-    flex: 1,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 8,
-    padding: 13,
-    alignItems: 'center',
-  },
-  btnSecondaryText: { color: '#1E3A5F', fontWeight: '600', fontSize: 15 },
-});
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background, padding: 16 },
+    headerRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    sectionTitle: { color: c.textSecondary, fontSize: 13, fontWeight: '500' },
+    toggleAll: { color: c.primary, fontSize: 13, fontWeight: '600' },
+    guestBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      backgroundColor: c.primaryLight,
+      borderRadius: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    guestBtnText: { color: c.primary, fontSize: 12, fontWeight: '700' },
+    card: {
+      backgroundColor: c.surface,
+      borderRadius: 10,
+      padding: 14,
+      marginBottom: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOpacity: 0.04,
+      shadowRadius: 4,
+      borderWidth: 2,
+      borderColor: 'transparent',
+    },
+    cardSelected: { borderColor: c.primary, backgroundColor: c.primaryLight },
+    cardGuest: { borderStyle: 'dashed', borderColor: '#7C3AED' },
+    checkCircle: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: c.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    checkCircleGuest: { borderColor: '#7C3AED' },
+    cardInfo: { flex: 1, gap: 3 },
+    nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+    cardName: { fontSize: 15, fontWeight: '600', color: c.textSecondary },
+    cardNameSelected: { color: c.text },
+    guestBadge: { backgroundColor: '#EDE9FE', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 1 },
+    guestBadgeText: { fontSize: 10, fontWeight: '700', color: '#7C3AED' },
+    cardActions: { flexDirection: 'row', gap: 8, flexShrink: 0, alignItems: 'center' },
+    actionBtn: { padding: 4 },
+    continueBtn: {
+      position: 'absolute',
+      bottom: 24,
+      left: 16,
+      right: 16,
+      backgroundColor: c.primary,
+      borderRadius: 12,
+      padding: 16,
+      alignItems: 'center',
+      elevation: 6,
+      shadowColor: c.primary,
+      shadowOpacity: 0.4,
+      shadowRadius: 8,
+    },
+    continueBtnDisabled: { backgroundColor: c.disabled, elevation: 0, shadowOpacity: 0 },
+    continueBtnText: { color: c.textOnPrimary, fontWeight: '700', fontSize: 15 },
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 24 },
+    modal: { backgroundColor: c.surface, borderRadius: 16, padding: 24, gap: 14 },
+    modalTitle: { fontSize: 18, fontWeight: '700', color: c.text },
+    modalSub: { fontSize: 12, color: c.textSecondary, marginTop: -6 },
+    input: {
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 8,
+      padding: 11,
+      fontSize: 15,
+      color: c.inputText,
+      backgroundColor: c.inputBg,
+    },
+    levelRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    levelLabel: { fontSize: 14, fontWeight: '600', color: c.text },
+    modalButtons: { flexDirection: 'row', gap: 10, marginTop: 4 },
+    btnPrimary: { flex: 1, backgroundColor: c.primary, borderRadius: 8, padding: 13, alignItems: 'center' },
+    btnPrimaryText: { color: c.textOnPrimary, fontWeight: '700', fontSize: 15 },
+    btnSecondary: { flex: 1, backgroundColor: c.borderLight, borderRadius: 8, padding: 13, alignItems: 'center' },
+    btnSecondaryText: { color: c.text, fontWeight: '600', fontSize: 15 },
+  });
+}

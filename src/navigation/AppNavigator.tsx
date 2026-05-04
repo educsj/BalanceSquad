@@ -2,6 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../theme';
 import { RootStackParamList } from '../types';
 import HomeScreen from '../screens/HomeScreen';
 import PeladaHubScreen from '../screens/PeladaHubScreen';
@@ -14,18 +15,19 @@ import DrawHistoryScreen from '../screens/DrawHistoryScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
-const HEADER_STYLE = {
-  headerStyle: { backgroundColor: '#1E3A5F' },
-  headerTintColor: '#fff',
-  headerTitleStyle: { fontWeight: '700' as const },
-};
-
 export default function AppNavigator() {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+
+  const headerStyle = {
+    headerStyle: { backgroundColor: colors.headerBg },
+    headerTintColor: colors.headerText,
+    headerTitleStyle: { fontWeight: '700' as const },
+  };
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={HEADER_STYLE}>
+      <Stack.Navigator screenOptions={headerStyle}>
         <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
         <Stack.Screen name="PeladaHub" component={PeladaHubScreen} options={{ title: '' }} />
         <Stack.Screen name="PlayerRegister" component={PlayerRegisterScreen} options={{ title: t('nav.registerPlayer') }} />

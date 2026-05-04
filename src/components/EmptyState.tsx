@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useTheme, ThemeColors } from '../theme';
 
 interface Props {
   icon: keyof typeof Feather.glyphMap;
@@ -11,10 +12,13 @@ interface Props {
 }
 
 export default function EmptyState({ icon, title, subtitle, actionLabel, onAction }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.container}>
       <View style={styles.iconCircle}>
-        <Feather name={icon} size={36} color="#93C5FD" />
+        <Feather name={icon} size={36} color={colors.headerSub} />
       </View>
       <Text style={styles.title}>{title}</Text>
       {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
@@ -27,44 +31,46 @@ export default function EmptyState({ icon, title, subtitle, actionLabel, onActio
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    marginTop: 60,
-    paddingHorizontal: 32,
-    gap: 10,
-  },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#1E3A5F',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#1E3A5F',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#94A3B8',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  btn: {
-    marginTop: 8,
-    backgroundColor: '#1E3A5F',
-    borderRadius: 10,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-  btnText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-});
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      alignItems: 'center',
+      marginTop: 60,
+      paddingHorizontal: 32,
+      gap: 10,
+    },
+    iconCircle: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: c.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+    },
+    title: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: c.text,
+      textAlign: 'center',
+    },
+    subtitle: {
+      fontSize: 13,
+      color: c.textMuted,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    btn: {
+      marginTop: 8,
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+    },
+    btnText: {
+      color: c.textOnPrimary,
+      fontWeight: '700',
+      fontSize: 14,
+    },
+  });
+}
