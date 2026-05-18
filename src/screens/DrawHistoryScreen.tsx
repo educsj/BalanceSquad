@@ -1,15 +1,18 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
-  View, Text, TouchableOpacity, FlatList, StyleSheet, Share,
+  View, Text, TouchableOpacity, FlatList, StyleSheet, Share, Modal,
 } from 'react-native';
 import { RouteProp, useRoute, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import { RootStackParamList, DrawRecord, Team } from '../types';
 import { getPeladaById } from '../storage';
 import EmptyState from '../components/EmptyState';
 import { useTheme, ThemeColors } from '../theme';
+import { formatStars } from '../utils/stars';
 
 type RouteProps = RouteProp<RootStackParamList, 'DrawHistory'>;
 type Nav = StackNavigationProp<RootStackParamList>;
@@ -32,6 +35,18 @@ function formatTeamsForShare(teams: Team[]): string {
   }).join('\n\n');
 }
 
+// Per-entry metrics: total players, avg stars, spread between strongest/weakest team.
+function computeMetrics(teams: Team[]) {
+  const totalPlayers = teams.reduce((s, t) => s + t.players.length, 0);
+  const totals = teams.map(t => t.totalStars);
+  const max = Math.max(...totals);
+  const min = Math.min(...totals);
+  const avg = totalPlayers === 0 ? 0 : totals.reduce((s, x) => s + x, 0) / teams.length;
+  const males   = teams.flatMap(t => t.players).filter(p => p.gender === 'M').length;
+  const females = teams.flatMap(t => t.players).filter(p => p.gender === 'F').length;
+  return { totalPlayers, spread: max - min, avg, males, females };
+}
+
 function DrawEntry({
   record,
   index,
@@ -48,23 +63,50 @@ function DrawEntry({
   styles: ReturnType<typeof createStyles>;
 }) {
   const [expanded, setExpanded] = useState(index === 0);
+  const [shareMenuVisible, setShareMenuVisible] = useState(false);
+  const shareCardRef = useRef<View>(null);
   const { t } = useTranslation();
+  const metrics = useMemo(() => computeMetrics(record.teams), [record.teams]);
+  const hasGender = metrics.males + metrics.females > 0;
 
-  async function handleShare() {
+  async function handleShareText() {
+    setShareMenuVisible(false);
     const timestamp = formatTimestamp(record.timestamp, t('drawHistory.noDate'), t('drawHistory.dateAt'));
     const text = `⚽ ${t('teams.shareCardTitle')} — BalanceSquad\n${timestamp}\n\n${formatTeamsForShare(record.teams)}`;
     await Share.share({ message: text });
   }
 
-  function handleAdjust() {
-    navigation.navigate('Teams', { teams: record.teams, peladaId, historyIndex: index });
+  async function handleShareImage() {
+    setShareMenuVisible(false);
+    try {
+      const uri = await captureRef(shareCardRef, { format: 'png', quality: 0.95 });
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: t('teams.shareImageTitle') });
+      }
+    } catch {
+      // silently ignore share failures
+    }
+  }
+
+  function handleResume() {
+    navigation.navigate('Teams', {
+      teams: record.teams,
+      peladaId,
+      historyIndex: index,
+      balanceByGender: record.balanceByGender,
+    });
   }
 
   function handleRebalance() {
-    navigation.navigate('Teams', { teams: record.teams, peladaId, historyIndex: index, openMergeModal: true });
+    navigation.navigate('Teams', {
+      teams: record.teams,
+      peladaId,
+      historyIndex: index,
+      openMergeModal: true,
+      balanceByGender: record.balanceByGender,
+    });
   }
-
-  const totalPlayers = record.teams.reduce((s, t) => s + t.players.length, 0);
 
   return (
     <View style={styles.entry}>
@@ -78,7 +120,7 @@ function DrawEntry({
               {formatTimestamp(record.timestamp, t('drawHistory.noDate'), t('drawHistory.dateAt'))}
             </Text>
             <Text style={styles.entrySummary}>
-              {t('drawHistory.teamsSummary', { teams: record.teams.length, players: totalPlayers })}
+              {t('drawHistory.teamsSummary', { teams: record.teams.length, players: metrics.totalPlayers })}
             </Text>
           </View>
         </View>
@@ -87,13 +129,38 @@ function DrawEntry({
 
       {expanded && (
         <View style={styles.entryBody}>
+          <View style={styles.metricsRow}>
+            <View style={styles.metricChip}>
+              <Text style={styles.metricLabel}>{t('drawHistory.metricSpread')}</Text>
+              <Text style={styles.metricValue}>{formatStars(metrics.spread)} ★</Text>
+            </View>
+            <View style={styles.metricChip}>
+              <Text style={styles.metricLabel}>{t('drawHistory.metricAvg')}</Text>
+              <Text style={styles.metricValue}>{formatStars(metrics.avg)} ★</Text>
+            </View>
+            {hasGender && (
+              <View style={styles.metricChip}>
+                <Text style={styles.metricLabel}>{t('drawHistory.metricGender')}</Text>
+                <Text style={styles.metricValue}>♂ {metrics.males} · ♀ {metrics.females}</Text>
+              </View>
+            )}
+            {record.balanceByGender && (
+              <View style={[styles.metricChip, styles.metricChipAccent]}>
+                <Feather name="users" size={11} color={colors.primary} />
+                <Text style={[styles.metricLabel, styles.metricLabelAccent]}>
+                  {t('drawHistory.metricGenderBalanced')}
+                </Text>
+              </View>
+            )}
+          </View>
+
           {record.teams.map((team, ti) => (
             <View key={team.id} style={styles.teamSection}>
               <View style={[styles.teamHeader, { borderLeftColor: colors.teamColors[ti % colors.teamColors.length] }]}>
                 <Text style={[styles.teamName, { color: colors.teamColors[ti % colors.teamColors.length] }]}>
                   {team.name}
                 </Text>
-                <Text style={styles.teamStars}>{team.totalStars} ★</Text>
+                <Text style={styles.teamStars}>{formatStars(team.totalStars)} ★</Text>
               </View>
               {team.players.map(player => (
                 <Text key={player.id} style={styles.playerRow}>· {player.name}</Text>
@@ -102,21 +169,71 @@ function DrawEntry({
           ))}
 
           <View style={styles.entryActions}>
-            <TouchableOpacity style={styles.adjustBtn} onPress={handleAdjust} activeOpacity={0.8}>
-              <Feather name="edit-2" size={14} color="#fff" />
-              <Text style={styles.adjustBtnText}>{t('drawHistory.adjust')}</Text>
+            <TouchableOpacity style={styles.resumeBtn} onPress={handleResume} activeOpacity={0.8}>
+              <Feather name="play" size={14} color="#fff" />
+              <Text style={styles.resumeBtnText}>{t('drawHistory.resume')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.rebalanceBtn} onPress={handleRebalance} activeOpacity={0.8}>
               <Feather name="refresh-cw" size={14} color="#fff" />
               <Text style={styles.rebalanceBtnText}>{t('drawHistory.rebalance')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.shareBtn} onPress={handleShare} activeOpacity={0.8}>
-              <Feather name="send" size={14} color={colors.primary} />
+            <TouchableOpacity style={styles.shareBtn} onPress={() => setShareMenuVisible(true)} activeOpacity={0.8}>
+              <Feather name="share-2" size={14} color={colors.primary} />
               <Text style={styles.shareBtnText}>{t('drawHistory.share')}</Text>
             </TouchableOpacity>
           </View>
         </View>
       )}
+
+      {/* Hidden share card */}
+      <View ref={shareCardRef} style={styles.shareCard} collapsable={false}>
+        <View style={styles.shareCardInner}>
+          <Text style={styles.shareCardTitle}>{t('teams.shareCardTitle')}</Text>
+          <Text style={styles.shareCardSub}>
+            {formatTimestamp(record.timestamp, t('drawHistory.noDate'), t('drawHistory.dateAt'))}
+          </Text>
+          {record.teams.map((team, idx) => (
+            <View key={team.id} style={[styles.shareTeam, { borderLeftColor: colors.teamColors[idx % colors.teamColors.length] }]}>
+              <Text style={[styles.shareTeamName, { color: colors.teamColors[idx % colors.teamColors.length] }]}>
+                {team.name}
+              </Text>
+              {team.players.map(p => (
+                <Text key={p.id} style={styles.sharePlayerName}>{p.name}</Text>
+              ))}
+            </View>
+          ))}
+        </View>
+      </View>
+
+      <Modal
+        visible={shareMenuVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShareMenuVisible(false)}
+      >
+        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setShareMenuVisible(false)}>
+          <TouchableOpacity activeOpacity={1} style={styles.shareMenu}>
+            <Text style={styles.modalTitle}>{t('teams.shareMenuTitle')}</Text>
+            <Text style={styles.modalSubtitle}>{t('teams.shareMenuSubtitle')}</Text>
+            <TouchableOpacity style={styles.shareOption} onPress={handleShareText}>
+              <Feather name="message-square" size={18} color={colors.primary} />
+              <View style={styles.shareOptionText}>
+                <Text style={styles.shareOptionLabel}>{t('teams.shareText')}</Text>
+                <Text style={styles.shareOptionDesc}>{t('teams.shareTextDesc')}</Text>
+              </View>
+              <Feather name="chevron-right" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.shareOption} onPress={handleShareImage}>
+              <Feather name="image" size={18} color={colors.primary} />
+              <View style={styles.shareOptionText}>
+                <Text style={styles.shareOptionLabel}>{t('teams.shareImage')}</Text>
+                <Text style={styles.shareOptionDesc}>{t('teams.shareImageDesc')}</Text>
+              </View>
+              <Feather name="chevron-right" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -205,6 +322,22 @@ function createStyles(c: ThemeColors) {
     entryTimestamp: { fontSize: 14, fontWeight: '700', color: c.text },
     entrySummary: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
     entryBody: { paddingHorizontal: 16, paddingBottom: 16, gap: 10 },
+
+    metricsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    metricChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: c.surfaceVariant,
+      borderRadius: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+    },
+    metricChipAccent: { backgroundColor: c.primaryLight },
+    metricLabel: { fontSize: 11, color: c.textSecondary, fontWeight: '600' },
+    metricLabelAccent: { color: c.primary },
+    metricValue: { fontSize: 12, color: c.text, fontWeight: '700', marginLeft: 4 },
+
     teamSection: { gap: 4 },
     teamHeader: {
       flexDirection: 'row',
@@ -218,7 +351,7 @@ function createStyles(c: ThemeColors) {
     teamStars: { fontSize: 12, color: c.textSecondary, fontWeight: '600' },
     playerRow: { fontSize: 13, color: c.textSecondary, paddingLeft: 12 },
     entryActions: { flexDirection: 'row', gap: 8, marginTop: 4 },
-    adjustBtn: {
+    resumeBtn: {
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
@@ -228,7 +361,7 @@ function createStyles(c: ThemeColors) {
       borderRadius: 8,
       padding: 11,
     },
-    adjustBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+    resumeBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
     rebalanceBtn: {
       flex: 1,
       flexDirection: 'row',
@@ -253,5 +386,36 @@ function createStyles(c: ThemeColors) {
       borderColor: c.border,
     },
     shareBtnText: { color: c.primary, fontWeight: '600', fontSize: 13 },
+
+    shareCard: { position: 'absolute', left: -9999, top: 0 },
+    shareCardInner: { backgroundColor: '#F0F4FF', padding: 20, width: 320, gap: 10 },
+    shareCardTitle: { fontSize: 20, fontWeight: '800', color: '#1E3A5F' },
+    shareCardSub: { fontSize: 12, color: '#64748B', marginTop: -6 },
+    shareTeam: {
+      backgroundColor: '#fff',
+      borderRadius: 10,
+      padding: 12,
+      borderLeftWidth: 4,
+      gap: 4,
+    },
+    shareTeamName: { fontSize: 15, fontWeight: '700', marginBottom: 2 },
+    sharePlayerName: { fontSize: 13, color: '#334155' },
+
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 24 },
+    shareMenu: { backgroundColor: c.surface, borderRadius: 16, padding: 20, gap: 10 },
+    shareOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+      paddingVertical: 12,
+      paddingHorizontal: 10,
+      borderRadius: 10,
+      backgroundColor: c.surfaceVariant,
+    },
+    shareOptionText: { flex: 1 },
+    shareOptionLabel: { fontSize: 15, fontWeight: '700', color: c.text },
+    shareOptionDesc: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
+    modalTitle: { fontSize: 18, fontWeight: '700', color: c.text },
+    modalSubtitle: { fontSize: 13, color: c.textSecondary, marginTop: -6 },
   });
 }

@@ -1,20 +1,21 @@
 import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Animated,
-  StyleSheet, Share, Modal,
+  StyleSheet, Share, Modal, TextInput, KeyboardAvoidingView, Platform, Alert,
 } from 'react-native';
 import { RouteProp, useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
-import { RootStackParamList, Team } from '../types';
+import { RootStackParamList, Team, Player, StarLevel, Gender } from '../types';
 import StarRating from '../components/StarRating';
-import { rematchTwoTeams } from '../utils/balancer';
-import { updateDrawRecord, addDrawRecord, getHideRatings } from '../storage';
+import { rematchTwoTeams, recalcTeams } from '../utils/balancer';
+import { updateDrawRecord, addDrawRecord, getHideRatings, getPeladaById } from '../storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { useTheme, ThemeColors } from '../theme';
+import { formatStars } from '../utils/stars';
 
 type RouteProps = RouteProp<RootStackParamList, 'Teams'>;
 
@@ -27,6 +28,10 @@ function shuffled<T>(arr: T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
 function formatTeamsForShare(teams: Team[]): string {
@@ -49,6 +54,14 @@ export default function TeamsScreen() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [hideRatings, setHideRatings] = useState(false);
   const [swapSelection, setSwapSelection] = useState<SwapSelection>(null);
+  const [shareMenuVisible, setShareMenuVisible] = useState(false);
+
+  const [basePlayers, setBasePlayers] = useState<Player[]>([]);
+  const [addPickerTeamIdx, setAddPickerTeamIdx] = useState<number | null>(null);
+  const [guestModalTeamIdx, setGuestModalTeamIdx] = useState<number | null>(null);
+  const [newGuestName, setNewGuestName] = useState('');
+  const [newGuestLevel, setNewGuestLevel] = useState<StarLevel>(3);
+  const [newGuestGender, setNewGuestGender] = useState<Gender | undefined>(undefined);
 
   const shareCardRef = useRef<View>(null);
   const insets = useSafeAreaInsets();
@@ -71,8 +84,18 @@ export default function TeamsScreen() {
   useFocusEffect(
     useCallback(() => {
       getHideRatings().then(setHideRatings);
-    }, [])
+      getPeladaById(params.peladaId).then(pelada => {
+        if (pelada) setBasePlayers(pelada.players);
+      });
+    }, [params.peladaId])
   );
+
+  // Persists the current arrangement to the history record we're attached to.
+  // historyIndex defaults to 0 — the most recent draw, which addDrawRecord
+  // unshifts into the history when the screen is opened fresh.
+  async function persistTeams(teams: Team[]) {
+    await updateDrawRecord(params.peladaId, teams, params.historyIndex ?? 0);
+  }
 
   function handlePlayerTap(teamIndex: number, playerIndex: number) {
     if (!swapSelection) {
@@ -110,15 +133,85 @@ export default function TeamsScreen() {
     updatedTeams[tgtTeamIdx].totalStars = updatedTeams[tgtTeamIdx].totalStars - playerB.level + playerA.level;
 
     setCurrentTeams(updatedTeams);
-    await updateDrawRecord(params.peladaId, updatedTeams, params.historyIndex ?? 0);
+    await persistTeams(updatedTeams);
   }
 
-  async function handleShare() {
+  function handleRemovePlayer(teamIndex: number, playerIndex: number) {
+    const player = currentTeams[teamIndex].players[playerIndex];
+    Alert.alert(
+      t('teams.removePlayerTitle'),
+      t('teams.removePlayerMsg', { name: player.name }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.remove'),
+          style: 'destructive',
+          onPress: () => removePlayer(teamIndex, playerIndex),
+        },
+      ],
+    );
+  }
+
+  async function removePlayer(teamIndex: number, playerIndex: number) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    const next = currentTeams.map(t => ({ ...t, players: [...t.players] }));
+    next[teamIndex].players.splice(playerIndex, 1);
+    const recalced = recalcTeams(next);
+    setCurrentTeams(recalced);
+    if (swapSelection?.teamIndex === teamIndex) setSwapSelection(null);
+    await persistTeams(recalced);
+  }
+
+  function openAddPicker(teamIndex: number) {
+    setAddPickerTeamIdx(teamIndex);
+  }
+
+  async function addPlayerToTeam(player: Player, teamIndex: number) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    const next = currentTeams.map(t => ({ ...t, players: [...t.players] }));
+    next[teamIndex].players.push(player);
+    const recalced = recalcTeams(next);
+    setCurrentTeams(recalced);
+    setAddPickerTeamIdx(null);
+    await persistTeams(recalced);
+  }
+
+  function openGuestModal(teamIndex: number) {
+    setAddPickerTeamIdx(null);
+    setNewGuestName('');
+    setNewGuestLevel(3);
+    setNewGuestGender(undefined);
+    setGuestModalTeamIdx(teamIndex);
+  }
+
+  async function confirmGuest() {
+    if (guestModalTeamIdx === null) return;
+    const name = newGuestName.trim();
+    if (!name) return;
+    const guest: Player = {
+      id: generateId(),
+      name,
+      level: newGuestLevel,
+      ...(newGuestGender ? { gender: newGuestGender } : {}),
+    };
+    const idx = guestModalTeamIdx;
+    setGuestModalTeamIdx(null);
+    await addPlayerToTeam(guest, idx);
+  }
+
+  // Players already placed in any team should not appear in the picker — even
+  // if they're guests (they have unique ids).
+  const placedIds = new Set(currentTeams.flatMap(t => t.players.map(p => p.id)));
+  const availableBasePlayers = basePlayers.filter(p => !placedIds.has(p.id));
+
+  async function handleShareText() {
+    setShareMenuVisible(false);
     const text = `${t('teams.sharePrefix')}\n\n${formatTeamsForShare(currentTeams)}`;
     await Share.share({ message: text });
   }
 
   async function handleShareImage() {
+    setShareMenuVisible(false);
     try {
       const uri = await captureRef(shareCardRef, { format: 'png', quality: 0.95 });
       const canShare = await Sharing.isAvailableAsync();
@@ -164,7 +257,7 @@ export default function TeamsScreen() {
     setMergeVisible(false);
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    await addDrawRecord(params.peladaId, updatedTeams);
+    await addDrawRecord(params.peladaId, updatedTeams, { balanceByGender: params.balanceByGender });
   }
 
   function openMergeModal() {
@@ -209,7 +302,7 @@ export default function TeamsScreen() {
             >
               <View style={styles.cardHeader}>
                 <Text style={[styles.teamName, { color }]}>{team.name}</Text>
-                <Text style={styles.totalStars}>{team.totalStars} ★</Text>
+                <Text style={styles.totalStars}>{formatStars(team.totalStars)} ★</Text>
               </View>
 
               {team.players.map((player, playerIndex) => {
@@ -218,23 +311,45 @@ export default function TeamsScreen() {
                   swapSelection?.playerIndex === playerIndex;
 
                 return (
-                  <TouchableOpacity
-                    key={player.id}
-                    style={[styles.playerRow, isSelected && styles.playerRowSelected]}
-                    onPress={() => handlePlayerTap(teamIndex, playerIndex)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.playerName, isSelected && styles.playerNameSelected]}>
-                      {player.name}
-                    </Text>
-                    {!hideRatings && <StarRating value={player.level} readonly size={14} />}
-                    {isSelected
-                      ? <Feather name="check-circle" size={14} color={colors.primary} style={{ marginLeft: 4 }} />
-                      : <Feather name="chevron-right" size={14} color={colors.border} style={{ marginLeft: 4 }} />
-                    }
-                  </TouchableOpacity>
+                  <View key={player.id} style={[styles.playerRow, isSelected && styles.playerRowSelected]}>
+                    <TouchableOpacity
+                      style={styles.playerTapZone}
+                      onPress={() => handlePlayerTap(teamIndex, playerIndex)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.playerName, isSelected && styles.playerNameSelected]}>
+                        {player.name}
+                      </Text>
+                      {player.gender && (
+                        <Text style={styles.playerGender}>
+                          {player.gender === 'M' ? '♂' : '♀'}
+                        </Text>
+                      )}
+                      {!hideRatings && <StarRating value={player.level} readonly size={14} />}
+                      {isSelected
+                        ? <Feather name="check-circle" size={14} color={colors.primary} />
+                        : <Feather name="chevron-right" size={14} color={colors.border} />
+                      }
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.removeBtn}
+                      onPress={() => handleRemovePlayer(teamIndex, playerIndex)}
+                      hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+                    >
+                      <Feather name="x" size={16} color={colors.danger} />
+                    </TouchableOpacity>
+                  </View>
                 );
               })}
+
+              <TouchableOpacity
+                style={[styles.addPlayerBtn, { borderColor: color }]}
+                onPress={() => openAddPicker(teamIndex)}
+                activeOpacity={0.7}
+              >
+                <Feather name="user-plus" size={14} color={color} />
+                <Text style={[styles.addPlayerBtnText, { color }]}>{t('teams.addPlayer')}</Text>
+              </TouchableOpacity>
             </Animated.View>
           );
         })}
@@ -268,16 +383,40 @@ export default function TeamsScreen() {
             <Feather name="rotate-ccw" size={15} color={colors.primary} />
             <Text style={styles.btnSecondaryText}>{t('teams.redo')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.btnPrimary} onPress={handleShare}>
-            <Feather name="send" size={15} color="#fff" />
-            <Text style={styles.btnPrimaryText}>{t('teams.text')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.btnImage} onPress={handleShareImage}>
-            <Feather name="image" size={20} color={colors.primary} />
+          <TouchableOpacity style={styles.btnPrimary} onPress={() => setShareMenuVisible(true)}>
+            <Feather name="share-2" size={16} color="#fff" />
+            <Text style={styles.btnPrimaryText}>{t('teams.share')}</Text>
           </TouchableOpacity>
         </View>
       </View>
 
+      {/* Unified share menu */}
+      <Modal visible={shareMenuVisible} transparent animationType="fade" onRequestClose={() => setShareMenuVisible(false)}>
+        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setShareMenuVisible(false)}>
+          <TouchableOpacity activeOpacity={1} style={styles.shareMenu}>
+            <Text style={styles.modalTitle}>{t('teams.shareMenuTitle')}</Text>
+            <Text style={styles.modalSubtitle}>{t('teams.shareMenuSubtitle')}</Text>
+            <TouchableOpacity style={styles.shareOption} onPress={handleShareText}>
+              <Feather name="message-square" size={18} color={colors.primary} />
+              <View style={styles.shareOptionText}>
+                <Text style={styles.shareOptionLabel}>{t('teams.shareText')}</Text>
+                <Text style={styles.shareOptionDesc}>{t('teams.shareTextDesc')}</Text>
+              </View>
+              <Feather name="chevron-right" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.shareOption} onPress={handleShareImage}>
+              <Feather name="image" size={18} color={colors.primary} />
+              <View style={styles.shareOptionText}>
+                <Text style={styles.shareOptionLabel}>{t('teams.shareImage')}</Text>
+                <Text style={styles.shareOptionDesc}>{t('teams.shareImageDesc')}</Text>
+              </View>
+              <Feather name="chevron-right" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Merge modal */}
       <Modal visible={mergeVisible} transparent animationType="fade" onRequestClose={() => setMergeVisible(false)}>
         <View style={styles.overlay}>
           <View style={styles.modal}>
@@ -299,7 +438,7 @@ export default function TeamsScreen() {
                     <View style={styles.teamOptionInfo}>
                       <Text style={[styles.teamOptionName, isSelected && { color }]}>{team.name}</Text>
                       <Text style={styles.teamOptionMeta}>
-                        {t('teams.teamInfo', { count: team.players.length, stars: team.totalStars })}
+                        {t('teams.teamInfo', { count: team.players.length, stars: formatStars(team.totalStars) })}
                       </Text>
                     </View>
                     {isSelected && <Feather name="check" size={18} color={color} />}
@@ -322,6 +461,129 @@ export default function TeamsScreen() {
             </View>
           </View>
         </View>
+      </Modal>
+
+      {/* Add player picker */}
+      <Modal
+        visible={addPickerTeamIdx !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAddPickerTeamIdx(null)}
+      >
+        <View style={styles.overlay}>
+          <View style={[styles.modal, { maxHeight: '80%' }]}>
+            <Text style={styles.modalTitle}>
+              {addPickerTeamIdx !== null
+                ? t('teams.addToTeam', { team: currentTeams[addPickerTeamIdx]?.name ?? '' })
+                : ''}
+            </Text>
+            <Text style={styles.modalSubtitle}>{t('teams.addPickerSubtitle')}</Text>
+
+            <ScrollView style={{ maxHeight: 320 }}>
+              {availableBasePlayers.length === 0 ? (
+                <Text style={styles.emptyHint}>{t('teams.noAvailablePlayers')}</Text>
+              ) : (
+                availableBasePlayers.map(player => (
+                  <TouchableOpacity
+                    key={player.id}
+                    style={styles.pickerRow}
+                    onPress={() => addPickerTeamIdx !== null && addPlayerToTeam(player, addPickerTeamIdx)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.pickerName}>{player.name}</Text>
+                      <View style={styles.pickerMeta}>
+                        {!hideRatings && <StarRating value={player.level} readonly size={12} />}
+                        {player.gender && (
+                          <Text style={styles.pickerGender}>
+                            {player.gender === 'M' ? '♂' : '♀'}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                    <Feather name="plus-circle" size={20} color={colors.primary} />
+                  </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.btnModalSecondary} onPress={() => setAddPickerTeamIdx(null)}>
+                <Text style={styles.btnModalSecondaryText}>{t('teams.cancelBtn')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.btnModalPrimary}
+                onPress={() => addPickerTeamIdx !== null && openGuestModal(addPickerTeamIdx)}
+              >
+                <Feather name="user-plus" size={14} color="#fff" />
+                <Text style={styles.btnModalPrimaryText}>{t('teams.addGuest')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Guest add modal */}
+      <Modal
+        visible={guestModalTeamIdx !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setGuestModalTeamIdx(null)}
+      >
+        <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.modal}>
+            <Text style={styles.modalTitle}>{t('teams.addGuest')}</Text>
+            <Text style={styles.modalSubtitle}>
+              {guestModalTeamIdx !== null
+                ? t('teams.guestForTeam', { team: currentTeams[guestModalTeamIdx]?.name ?? '' })
+                : ''}
+            </Text>
+            <TextInput
+              style={styles.input}
+              placeholder={t('playerList.guestName')}
+              placeholderTextColor={colors.textMuted}
+              value={newGuestName}
+              onChangeText={setNewGuestName}
+              autoFocus
+            />
+            <View style={styles.levelRow}>
+              <Text style={styles.levelLabel}>{t('playerList.levelLabel')}</Text>
+              <StarRating value={newGuestLevel} onChange={lvl => setNewGuestLevel(lvl)} size={26} />
+            </View>
+            <View style={styles.genderRow}>
+              {([
+                { value: undefined, key: 'none' },
+                { value: 'M' as const, key: 'male' },
+                { value: 'F' as const, key: 'female' },
+              ]).map(opt => {
+                const active = newGuestGender === opt.value;
+                return (
+                  <TouchableOpacity
+                    key={opt.key}
+                    style={[styles.genderBtn, active && styles.genderBtnActive]}
+                    onPress={() => setNewGuestGender(opt.value)}
+                  >
+                    <Text style={[styles.genderBtnText, active && styles.genderBtnTextActive]}>
+                      {t(`playerRegister.gender.${opt.key}`)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.btnModalSecondary} onPress={() => setGuestModalTeamIdx(null)}>
+                <Text style={styles.btnModalSecondaryText}>{t('teams.cancelBtn')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.btnModalPrimary, !newGuestName.trim() && styles.btnModalDisabled]}
+                onPress={confirmGuest}
+                disabled={!newGuestName.trim()}
+              >
+                <Text style={styles.btnModalPrimaryText}>{t('common.add')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -375,11 +637,18 @@ function createStyles(c: ThemeColors) {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingVertical: 8,
-      paddingHorizontal: 6,
+      paddingVertical: 4,
+      paddingHorizontal: 4,
       borderTopWidth: 1,
       borderTopColor: c.borderLight,
       borderRadius: 6,
+    },
+    playerTapZone: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingVertical: 6,
     },
     playerRowSelected: {
       backgroundColor: c.primaryLight,
@@ -387,6 +656,21 @@ function createStyles(c: ThemeColors) {
     },
     playerName: { fontSize: 14, color: c.text, fontWeight: '500', flex: 1 },
     playerNameSelected: { color: c.primary, fontWeight: '700' },
+    playerGender: { fontSize: 13, color: c.textSecondary, fontWeight: '700' },
+    removeBtn: { paddingHorizontal: 6, paddingVertical: 6 },
+
+    addPlayerBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      marginTop: 10,
+      paddingVertical: 8,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderStyle: 'dashed',
+    },
+    addPlayerBtnText: { fontWeight: '700', fontSize: 13 },
 
     footer: { position: 'absolute', left: 16, right: 16, gap: 8 },
     footerRow: { flexDirection: 'row', gap: 8 },
@@ -413,14 +697,6 @@ function createStyles(c: ThemeColors) {
       padding: 15,
     },
     btnSecondaryText: { color: c.primary, fontWeight: '600', fontSize: 15 },
-    btnImage: {
-      backgroundColor: c.borderLight,
-      borderRadius: 12,
-      paddingHorizontal: 14,
-      paddingVertical: 15,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
     btnMerge: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -451,6 +727,20 @@ function createStyles(c: ThemeColors) {
 
     overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 24 },
     modal: { backgroundColor: c.surface, borderRadius: 16, padding: 24, gap: 14 },
+    shareMenu: { backgroundColor: c.surface, borderRadius: 16, padding: 20, gap: 10 },
+    shareOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+      paddingVertical: 12,
+      paddingHorizontal: 10,
+      borderRadius: 10,
+      backgroundColor: c.surfaceVariant,
+    },
+    shareOptionText: { flex: 1 },
+    shareOptionLabel: { fontSize: 15, fontWeight: '700', color: c.text },
+    shareOptionDesc: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
+
     modalTitle: { fontSize: 18, fontWeight: '700', color: c.text },
     modalSubtitle: { fontSize: 13, color: c.textSecondary, marginTop: -6 },
     teamList: { gap: 8 },
@@ -468,9 +758,52 @@ function createStyles(c: ThemeColors) {
     teamOptionInfo: { flex: 1 },
     teamOptionName: { fontSize: 15, fontWeight: '600', color: c.text },
     teamOptionMeta: { fontSize: 12, color: c.textSecondary, marginTop: 1 },
+
+    pickerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: c.borderLight,
+      backgroundColor: c.surfaceVariant,
+      marginBottom: 6,
+    },
+    pickerName: { fontSize: 14, fontWeight: '600', color: c.text },
+    pickerMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+    pickerGender: { fontSize: 12, color: c.textSecondary, fontWeight: '700' },
+    emptyHint: { fontSize: 13, color: c.textSecondary, textAlign: 'center', paddingVertical: 24 },
+
+    input: {
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 8,
+      padding: 11,
+      fontSize: 15,
+      color: c.inputText,
+      backgroundColor: c.inputBg,
+    },
+    levelRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    levelLabel: { fontSize: 14, fontWeight: '600', color: c.text },
+    genderRow: { flexDirection: 'row', gap: 8 },
+    genderBtn: {
+      flex: 1,
+      paddingVertical: 10,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: c.border,
+      alignItems: 'center',
+      backgroundColor: c.surfaceVariant,
+    },
+    genderBtnActive: { borderColor: c.primary, backgroundColor: c.primaryLight },
+    genderBtnText: { color: c.textSecondary, fontWeight: '600', fontSize: 13 },
+    genderBtnTextActive: { color: c.primary, fontWeight: '700' },
+
     modalButtons: { flexDirection: 'row', gap: 10, marginTop: 4 },
     btnModalPrimary: {
-      flex: 1, backgroundColor: c.primary, borderRadius: 8, padding: 13, alignItems: 'center',
+      flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+      backgroundColor: c.primary, borderRadius: 8, padding: 13,
     },
     btnModalPrimaryText: { color: '#fff', fontWeight: '700', fontSize: 15 },
     btnModalSecondary: {

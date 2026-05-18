@@ -38,10 +38,18 @@ export async function updatePelada(updated: Pelada): Promise<void> {
   await savePeladas(peladas.map(p => (p.id === updated.id ? updated : p)));
 }
 
-export async function addDrawRecord(peladaId: string, teams: Team[]): Promise<void> {
+export async function addDrawRecord(
+  peladaId: string,
+  teams: Team[],
+  meta?: { balanceByGender?: boolean },
+): Promise<void> {
   const pelada = await getPeladaById(peladaId);
   if (!pelada) return;
-  const record: DrawRecord = { teams, timestamp: new Date().toISOString() };
+  const record: DrawRecord = {
+    teams,
+    timestamp: new Date().toISOString(),
+    ...(meta?.balanceByGender ? { balanceByGender: true } : {}),
+  };
   const history = [record, ...(pelada.drawHistory ?? [])].slice(0, 5);
   await updatePelada({ ...pelada, drawHistory: history });
 }

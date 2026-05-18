@@ -6,7 +6,7 @@ import {
 import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useTranslation } from 'react-i18next';
-import { Player, StarLevel, RootStackParamList } from '../types';
+import { Player, StarLevel, Gender, RootStackParamList } from '../types';
 import { getPeladaById, updatePelada } from '../storage';
 import StarRating from '../components/StarRating';
 import { useTheme, ThemeColors } from '../theme';
@@ -17,6 +17,12 @@ type Nav = StackNavigationProp<RootStackParamList>;
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
+
+const GENDER_OPTIONS: { value: Gender | undefined; key: string }[] = [
+  { value: undefined, key: 'none' },
+  { value: 'M', key: 'male' },
+  { value: 'F', key: 'female' },
+];
 
 export default function PlayerRegisterScreen() {
   const { params } = useRoute<RouteProps>();
@@ -29,6 +35,7 @@ export default function PlayerRegisterScreen() {
 
   const [name, setName] = useState('');
   const [level, setLevel] = useState<StarLevel>(3);
+  const [gender, setGender] = useState<Gender | undefined>(undefined);
   const [playerCount, setPlayerCount] = useState(0);
 
   useFocusEffect(
@@ -41,6 +48,7 @@ export default function PlayerRegisterScreen() {
           if (player) {
             setName(player.name);
             setLevel(player.level);
+            setGender(player.gender);
           }
         }
       });
@@ -56,10 +64,10 @@ export default function PlayerRegisterScreen() {
     let updatedPlayers: Player[];
     if (isEditing && editPlayerId) {
       updatedPlayers = pelada.players.map(p =>
-        p.id === editPlayerId ? { ...p, name: trimmed, level } : p
+        p.id === editPlayerId ? { ...p, name: trimmed, level, gender } : p
       );
     } else {
-      updatedPlayers = [...pelada.players, { id: generateId(), name: trimmed, level }];
+      updatedPlayers = [...pelada.players, { id: generateId(), name: trimmed, level, gender }];
     }
 
     await updatePelada({ ...pelada, players: updatedPlayers });
@@ -90,7 +98,27 @@ export default function PlayerRegisterScreen() {
           </View>
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>{t('playerRegister.levelLabel')}</Text>
-            <StarRating value={level} onChange={setLevel} />
+            <StarRating value={level} onChange={setLevel} size={28} />
+          </View>
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>{t('playerRegister.genderLabel')}</Text>
+            <View style={styles.genderRow}>
+              {GENDER_OPTIONS.map(opt => {
+                const active = gender === opt.value;
+                return (
+                  <TouchableOpacity
+                    key={opt.key}
+                    style={[styles.genderBtn, active && styles.genderBtnActive]}
+                    onPress={() => setGender(opt.value)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.genderBtnText, active && styles.genderBtnTextActive]}>
+                      {t(`playerRegister.gender.${opt.key}`)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
         </View>
 
@@ -141,6 +169,19 @@ function createStyles(c: ThemeColors) {
       color: c.inputText,
       backgroundColor: c.inputBg,
     },
+    genderRow: { flexDirection: 'row', gap: 8 },
+    genderBtn: {
+      flex: 1,
+      paddingVertical: 10,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: c.border,
+      alignItems: 'center',
+      backgroundColor: c.surfaceVariant,
+    },
+    genderBtnActive: { borderColor: c.primary, backgroundColor: c.primaryLight },
+    genderBtnText: { color: c.textSecondary, fontWeight: '600', fontSize: 13 },
+    genderBtnTextActive: { color: c.primary, fontWeight: '700' },
     saveBtn: {
       backgroundColor: c.primary,
       borderRadius: 12,

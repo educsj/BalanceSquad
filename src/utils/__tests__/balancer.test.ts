@@ -3,11 +3,11 @@ import { Player, Team } from '../../types';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
-function p(id: string, level: 1 | 2 | 3 | 4 | 5): Player {
-  return { id, name: `Player ${id}`, level };
+function p(id: string, level: number, gender?: 'M' | 'F'): Player {
+  return { id, name: `Player ${id}`, level, gender };
 }
 
-function players(count: number, level: 1 | 2 | 3 | 4 | 5 = 3): Player[] {
+function players(count: number, level: number = 3): Player[] {
   return Array.from({ length: count }, (_, i) => p(String(i + 1), level));
 }
 
@@ -171,6 +171,68 @@ describe('balanceTeams', () => {
         }
       }
     });
+  });
+});
+
+// ─── half-star levels ────────────────────────────────────────────────────────
+
+describe('balanceTeams with fractional levels', () => {
+  test('handles 0.5-step levels without crashing', () => {
+    const ps = [
+      p('1', 4.5), p('2', 3.5), p('3', 2.5), p('4', 1.5),
+      p('5', 4),   p('6', 3),   p('7', 2),   p('8', 1),
+    ];
+    const result = balanceTeams(ps, 2, 4);
+    expect(totalPlayerCount(result)).toBe(8);
+    const sumLevels = ps.reduce((s, x) => s + x.level, 0);
+    const sumStars  = result.reduce((s, t) => s + t.totalStars, 0);
+    expect(sumStars).toBeCloseTo(sumLevels, 5);
+  });
+
+  test('symmetric half-star pairs produce zero spread', () => {
+    const ps = [
+      p('1', 4.5), p('2', 4.5),
+      p('3', 3.5), p('4', 3.5),
+      p('5', 2.5), p('6', 2.5),
+    ];
+    const result = balanceTeams(ps, 2, 3);
+    expect(mainSpread(result, 2)).toBeCloseTo(0, 5);
+  });
+});
+
+// ─── gender balancing ────────────────────────────────────────────────────────
+
+describe('balanceTeams with balanceByGender option', () => {
+  test('distributes males and females proportionally across teams', () => {
+    const ps = [
+      p('m1', 3, 'M'), p('m2', 3, 'M'), p('m3', 3, 'M'), p('m4', 3, 'M'),
+      p('m5', 3, 'M'), p('m6', 3, 'M'), p('m7', 3, 'M'), p('m8', 3, 'M'),
+      p('f1', 3, 'F'), p('f2', 3, 'F'), p('f3', 3, 'F'), p('f4', 3, 'F'),
+    ];
+    const result = balanceTeams(ps, 4, 3, { balanceByGender: true });
+    expect(result).toHaveLength(4);
+    result.forEach(team => {
+      const males   = team.players.filter(x => x.gender === 'M').length;
+      const females = team.players.filter(x => x.gender === 'F').length;
+      expect(males).toBe(2);
+      expect(females).toBe(1);
+    });
+  });
+
+  test('still respects star balance with mixed levels and genders', () => {
+    const ps = [
+      p('m1', 5, 'M'), p('m2', 5, 'M'),
+      p('m3', 1, 'M'), p('m4', 1, 'M'),
+      p('f1', 4, 'F'), p('f2', 2, 'F'),
+    ];
+    const result = balanceTeams(ps, 2, 3, { balanceByGender: true });
+    result.forEach(team => {
+      expect(team.players.filter(x => x.gender === 'M').length).toBe(2);
+      expect(team.players.filter(x => x.gender === 'F').length).toBe(1);
+    });
+    // With the 2M+1F-per-team constraint, the optimal split is 10/8 (spread = 2):
+    // males {5,1}+{5,1} = 6/6, females {4}+{2} or {2}+{4} = 4/2.
+    expect(mainSpread(result, 2)).toBeLessThanOrEqual(2);
   });
 });
 

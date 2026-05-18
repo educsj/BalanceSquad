@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Alert,
+  View, Text, TouchableOpacity, StyleSheet, Alert, Switch,
 } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -30,6 +30,7 @@ export default function DrawConfigScreen() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [numTeams, setNumTeams] = useState(2);
   const [playersPerTeam, setPlayersPerTeam] = useState(5);
+  const [balanceByGender, setBalanceByGender] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -44,6 +45,11 @@ export default function DrawConfigScreen() {
 
   const totalSlots = numTeams * playersPerTeam;
   const overflow = players.length - totalSlots;
+
+  const hasGenderInfo = players.some(p => !!p.gender);
+  const males   = players.filter(p => p.gender === 'M').length;
+  const females = players.filter(p => p.gender === 'F').length;
+  const others  = players.length - males - females;
 
   function slotInfo(): string {
     if (overflow === 0) return t('drawConfig.perfectDist', { teams: numTeams, perTeam: playersPerTeam });
@@ -66,9 +72,9 @@ export default function DrawConfigScreen() {
   async function handleDraw() {
     if (!validate()) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    const teams = balanceTeams(players, numTeams, playersPerTeam);
-    await addDrawRecord(peladaId, teams);
-    navigation.navigate('Teams', { teams, peladaId });
+    const teams = balanceTeams(players, numTeams, playersPerTeam, { balanceByGender });
+    await addDrawRecord(peladaId, teams, { balanceByGender });
+    navigation.navigate('Teams', { teams, peladaId, balanceByGender });
   }
 
   function handleManual() {
@@ -81,6 +87,11 @@ export default function DrawConfigScreen() {
       <View style={styles.infoCard}>
         <Text style={styles.infoTitle}>{t('drawConfig.playersSelected', { count: players.length })}</Text>
         <Text style={styles.infoSub}>{slotInfo()}</Text>
+        {hasGenderInfo && (
+          <Text style={styles.infoSub}>
+            {t('drawConfig.genderBreakdown', { males, females, others })}
+          </Text>
+        )}
       </View>
 
       <View style={styles.configCard}>
@@ -116,6 +127,21 @@ export default function DrawConfigScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {hasGenderInfo && (
+        <View style={styles.configCard}>
+          <View style={styles.toggleInfo}>
+            <Text style={styles.configLabel}>{t('drawConfig.balanceByGender')}</Text>
+            <Text style={styles.toggleHint}>{t('drawConfig.balanceByGenderHint')}</Text>
+          </View>
+          <Switch
+            value={balanceByGender}
+            onValueChange={setBalanceByGender}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor="#fff"
+          />
+        </View>
+      )}
 
       <View style={[styles.footer, { bottom: 24 + insets.bottom }]}>
         <TouchableOpacity style={styles.manualBtn} onPress={handleManual}>
@@ -160,6 +186,8 @@ function createStyles(c: ThemeColors) {
       shadowRadius: 4,
     },
     configLabel: { color: c.text, fontWeight: '600', fontSize: 14 },
+    toggleInfo: { flex: 1, marginRight: 12 },
+    toggleHint: { color: c.textSecondary, fontSize: 12, marginTop: 2 },
     teamOptions: { flexDirection: 'row', gap: 8 },
     teamBtn: {
       width: 44,
