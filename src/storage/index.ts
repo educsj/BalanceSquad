@@ -4,6 +4,7 @@ import { Pelada, DrawRecord, Team } from '../types';
 const PELADAS_KEY = '@balancesquad:peladas';
 const HIDE_RATINGS_KEY = '@balancesquad:hideRatings';
 const LANGUAGE_KEY = '@balancesquad:language';
+const DRAW_HISTORY_LIMIT = 20;
 
 function migratePelada(pelada: Pelada): Pelada {
   if (pelada.lastDraw && pelada.lastDraw.length > 0 && !pelada.drawHistory) {
@@ -50,7 +51,7 @@ export async function addDrawRecord(
     timestamp: new Date().toISOString(),
     ...(meta?.balanceByGender ? { balanceByGender: true } : {}),
   };
-  const history = [record, ...(pelada.drawHistory ?? [])].slice(0, 5);
+  const history = [record, ...(pelada.drawHistory ?? [])].slice(0, DRAW_HISTORY_LIMIT);
   await updatePelada({ ...pelada, drawHistory: history });
 }
 
@@ -86,12 +87,52 @@ export async function exportData(): Promise<string> {
   return JSON.stringify({ peladas, hideRatings, exportedAt: new Date().toISOString() }, null, 2);
 }
 
-export async function importData(jsonString: string): Promise<void> {
-  const data = JSON.parse(jsonString);
-  if (Array.isArray(data.peladas)) {
-    await savePeladas(data.peladas.map(migratePelada));
+interface BackupData {
+  peladas: Pelada[];
+  hideRatings?: boolean;
+}
+
+// Rejects malformed JSON before it can land in AsyncStorage and brick the app.
+// Mirrors the strictness of parseDrawPayload — every required field is shape-
+// checked. Returns null on any deviation.
+export function parseBackupData(jsonString: string): BackupData | null {
+  let data: unknown;
+  try {
+    data = JSON.parse(jsonString);
+  } catch {
+    return null;
   }
-  if (typeof data.hideRatings === 'boolean') {
-    await setHideRatings(data.hideRatings);
+  if (!data || typeof data !== 'object') return null;
+  const obj = data as Record<string, unknown>;
+  if (!Array.isArray(obj.peladas)) return null;
+
+  for (const p of obj.peladas) {
+    if (!p || typeof p !== 'object') return null;
+    const pelada = p as Record<string, unknown>;
+    if (typeof pelada.id !== 'string') return null;
+    if (typeof pelada.name !== 'string') return null;
+    if (typeof pelada.playersPerTeam !== 'number') return null;
+    if (!Array.isArray(pelada.players)) return null;
+    for (const pl of pelada.players) {
+      if (!pl || typeof pl !== 'object') return null;
+      const player = pl as Record<string, unknown>;
+      if (typeof player.id !== 'string') return null;
+      if (typeof player.name !== 'string') return null;
+      if (typeof player.level !== 'number') return null;
+      if (player.gender !== undefined && player.gender !== 'M' && player.gender !== 'F') return null;
+    }
+    if (pelada.drawHistory !== undefined && !Array.isArray(pelada.drawHistory)) return null;
   }
+
+  const result: BackupData = { peladas: obj.peladas as Pelada[] };
+  if (typeof obj.hideRatings === 'boolean') result.hideRatings = obj.hideRatings;
+  return result;
+}
+
+export async function importData(jsonString: string): Promise<boolean> {
+  const parsed = parseBackupData(jsonString);
+  if (!parsed) return false;
+  await savePeladas(parsed.peladas.map(migratePelada));
+  if (parsed.hideRatings !== undefined) await setHideRatings(parsed.hideRatings);
+  return true;
 }

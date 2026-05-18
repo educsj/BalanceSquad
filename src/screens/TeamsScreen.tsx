@@ -361,7 +361,10 @@ export default function TeamsScreen() {
                       onPress={() => handlePlayerTap(teamIndex, playerIndex)}
                       activeOpacity={0.7}
                     >
-                      <Text style={[styles.playerName, isSelected && styles.playerNameSelected]}>
+                      <Text
+                        style={[styles.playerName, isSelected && styles.playerNameSelected]}
+                        numberOfLines={1}
+                      >
                         {player.name}
                       </Text>
                       {player.gender && (
@@ -543,7 +546,7 @@ export default function TeamsScreen() {
                     activeOpacity={0.7}
                   >
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.pickerName}>{player.name}</Text>
+                      <Text style={styles.pickerName} numberOfLines={1}>{player.name}</Text>
                       <View style={styles.pickerMeta}>
                         {!hideRatings && <StarRating value={player.level} readonly size={12} />}
                         {player.gender && (

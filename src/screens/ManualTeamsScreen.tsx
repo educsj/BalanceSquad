@@ -112,7 +112,7 @@ export default function ManualTeamsScreen() {
           const assigned = assignments[item.id];
           return (
             <View style={styles.playerCard}>
-              <Text style={styles.playerName}>{item.name}</Text>
+              <Text style={styles.playerName} numberOfLines={1}>{item.name}</Text>
               <View style={styles.teamBtns}>
                 {Array.from({ length: numTeams }, (_, i) => {
                   const active = assigned === i;

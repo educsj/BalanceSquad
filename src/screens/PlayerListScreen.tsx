@@ -163,7 +163,10 @@ export default function PlayerListScreen() {
               </View>
               <View style={styles.cardInfo}>
                 <View style={styles.nameRow}>
-                  <Text style={[styles.cardName, isSelected && styles.cardNameSelected]}>
+                  <Text
+                    style={[styles.cardName, isSelected && styles.cardNameSelected]}
+                    numberOfLines={1}
+                  >
                     {item.name}
                   </Text>
                   {isGuest && (

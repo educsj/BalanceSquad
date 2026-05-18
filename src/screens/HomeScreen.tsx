@@ -145,7 +145,11 @@ export default function HomeScreen() {
           { text: t('common.cancel'), style: 'cancel' },
           {
             text: t('home.importLabel'), style: 'destructive', onPress: async () => {
-              await importData(json);
+              const ok = await importData(json);
+              if (!ok) {
+                Alert.alert(t('common.error'), t('home.importError'));
+                return;
+              }
               const updated = await loadPeladas();
               setPeladas(updated);
               setBackupModalVisible(false);

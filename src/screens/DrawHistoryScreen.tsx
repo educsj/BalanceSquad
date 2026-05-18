@@ -191,7 +191,7 @@ function DrawEntry({
                     key={player.id}
                     style={[styles.playerRowWrap, tint ? { backgroundColor: tint } : null]}
                   >
-                    <Text style={styles.playerRow}>· {player.name}</Text>
+                    <Text style={styles.playerRow} numberOfLines={1}>· {player.name}</Text>
                   </View>
                 );
               })}
