@@ -220,7 +220,15 @@ export function rematchTwoTeams(
   options: RematchOptions = {},
 ): [Team, Team] {
   const present = [...teamA.players, ...teamB.players];
-  const caps = [teamA.players.length, teamB.players.length];
+
+  // Preserve sizes when both teams have at least one player — that fixes the
+  // 5+1 main-vs-overflow case. But if either team is empty (because the user
+  // manually removed everyone), fall back to a balanced split so the rematch
+  // actually populates both teams.
+  const bothNonEmpty = teamA.players.length > 0 && teamB.players.length > 0;
+  const caps = bothNonEmpty
+    ? [teamA.players.length, teamB.players.length]
+    : [Math.ceil(present.length / 2), Math.ceil(present.length / 2)];
 
   const pair: Team[] = [
     { ...teamA, players: [], totalStars: 0 },

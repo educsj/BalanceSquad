@@ -344,6 +344,20 @@ describe('rematchTwoTeams', () => {
     });
   });
 
+  test('empty team triggers even split (does not leave the rematch broken)', () => {
+    // User manually removed everyone from team B before triggering rebalance.
+    // The "preserve sizes" rule would leave B empty — useless. Fall back to
+    // an even split so both teams come out populated.
+    const full  = teamWith(1, [p('1', 5), p('2', 4), p('3', 3), p('4', 2), p('5', 1)]);
+    const empty = teamWith(2, []);
+    for (let run = 0; run < 20; run++) {
+      const [a, b] = rematchTwoTeams(full, empty);
+      expect(a.players.length + b.players.length).toBe(5);
+      expect(Math.abs(a.players.length - b.players.length)).toBeLessThanOrEqual(1);
+      expect(b.players.length).toBeGreaterThan(0);
+    }
+  });
+
   test('preserves original team sizes (no flattening of 5+1 into 3+3)', () => {
     // Mixed sizes — main + overflow case. After rematch, |A| stays 5 and |B|
     // stays 1, even though Math.ceil(6/2) would naively force 3+3.

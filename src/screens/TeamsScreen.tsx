@@ -353,7 +353,16 @@ export default function TeamsScreen() {
               style={[styles.card, { borderLeftColor: color }, cardAnimStyle]}
             >
               <View style={styles.cardHeader}>
-                <Text style={[styles.teamName, { color }]}>{team.name}</Text>
+                <View style={styles.teamNameRow}>
+                  <Text style={[styles.teamName, { color }]}>{team.name}</Text>
+                  {team.players.length >= playersPerTeamCfg && (
+                    <View style={styles.fullChip}>
+                      <Text style={styles.fullChipText}>
+                        {team.players.length}/{playersPerTeamCfg}
+                      </Text>
+                    </View>
+                  )}
+                </View>
                 {team.players.length > 0 && (
                   <Text style={styles.totalStars}>
                     {formatStars(teamAverage(team))} ★ {t('teams.avgSuffix')}
@@ -452,7 +461,7 @@ export default function TeamsScreen() {
       </View>
 
       {pendingUndo && (
-        <View style={[styles.snackbar, { bottom: 100 + insets.bottom }]}>
+        <View style={[styles.snackbar, { bottom: 150 + insets.bottom }]}>
           <Text style={styles.snackbarText} numberOfLines={1}>
             {t('teams.undoSnackbar', { name: pendingUndo.player.name })}
           </Text>
@@ -648,6 +657,18 @@ export default function TeamsScreen() {
                 ? t('teams.guestForTeam', { team: currentTeams[guestModalTeamIdx]?.name ?? '' })
                 : ''}
             </Text>
+            {guestModalTeamIdx !== null
+              && (currentTeams[guestModalTeamIdx]?.players.length ?? 0) >= playersPerTeamCfg && (
+              <View style={styles.warningBanner}>
+                <Feather name="alert-triangle" size={14} color={colors.danger} />
+                <Text style={styles.warningBannerText}>
+                  {t('teams.teamFullWarn', {
+                    count: currentTeams[guestModalTeamIdx]?.players.length ?? 0,
+                    max: playersPerTeamCfg,
+                  })}
+                </Text>
+              </View>
+            )}
             <TextInput
               style={styles.input}
               placeholder={t('playerList.guestName')}
@@ -750,7 +771,15 @@ function createStyles(c: ThemeColors) {
       alignItems: 'center',
       marginBottom: 10,
     },
+    teamNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
     teamName: { fontSize: 17, fontWeight: '700' },
+    fullChip: {
+      backgroundColor: 'rgba(185, 28, 28, 0.15)',
+      borderRadius: 6,
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+    },
+    fullChipText: { color: c.danger, fontWeight: '800', fontSize: 11 },
     totalStars: { fontSize: 14, color: c.textSecondary, fontWeight: '600' },
 
     playerRow: {
@@ -909,12 +938,14 @@ function createStyles(c: ThemeColors) {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
-      backgroundColor: 'rgba(185, 28, 28, 0.10)',
+      backgroundColor: 'rgba(185, 28, 28, 0.18)',
       borderRadius: 8,
-      paddingHorizontal: 10,
-      paddingVertical: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderWidth: 1,
+      borderColor: 'rgba(185, 28, 28, 0.35)',
     },
-    warningBannerText: { flex: 1, color: c.danger, fontWeight: '600', fontSize: 12 },
+    warningBannerText: { flex: 1, color: c.danger, fontWeight: '700', fontSize: 13 },
     pickerRow: {
       flexDirection: 'row',
       alignItems: 'center',
