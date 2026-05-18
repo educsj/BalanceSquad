@@ -333,9 +333,21 @@ export default function TeamsScreen() {
                 const isSelected =
                   swapSelection?.teamIndex === teamIndex &&
                   swapSelection?.playerIndex === playerIndex;
+                const genderTint = params.balanceByGender
+                  ? player.gender === 'F' ? colors.genderTintFemale
+                  : player.gender === 'M' ? colors.genderTintMale
+                  : undefined
+                  : undefined;
 
                 return (
-                  <View key={player.id} style={[styles.playerRow, isSelected && styles.playerRowSelected]}>
+                  <View
+                    key={player.id}
+                    style={[
+                      styles.playerRow,
+                      genderTint ? { backgroundColor: genderTint } : null,
+                      isSelected && styles.playerRowSelected,
+                    ]}
+                  >
                     <TouchableOpacity
                       style={styles.playerTapZone}
                       onPress={() => handlePlayerTap(teamIndex, playerIndex)}

@@ -26,6 +26,8 @@ export type ThemeColors = {
   badgeBg: string;
   badgeText: string;
   danger: string;
+  genderTintMale: string;
+  genderTintFemale: string;
   teamColors: readonly string[];
 };
 
@@ -54,6 +56,8 @@ export const lightColors: ThemeColors = {
   badgeBg: '#DBEAFE',
   badgeText: '#1E3A5F',
   danger: '#B91C1C',
+  genderTintMale: 'rgba(59, 130, 246, 0.14)',
+  genderTintFemale: 'rgba(236, 72, 153, 0.14)',
   teamColors: ['#1E3A5F', '#2563EB', '#0F766E', '#7C3AED', '#B91C1C'],
 };
 
@@ -82,6 +86,8 @@ export const darkColors: ThemeColors = {
   badgeBg: '#1E3A5F',
   badgeText: '#93C5FD',
   danger: '#F87171',
+  genderTintMale: 'rgba(96, 165, 250, 0.22)',
+  genderTintFemale: 'rgba(244, 114, 182, 0.22)',
   teamColors: ['#60A5FA', '#93C5FD', '#2DD4BF', '#A78BFA', '#F87171'],
 };
 

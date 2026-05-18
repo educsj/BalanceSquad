@@ -180,9 +180,21 @@ function DrawEntry({
                 </Text>
                 <Text style={styles.teamStars}>{formatStars(team.totalStars)} ★</Text>
               </View>
-              {team.players.map(player => (
-                <Text key={player.id} style={styles.playerRow}>· {player.name}</Text>
-              ))}
+              {team.players.map(player => {
+                const tint = record.balanceByGender
+                  ? player.gender === 'F' ? colors.genderTintFemale
+                  : player.gender === 'M' ? colors.genderTintMale
+                  : undefined
+                  : undefined;
+                return (
+                  <View
+                    key={player.id}
+                    style={[styles.playerRowWrap, tint ? { backgroundColor: tint } : null]}
+                  >
+                    <Text style={styles.playerRow}>· {player.name}</Text>
+                  </View>
+                );
+              })}
             </View>
           ))}
 
@@ -383,7 +395,8 @@ function createStyles(c: ThemeColors) {
     },
     teamName: { fontSize: 14, fontWeight: '700' },
     teamStars: { fontSize: 12, color: c.textSecondary, fontWeight: '600' },
-    playerRow: { fontSize: 13, color: c.textSecondary, paddingLeft: 12 },
+    playerRowWrap: { borderRadius: 6, marginBottom: 2 },
+    playerRow: { fontSize: 13, color: c.textSecondary, paddingLeft: 12, paddingVertical: 2 },
     entryActions: { flexDirection: 'row', gap: 8, marginTop: 4 },
     resumeBtn: {
       flex: 1,
