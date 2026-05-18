@@ -125,6 +125,7 @@
     "stars": "{{count}} ★",
     "shareCardTitle": "⚽ Equipos Sorteados",
     "shareCardApp": "BalanceSquad",
+    "avgSuffix": "prom.",
     "genderBalancedBadge": "Equilibrado por género",
     "rebalanceTeams": "Rebalancear Equipos",
     "redo": "Rehacer",

@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { useTheme, ThemeColors } from '../theme';
-import { formatStars } from '../utils/stars';
+import { formatStars, teamAverage } from '../utils/stars';
 import { exportDrawToFile } from '../utils/drawShare';
 
 type RouteProps = RouteProp<RootStackParamList, 'Teams'>;
@@ -334,7 +334,7 @@ export default function TeamsScreen() {
             >
               <View style={styles.cardHeader}>
                 <Text style={[styles.teamName, { color }]}>{team.name}</Text>
-                <Text style={styles.totalStars}>{formatStars(team.totalStars)} ★</Text>
+                <Text style={styles.totalStars}>{formatStars(teamAverage(team))} ★ {t('teams.avgSuffix')}</Text>
               </View>
 
               {team.players.map((player, playerIndex) => {
@@ -490,7 +490,7 @@ export default function TeamsScreen() {
                     <View style={styles.teamOptionInfo}>
                       <Text style={[styles.teamOptionName, isSelected && { color }]}>{team.name}</Text>
                       <Text style={styles.teamOptionMeta}>
-                        {t('teams.teamInfo', { count: team.players.length, stars: formatStars(team.totalStars) })}
+                        {t('teams.teamInfo', { count: team.players.length, stars: formatStars(teamAverage(team)) })}
                       </Text>
                     </View>
                     {isSelected && <Feather name="check" size={18} color={color} />}

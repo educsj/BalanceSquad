@@ -125,6 +125,7 @@
     "stars": "{{count}} ★",
     "shareCardTitle": "⚽ Sorted Teams",
     "shareCardApp": "BalanceSquad",
+    "avgSuffix": "avg",
     "genderBalancedBadge": "Gender-balanced",
     "rebalanceTeams": "Rebalance Teams",
     "redo": "Redo",

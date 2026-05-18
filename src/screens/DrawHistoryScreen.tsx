@@ -12,7 +12,7 @@ import { RootStackParamList, DrawRecord, Team } from '../types';
 import { getPeladaById } from '../storage';
 import EmptyState from '../components/EmptyState';
 import { useTheme, ThemeColors } from '../theme';
-import { formatStars } from '../utils/stars';
+import { formatStars, teamAverage } from '../utils/stars';
 import { exportDrawToFile } from '../utils/drawShare';
 
 type RouteProps = RouteProp<RootStackParamList, 'DrawHistory'>;
@@ -36,13 +36,15 @@ function formatTeamsForShare(teams: Team[]): string {
   }).join('\n\n');
 }
 
-// Per-entry metrics: total players, avg stars, spread between strongest/weakest team.
+// Per-entry metrics: total players, avg-of-averages, spread of averages.
+// Using per-player averages keeps the metrics comparable even if teams have
+// different sizes (overflow case).
 function computeMetrics(teams: Team[]) {
   const totalPlayers = teams.reduce((s, t) => s + t.players.length, 0);
-  const totals = teams.map(t => t.totalStars);
-  const max = Math.max(...totals);
-  const min = Math.min(...totals);
-  const avg = totalPlayers === 0 ? 0 : totals.reduce((s, x) => s + x, 0) / teams.length;
+  const teamAvgs = teams.map(t => teamAverage(t));
+  const max = Math.max(...teamAvgs);
+  const min = Math.min(...teamAvgs);
+  const avg = teamAvgs.length === 0 ? 0 : teamAvgs.reduce((s, x) => s + x, 0) / teamAvgs.length;
   const males   = teams.flatMap(t => t.players).filter(p => p.gender === 'M').length;
   const females = teams.flatMap(t => t.players).filter(p => p.gender === 'F').length;
   return { totalPlayers, spread: max - min, avg, males, females };
@@ -178,7 +180,7 @@ function DrawEntry({
                 <Text style={[styles.teamName, { color: colors.teamColors[ti % colors.teamColors.length] }]}>
                   {team.name}
                 </Text>
-                <Text style={styles.teamStars}>{formatStars(team.totalStars)} ★</Text>
+                <Text style={styles.teamStars}>{formatStars(teamAverage(team))} ★ {t('teams.avgSuffix')}</Text>
               </View>
               {team.players.map(player => {
                 const tint = record.balanceByGender

@@ -125,6 +125,7 @@
     "stars": "{{count}} ★",
     "shareCardTitle": "⚽ Times Sorteados",
     "shareCardApp": "BalanceSquad",
+    "avgSuffix": "média",
     "genderBalancedBadge": "Equilibrado por gênero",
     "rebalanceTeams": "Rebalancear Times",
     "redo": "Refazer",
