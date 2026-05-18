@@ -180,6 +180,35 @@ export default function HomeScreen() {
       }
 
       const players = payload.teams.reduce((s, x) => s + x.players.length, 0);
+
+      // Already-imported check: a pelada whose name starts with the source
+      // and whose drawHistory has an entry with the exact same timestamp is
+      // almost certainly the same draw. Warn before creating a duplicate.
+      const existing = peladas.find(p =>
+        p.name.startsWith(payload.sourcePeladaName)
+        && (p.drawHistory ?? []).some(r => r.timestamp === payload.timestamp)
+      );
+
+      const proceedToImport = async () => {
+        const pelada = await importDrawAsPelada(payload, t('home.importedSuffix'));
+        const updated = await loadPeladas();
+        setPeladas(updated);
+        setBackupModalVisible(false);
+        Alert.alert(t('common.success'), t('home.importDrawSuccess', { name: pelada.name }));
+      };
+
+      if (existing) {
+        Alert.alert(
+          t('home.importDrawDuplicateTitle'),
+          t('home.importDrawDuplicateMsg', { name: existing.name }),
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: t('home.importLabel'), onPress: proceedToImport },
+          ]
+        );
+        return;
+      }
+
       Alert.alert(
         t('home.importDrawConfirmTitle'),
         t('home.importDrawConfirmMsg', {
@@ -189,15 +218,7 @@ export default function HomeScreen() {
         }),
         [
           { text: t('common.cancel'), style: 'cancel' },
-          {
-            text: t('home.importLabel'), onPress: async () => {
-              const pelada = await importDrawAsPelada(payload, t('home.importedSuffix'));
-              const updated = await loadPeladas();
-              setPeladas(updated);
-              setBackupModalVisible(false);
-              Alert.alert(t('common.success'), t('home.importDrawSuccess', { name: pelada.name }));
-            },
-          },
+          { text: t('home.importLabel'), onPress: proceedToImport },
         ]
       );
     } catch {

@@ -52,6 +52,8 @@
     "importDrawConfirmTitle": "Importar sorteio",
     "importDrawConfirmMsg": "Criar uma pelada nova com base em \"{{name}}\" ({{teams}} times · {{players}} jogadores)?",
     "importDrawSuccess": "Pelada \"{{name}}\" criada com o sorteio importado.",
+    "importDrawDuplicateTitle": "Sorteio já importado",
+    "importDrawDuplicateMsg": "Parece que este mesmo sorteio já existe em \"{{name}}\". Importar mesmo assim?",
     "importedSuffix": "(importado)"
   },
   "peladaHub": {
@@ -147,6 +149,9 @@
     "guestForTeam": "Jogador avulso para {{team}}",
     "removePlayerTitle": "Remover do time",
     "removePlayerMsg": "Tirar {{name}} deste time?",
+    "teamFullWarn": "Time já está com {{count}}/{{max}} jogadores",
+    "undoSnackbar": "{{name}} removido",
+    "undoAction": "Desfazer",
     "modalTitle": "Mesclar Times",
     "modalSubtitle": "Selecione 2 times para redistribuir os jogadores",
     "teamInfo": "{{count}} jogadores · {{stars}}★",

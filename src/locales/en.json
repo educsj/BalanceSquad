@@ -52,6 +52,8 @@
     "importDrawConfirmTitle": "Import draw",
     "importDrawConfirmMsg": "Create a new group from \"{{name}}\" ({{teams}} teams · {{players}} players)?",
     "importDrawSuccess": "Group \"{{name}}\" created with the imported draw.",
+    "importDrawDuplicateTitle": "Draw already imported",
+    "importDrawDuplicateMsg": "Looks like this same draw already exists in \"{{name}}\". Import anyway?",
     "importedSuffix": "(imported)"
   },
   "peladaHub": {
@@ -147,6 +149,9 @@
     "guestForTeam": "One-off player for {{team}}",
     "removePlayerTitle": "Remove from team",
     "removePlayerMsg": "Take {{name}} out of this team?",
+    "teamFullWarn": "Team already has {{count}}/{{max}} players",
+    "undoSnackbar": "{{name}} removed",
+    "undoAction": "Undo",
     "modalTitle": "Merge Teams",
     "modalSubtitle": "Select 2 teams to redistribute players",
     "teamInfo": "{{count}} players · {{stars}}★",

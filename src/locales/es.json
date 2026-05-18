@@ -52,6 +52,8 @@
     "importDrawConfirmTitle": "Importar sorteo",
     "importDrawConfirmMsg": "¿Crear un grupo nuevo a partir de \"{{name}}\" ({{teams}} equipos · {{players}} jugadores)?",
     "importDrawSuccess": "Grupo \"{{name}}\" creado con el sorteo importado.",
+    "importDrawDuplicateTitle": "Sorteo ya importado",
+    "importDrawDuplicateMsg": "Parece que este mismo sorteo ya existe en \"{{name}}\". ¿Importar de todos modos?",
     "importedSuffix": "(importado)"
   },
   "peladaHub": {
@@ -147,6 +149,9 @@
     "guestForTeam": "Jugador puntual para {{team}}",
     "removePlayerTitle": "Quitar del equipo",
     "removePlayerMsg": "¿Quitar a {{name}} de este equipo?",
+    "teamFullWarn": "El equipo ya tiene {{count}}/{{max}} jugadores",
+    "undoSnackbar": "{{name}} eliminado",
+    "undoAction": "Deshacer",
     "modalTitle": "Mezclar Equipos",
     "modalSubtitle": "Selecciona 2 equipos para redistribuir los jugadores",
     "teamInfo": "{{count}} jugadores · {{stars}}★",

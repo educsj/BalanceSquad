@@ -60,6 +60,15 @@ export default function TeamsScreen() {
   const [basePlayers, setBasePlayers] = useState<Player[]>([]);
   const [peladaName, setPeladaName] = useState<string>('');
   const [playersPerTeamCfg, setPlayersPerTeamCfg] = useState<number>(5);
+
+  // One-step undo for the last destructive action (remove player). Captures
+  // enough state to splice the player back where they were and re-persist.
+  const [pendingUndo, setPendingUndo] = useState<{
+    player: Player;
+    teamIdx: number;
+    playerIdx: number;
+  } | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [addPickerTeamIdx, setAddPickerTeamIdx] = useState<number | null>(null);
   const [guestModalTeamIdx, setGuestModalTeamIdx] = useState<number | null>(null);
   const [newGuestName, setNewGuestName] = useState('');
@@ -143,31 +152,42 @@ export default function TeamsScreen() {
     await persistTeams(updatedTeams);
   }
 
-  function handleRemovePlayer(teamIndex: number, playerIndex: number) {
-    const player = currentTeams[teamIndex].players[playerIndex];
-    Alert.alert(
-      t('teams.removePlayerTitle'),
-      t('teams.removePlayerMsg', { name: player.name }),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.remove'),
-          style: 'destructive',
-          onPress: () => removePlayer(teamIndex, playerIndex),
-        },
-      ],
-    );
-  }
-
-  async function removePlayer(teamIndex: number, playerIndex: number) {
+  async function handleRemovePlayer(teamIndex: number, playerIndex: number) {
+    // No confirmation alert — the snackbar with Undo is the safety net.
+    // Snappier for normal use; one tap to recover from a misstap.
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    const player = currentTeams[teamIndex].players[playerIndex];
     const next = currentTeams.map(t => ({ ...t, players: [...t.players] }));
     next[teamIndex].players.splice(playerIndex, 1);
     const recalced = recalcTeams(next);
     setCurrentTeams(recalced);
     if (swapSelection?.teamIndex === teamIndex) setSwapSelection(null);
     await persistTeams(recalced);
+
+    setPendingUndo({ player, teamIdx: teamIndex, playerIdx: playerIndex });
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    undoTimerRef.current = setTimeout(() => setPendingUndo(null), 5000);
   }
+
+  async function handleUndoRemove() {
+    if (!pendingUndo) return;
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    const { player, teamIdx, playerIdx } = pendingUndo;
+    setPendingUndo(null);
+
+    const next = currentTeams.map(t => ({ ...t, players: [...t.players] }));
+    if (next[teamIdx]) {
+      next[teamIdx].players.splice(playerIdx, 0, player);
+      const recalced = recalcTeams(next);
+      setCurrentTeams(recalced);
+      await persistTeams(recalced);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    }
+  }
+
+  useEffect(() => () => {
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+  }, []);
 
   function openAddPicker(teamIndex: number) {
     setAddPickerTeamIdx(teamIndex);
@@ -420,6 +440,17 @@ export default function TeamsScreen() {
         </View>
       </View>
 
+      {pendingUndo && (
+        <View style={[styles.snackbar, { bottom: 100 + insets.bottom }]}>
+          <Text style={styles.snackbarText} numberOfLines={1}>
+            {t('teams.undoSnackbar', { name: pendingUndo.player.name })}
+          </Text>
+          <TouchableOpacity onPress={handleUndoRemove} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.snackbarAction}>{t('teams.undoAction')}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <View style={[styles.footer, { bottom: 24 + insets.bottom }]}>
         <TouchableOpacity style={styles.btnMerge} onPress={openMergeModal}>
           <Feather name="shuffle" size={16} color={colors.primary} />
@@ -533,6 +564,19 @@ export default function TeamsScreen() {
                 : ''}
             </Text>
             <Text style={styles.modalSubtitle}>{t('teams.addPickerSubtitle')}</Text>
+
+            {addPickerTeamIdx !== null
+              && (currentTeams[addPickerTeamIdx]?.players.length ?? 0) >= playersPerTeamCfg && (
+              <View style={styles.warningBanner}>
+                <Feather name="alert-triangle" size={14} color={colors.danger} />
+                <Text style={styles.warningBannerText}>
+                  {t('teams.teamFullWarn', {
+                    count: currentTeams[addPickerTeamIdx]?.players.length ?? 0,
+                    max: playersPerTeamCfg,
+                  })}
+                </Text>
+              </View>
+            )}
 
             <ScrollView style={{ maxHeight: 320 }}>
               {availableBasePlayers.length === 0 ? (
@@ -737,6 +781,24 @@ function createStyles(c: ThemeColors) {
     },
     addPlayerBtnText: { fontWeight: '700', fontSize: 13 },
 
+    snackbar: {
+      position: 'absolute',
+      left: 16,
+      right: 16,
+      backgroundColor: '#1F2937',
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      elevation: 6,
+      shadowColor: '#000',
+      shadowOpacity: 0.25,
+      shadowRadius: 8,
+    },
+    snackbarText: { flex: 1, color: '#F1F5F9', fontSize: 13 },
+    snackbarAction: { color: '#FCD34D', fontWeight: '800', fontSize: 13, textTransform: 'uppercase' },
     footer: { position: 'absolute', left: 16, right: 16, gap: 8 },
     footerRow: { flexDirection: 'row', gap: 8 },
     btnPrimary: {
@@ -824,6 +886,16 @@ function createStyles(c: ThemeColors) {
     teamOptionName: { fontSize: 15, fontWeight: '600', color: c.text },
     teamOptionMeta: { fontSize: 12, color: c.textSecondary, marginTop: 1 },
 
+    warningBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: 'rgba(185, 28, 28, 0.10)',
+      borderRadius: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+    },
+    warningBannerText: { flex: 1, color: c.danger, fontWeight: '600', fontSize: 12 },
     pickerRow: {
       flexDirection: 'row',
       alignItems: 'center',
