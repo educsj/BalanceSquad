@@ -37,8 +37,13 @@ export default function DrawConfigScreen() {
       getPeladaById(peladaId).then(pelada => {
         if (!pelada) return;
         const present = pelada.players.filter(p => selectedPlayerIds.includes(p.id));
-        setPlayers([...present, ...(guestPlayers ?? [])]);
+        const combined = [...present, ...(guestPlayers ?? [])];
+        setPlayers(combined);
         setPlayersPerTeam(pelada.playersPerTeam);
+        // Default the toggle to ON when any selected player has gender data —
+        // users almost always want gender balancing when they bothered to
+        // tag genders. Easy to flip off if they don't.
+        if (combined.some(p => !!p.gender)) setBalanceByGender(true);
       });
     }, [peladaId])
   );

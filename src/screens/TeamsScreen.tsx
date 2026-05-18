@@ -305,7 +305,15 @@ export default function TeamsScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        <Text style={styles.hint}>{t('teams.swapHintIdle')}</Text>
+        <View style={styles.hintRow}>
+          {params.balanceByGender && (
+            <View style={styles.genderBadge}>
+              <Feather name="users" size={11} color={colors.primary} />
+              <Text style={styles.genderBadgeText}>{t('teams.genderBalancedBadge')}</Text>
+            </View>
+          )}
+          <Text style={styles.hint}>{t('teams.swapHintIdle')}</Text>
+        </View>
       )}
 
       <ScrollView contentContainerStyle={{ paddingBottom: 180 }}>
@@ -637,12 +645,22 @@ function createStyles(c: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.background },
 
+    hintRow: { alignItems: 'center', paddingVertical: 6, gap: 4 },
     hint: {
       fontSize: 11,
       color: c.textMuted,
       textAlign: 'center',
-      paddingVertical: 6,
     },
+    genderBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: c.primaryLight,
+      borderRadius: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+    },
+    genderBadgeText: { fontSize: 11, fontWeight: '700', color: c.primary },
     swapBanner: {
       flexDirection: 'row',
       alignItems: 'center',

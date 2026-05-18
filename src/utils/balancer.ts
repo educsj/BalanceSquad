@@ -118,6 +118,39 @@ function distributeGenderGroup(
   }
 }
 
+// Belt-and-suspenders safety net: after the round-robin distribution and the
+// optimizer pass, if any gender's count differs by more than 1 across main
+// teams, swap a same-gender excess into the minority team and a non-gender
+// player back the other way. Re-runs until every gender is balanced.
+//
+// Round-robin should already produce this property, but this guards against
+// unexpected interactions (e.g. when a team is full of one gender before the
+// minority gets its turn) and makes the contract explicit.
+function enforceGenderBalance(teams: Team[], numTeams: number): void {
+  const main = teams.slice(0, numTeams);
+  for (const g of ['M', 'F'] as const) {
+    let guard = 0;
+    while (guard++ < 100) {
+      const counts = main.map(t => t.players.filter(p => p.gender === g).length);
+      const maxC = Math.max(...counts);
+      const minC = Math.min(...counts);
+      if (maxC - minC <= 1) break;
+      const maxIdx = counts.indexOf(maxC);
+      const minIdx = counts.indexOf(minC);
+      const gIdx = main[maxIdx].players.findIndex(p => p.gender === g);
+      const nonGIdx = main[minIdx].players.findIndex(p => p.gender !== g);
+      if (gIdx === -1 || nonGIdx === -1) break;
+
+      const a = main[maxIdx].players[gIdx];
+      const b = main[minIdx].players[nonGIdx];
+      main[maxIdx].players[gIdx] = b;
+      main[minIdx].players[nonGIdx] = a;
+      main[maxIdx].totalStars = main[maxIdx].totalStars - a.level + b.level;
+      main[minIdx].totalStars = main[minIdx].totalStars - b.level + a.level;
+    }
+  }
+}
+
 function applyGenderRoundRobin(
   teams: Team[],
   present: Player[],
@@ -162,7 +195,9 @@ export function rematchTwoTeams(
   if (options.balanceByGender) {
     applyGenderRoundRobin(pair, present, 2, playersPerTeam);
     const optimized = optimizeBalance(pair, 2, true);
-    return [optimized[0], optimized[1]];
+    enforceGenderBalance(optimized, 2);
+    const finalized = optimizeBalance(optimized, 2, true);
+    return [finalized[0], finalized[1]];
   }
 
   // numTeams = 2 — both slots are "main" teams, no overflow possible
@@ -246,7 +281,11 @@ export function balanceTeams(
     // gender differs by at most 1 across teams, no matter how lopsided the
     // star totals are after men are placed.
     applyGenderRoundRobin(teams, present, numTeams, playersPerTeam);
-    return optimizeBalance(teams, numTeams, true);
+    const balanced = optimizeBalance(teams, numTeams, true);
+    enforceGenderBalance(balanced, numTeams);
+    // One last star pass after the safety swaps — gender count is now locked
+    // and the optimizer can shuffle same-gender players to tighten the spread.
+    return optimizeBalance(balanced, numTeams, true);
   }
 
   // Shuffle the full list so overflow candidates are chosen at random —

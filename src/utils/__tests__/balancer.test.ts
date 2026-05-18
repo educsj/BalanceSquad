@@ -254,6 +254,26 @@ describe('balanceTeams with balanceByGender option', () => {
     }
   });
 
+  test('stress: random rosters keep gender-count diff <= 1 across main teams', () => {
+    // Fuzz: build random rosters and assert the property the user reported
+    // being broken — no team should be 2+ women off another.
+    for (let run = 0; run < 200; run++) {
+      const numTeams = 2 + Math.floor(Math.random() * 3); // 2, 3, or 4
+      const perTeam = 4 + Math.floor(Math.random() * 4);  // 4..7
+      const total = numTeams * perTeam;
+      const fCount = Math.floor(Math.random() * (total + 1));
+      const mCount = total - fCount;
+      const ps: ReturnType<typeof p>[] = [];
+      for (let i = 0; i < fCount; i++) ps.push(p(`f${i}`, 1 + Math.floor(Math.random() * 5), 'F'));
+      for (let i = 0; i < mCount; i++) ps.push(p(`m${i}`, 1 + Math.floor(Math.random() * 5), 'M'));
+      const result = balanceTeams(ps, numTeams, perTeam, { balanceByGender: true });
+      const fPerTeam = result.slice(0, numTeams).map(t => t.players.filter(x => x.gender === 'F').length);
+      const mPerTeam = result.slice(0, numTeams).map(t => t.players.filter(x => x.gender === 'M').length);
+      expect(Math.max(...fPerTeam) - Math.min(...fPerTeam)).toBeLessThanOrEqual(1);
+      expect(Math.max(...mPerTeam) - Math.min(...mPerTeam)).toBeLessThanOrEqual(1);
+    }
+  });
+
   test('still respects star balance with mixed levels and genders', () => {
     const ps = [
       p('m1', 5, 'M'), p('m2', 5, 'M'),
