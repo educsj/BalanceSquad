@@ -354,8 +354,19 @@ export default function TeamsScreen() {
             >
               <View style={styles.cardHeader}>
                 <Text style={[styles.teamName, { color }]}>{team.name}</Text>
-                <Text style={styles.totalStars}>{formatStars(teamAverage(team))} ★ {t('teams.avgSuffix')}</Text>
+                {team.players.length > 0 && (
+                  <Text style={styles.totalStars}>
+                    {formatStars(teamAverage(team))} ★ {t('teams.avgSuffix')}
+                  </Text>
+                )}
               </View>
+
+              {team.players.length === 0 && (
+                <View style={styles.emptyTeamState}>
+                  <Feather name="users" size={20} color={colors.textMuted} />
+                  <Text style={styles.emptyTeamText}>{t('teams.emptyTeam')}</Text>
+                </View>
+              )}
 
               {team.players.map((player, playerIndex) => {
                 const isSelected =
@@ -768,6 +779,14 @@ function createStyles(c: ThemeColors) {
     playerGender: { fontSize: 13, color: c.textSecondary, fontWeight: '700' },
     removeBtn: { paddingHorizontal: 6, paddingVertical: 6 },
 
+    emptyTeamState: {
+      alignItems: 'center',
+      gap: 6,
+      paddingVertical: 16,
+      borderTopWidth: 1,
+      borderTopColor: c.borderLight,
+    },
+    emptyTeamText: { fontSize: 13, color: c.textMuted, fontStyle: 'italic' },
     addPlayerBtn: {
       flexDirection: 'row',
       alignItems: 'center',

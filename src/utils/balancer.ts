@@ -172,18 +172,55 @@ export interface RematchOptions {
   balanceByGender?: boolean;
 }
 
-// Redistributes the combined players of two teams back into those same two teams,
-// preserving the original team ids/names and re-balancing stars from scratch.
-// The per-team cap is derived automatically (Math.ceil of the combined count / 2).
+// Same idea as pickBest, but each team has its own per-team capacity. Used by
+// the rematch flow where the two teams may have started with different sizes
+// (e.g. main 5 + overflow 1) and we want to preserve that.
+function pickBestWithCaps(teams: Team[], caps: number[]): number {
+  const candidates = teams
+    .map((t, i) => ({ i, stars: t.totalStars, count: t.players.length }))
+    .filter(c => c.count < caps[c.i]);
+  if (candidates.length === 0) {
+    return teams.reduce(
+      (minI, t, i, arr) => t.totalStars < arr[minI].totalStars ? i : minI,
+      0,
+    );
+  }
+  return pickBest(candidates);
+}
+
+function distributeRoundRobinWithCaps(teams: Team[], group: Player[], caps: number[]): void {
+  if (group.length === 0) return;
+  const sorted = sortByLevelDesc(group);
+  let cursor = 0;
+  while (cursor < sorted.length) {
+    const elig = teams
+      .map((t, i) => ({ i, stars: t.totalStars, count: t.players.length }))
+      .filter(c => c.count < caps[c.i]);
+    if (elig.length === 0) break;
+    elig.sort((a, b) => {
+      if (a.stars !== b.stars) return a.stars - b.stars;
+      if (a.count !== b.count) return a.count - b.count;
+      return Math.random() - 0.5;
+    });
+    for (const c of elig) {
+      if (cursor >= sorted.length) break;
+      addToTeam(teams, c.i, sorted[cursor++]);
+    }
+  }
+}
+
+// Redistributes the combined players of two teams back into those same two
+// teams, **preserving the original team sizes** (e.g. 5+1 stays 5+1, not 3+3).
+// Identities (id, name) are kept; stars rebalance from scratch.
 // When `balanceByGender` is on, distribution is gender-aware and the optimizer
-// only swaps same-gender players.
+// only swaps players within the same group (F vs everyone-else).
 export function rematchTwoTeams(
   teamA: Team,
   teamB: Team,
   options: RematchOptions = {},
 ): [Team, Team] {
   const present = [...teamA.players, ...teamB.players];
-  const playersPerTeam = Math.ceil(present.length / 2);
+  const caps = [teamA.players.length, teamB.players.length];
 
   const pair: Team[] = [
     { ...teamA, players: [], totalStars: 0 },
@@ -191,16 +228,18 @@ export function rematchTwoTeams(
   ];
 
   if (options.balanceByGender) {
-    applyGenderRoundRobin(pair, present, 2, playersPerTeam);
+    const females = present.filter(isFemale);
+    const others  = present.filter(p => !isFemale(p));
+    const groups  = [females, others].sort((a, b) => a.length - b.length);
+    groups.forEach(g => distributeRoundRobinWithCaps(pair, g, caps));
     const optimized = optimizeBalance(pair, 2, true);
     enforceGenderBalance(optimized, 2);
     const finalized = optimizeBalance(optimized, 2, true);
     return [finalized[0], finalized[1]];
   }
 
-  // numTeams = 2 — both slots are "main" teams, no overflow possible
   sortByLevelDesc(present).forEach(player => {
-    addToTeam(pair, getEligibleTeam(pair, 2, playersPerTeam), player);
+    addToTeam(pair, pickBestWithCaps(pair, caps), player);
   });
 
   return [pair[0], pair[1]];

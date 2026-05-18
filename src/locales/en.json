@@ -142,6 +142,7 @@
     "shareDataDesc": "File another phone can import into the app",
     "shareDataTitle": "Share draw (.json)",
     "addPlayer": "+ Add player",
+    "emptyTeam": "No players on this team",
     "addToTeam": "Add to {{team}}",
     "addPickerSubtitle": "Pick someone from the group or create a guest",
     "noAvailablePlayers": "Every group player is already on a team.",

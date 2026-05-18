@@ -142,6 +142,7 @@
     "shareDataDesc": "Arquivo para outro celular importar o sorteio",
     "shareDataTitle": "Compartilhar sorteio (.json)",
     "addPlayer": "+ Adicionar jogador",
+    "emptyTeam": "Sem jogadores neste time",
     "addToTeam": "Adicionar ao {{team}}",
     "addPickerSubtitle": "Escolha alguém da pelada ou crie um avulso",
     "noAvailablePlayers": "Todos os jogadores da pelada já estão em algum time.",

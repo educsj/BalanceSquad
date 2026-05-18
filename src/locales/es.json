@@ -142,6 +142,7 @@
     "shareDataDesc": "Archivo para que otro teléfono importe el sorteo",
     "shareDataTitle": "Compartir sorteo (.json)",
     "addPlayer": "+ Agregar jugador",
+    "emptyTeam": "Sin jugadores en este equipo",
     "addToTeam": "Agregar a {{team}}",
     "addPickerSubtitle": "Elige a alguien del grupo o crea un invitado",
     "noAvailablePlayers": "Todos los jugadores del grupo ya están en un equipo.",

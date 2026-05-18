@@ -344,6 +344,18 @@ describe('rematchTwoTeams', () => {
     });
   });
 
+  test('preserves original team sizes (no flattening of 5+1 into 3+3)', () => {
+    // Mixed sizes — main + overflow case. After rematch, |A| stays 5 and |B|
+    // stays 1, even though Math.ceil(6/2) would naively force 3+3.
+    const big   = teamWith(1, [p('1', 5), p('2', 4), p('3', 3), p('4', 2), p('5', 1)]);
+    const tiny  = teamWith(2, [p('6', 3)]);
+    for (let run = 0; run < 20; run++) {
+      const [a, b] = rematchTwoTeams(big, tiny);
+      expect(a.players).toHaveLength(5);
+      expect(b.players).toHaveLength(1);
+    }
+  });
+
   test('handles odd total: team sizes differ by at most 1', () => {
     // 5 players total → Math.ceil(5/2) = 3 per team; one gets 3, other gets 2
     const tx = teamWith(1, [p('a', 3), p('b', 3), p('c', 3)]);
