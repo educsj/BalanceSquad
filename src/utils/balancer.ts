@@ -73,10 +73,84 @@ function recomputeStars(team: Team): void {
   team.totalStars = team.players.reduce((s, p) => s + p.level, 0);
 }
 
+// Distributes a single-gender group across teams using a strict round-robin:
+// in each round, every team with capacity receives ONE player, picked
+// strongest-first and routed to the team with the lowest current totalStars.
+// This guarantees that the number of players from this group differs by at
+// most 1 between any two teams that had capacity throughout the placement.
+//
+// Main teams are preferred over overflow until they all reach playersPerTeam.
+function distributeGenderGroup(
+  teams: Team[],
+  group: Player[],
+  numTeams: number,
+  playersPerTeam: number,
+): void {
+  if (group.length === 0) return;
+  const sorted = sortByLevelDesc(group);
+  let cursor = 0;
+
+  while (cursor < sorted.length) {
+    const mainElig = teams.slice(0, numTeams)
+      .map((t, i) => ({ i, stars: t.totalStars, count: t.players.length }))
+      .filter(c => c.count < playersPerTeam);
+
+    const ovElig = teams.slice(numTeams)
+      .map((t, idx) => ({ i: idx + numTeams, stars: t.totalStars, count: t.players.length }))
+      .filter(c => c.count < playersPerTeam);
+
+    const elig = mainElig.length > 0 ? mainElig : ovElig;
+    if (elig.length === 0) break;
+
+    // Stars asc, then count asc, then random tie-break — guarantees the
+    // strongest remaining player goes to the team most in need of stars
+    // while keeping team sizes even across rounds.
+    elig.sort((a, b) => {
+      if (a.stars !== b.stars) return a.stars - b.stars;
+      if (a.count !== b.count) return a.count - b.count;
+      return Math.random() - 0.5;
+    });
+
+    for (const c of elig) {
+      if (cursor >= sorted.length) break;
+      addToTeam(teams, c.i, sorted[cursor++]);
+    }
+  }
+}
+
+function applyGenderRoundRobin(
+  teams: Team[],
+  present: Player[],
+  numTeams: number,
+  playersPerTeam: number,
+): void {
+  const males       = present.filter(p => p.gender === 'M');
+  const females     = present.filter(p => p.gender === 'F');
+  const unspecified = present.filter(p => !p.gender);
+
+  // Place the smaller of M/F first so the minority is spread cleanly before
+  // capacity gets eaten by the larger group. Unspecified always last — no
+  // gender constraint, so they fill whatever slots remain.
+  const gendered = [males, females].sort((a, b) => a.length - b.length);
+  [...gendered, unspecified].forEach(g =>
+    distributeGenderGroup(teams, g, numTeams, playersPerTeam),
+  );
+}
+
+export interface RematchOptions {
+  balanceByGender?: boolean;
+}
+
 // Redistributes the combined players of two teams back into those same two teams,
 // preserving the original team ids/names and re-balancing stars from scratch.
 // The per-team cap is derived automatically (Math.ceil of the combined count / 2).
-export function rematchTwoTeams(teamA: Team, teamB: Team): [Team, Team] {
+// When `balanceByGender` is on, distribution is gender-aware and the optimizer
+// only swaps same-gender players.
+export function rematchTwoTeams(
+  teamA: Team,
+  teamB: Team,
+  options: RematchOptions = {},
+): [Team, Team] {
   const present = [...teamA.players, ...teamB.players];
   const playersPerTeam = Math.ceil(present.length / 2);
 
@@ -85,10 +159,14 @@ export function rematchTwoTeams(teamA: Team, teamB: Team): [Team, Team] {
     { ...teamB, players: [], totalStars: 0 },
   ];
 
-  const sorted = sortByLevelDesc(present);
+  if (options.balanceByGender) {
+    applyGenderRoundRobin(pair, present, 2, playersPerTeam);
+    const optimized = optimizeBalance(pair, 2, true);
+    return [optimized[0], optimized[1]];
+  }
 
   // numTeams = 2 — both slots are "main" teams, no overflow possible
-  sorted.forEach(player => {
+  sortByLevelDesc(present).forEach(player => {
     addToTeam(pair, getEligibleTeam(pair, 2, playersPerTeam), player);
   });
 
@@ -163,19 +241,11 @@ export function balanceTeams(
   }));
 
   if (options.balanceByGender) {
-    // Distribute each gender group independently so the proportion of
-    // M / F / unspecified is roughly the same across all teams. Inside each
-    // group, players are still placed strongest-first to keep stars even.
-    const males       = present.filter(p => p.gender === 'M');
-    const females     = present.filter(p => p.gender === 'F');
-    const unspecified = present.filter(p => !p.gender);
-
-    [males, females, unspecified].forEach(group => {
-      sortByLevelDesc(group).forEach(player => {
-        addToTeam(teams, getEligibleTeam(teams, numTeams, playersPerTeam), player);
-      });
-    });
-
+    // Strict round-robin per gender: each team gets one player from a gender
+    // per round before any team gets a second. Guarantees the count of each
+    // gender differs by at most 1 across teams, no matter how lopsided the
+    // star totals are after men are placed.
+    applyGenderRoundRobin(teams, present, numTeams, playersPerTeam);
     return optimizeBalance(teams, numTeams, true);
   }
 

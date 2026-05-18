@@ -270,7 +270,7 @@ export default function TeamsScreen() {
     const teamB = currentTeams.find(t => t.id === idB);
     if (!teamA || !teamB) return;
 
-    const [newA, newB] = rematchTwoTeams(teamA, teamB);
+    const [newA, newB] = rematchTwoTeams(teamA, teamB, { balanceByGender: params.balanceByGender });
     const updatedTeams = currentTeams.map(t => {
       if (t.id === idA) return newA;
       if (t.id === idB) return newB;

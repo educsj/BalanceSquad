@@ -219,6 +219,41 @@ describe('balanceTeams with balanceByGender option', () => {
     });
   });
 
+  test('7 women across 3 teams of 6 always split 3-2-2 (no clustering)', () => {
+    // Reported bug: greedy lowest-stars placement let all 7 women land in
+    // 4-1-2. Round-robin must give |max - min| <= 1 every run.
+    const ps = [
+      // 11 men, mixed levels — uneven stars per team after placement
+      p('m1', 5, 'M'), p('m2', 5, 'M'), p('m3', 4, 'M'), p('m4', 4, 'M'),
+      p('m5', 3, 'M'), p('m6', 3, 'M'), p('m7', 2, 'M'), p('m8', 2, 'M'),
+      p('m9', 1, 'M'), p('m10', 1, 'M'), p('m11', 1, 'M'),
+      // 7 women
+      p('f1', 5, 'F'), p('f2', 4, 'F'), p('f3', 3, 'F'), p('f4', 3, 'F'),
+      p('f5', 2, 'F'), p('f6', 2, 'F'), p('f7', 1, 'F'),
+    ];
+    for (let run = 0; run < 30; run++) {
+      const result = balanceTeams(ps, 3, 6, { balanceByGender: true });
+      const fPerTeam = result.slice(0, 3).map(t => t.players.filter(x => x.gender === 'F').length);
+      expect(Math.max(...fPerTeam) - Math.min(...fPerTeam)).toBeLessThanOrEqual(1);
+      expect(fPerTeam.reduce((a, b) => a + b, 0)).toBe(7);
+    }
+  });
+
+  test('uneven men stars do not pull all women into one team', () => {
+    // Men cluster stars heavily — without round-robin, women would all flow
+    // to the weakest-stars team until it caught up.
+    const ps = [
+      p('m1', 5, 'M'), p('m2', 5, 'M'), p('m3', 5, 'M'),
+      p('m4', 1, 'M'), p('m5', 1, 'M'), p('m6', 1, 'M'),
+      p('f1', 3, 'F'), p('f2', 3, 'F'), p('f3', 3, 'F'), p('f4', 3, 'F'),
+    ];
+    for (let run = 0; run < 30; run++) {
+      const result = balanceTeams(ps, 2, 5, { balanceByGender: true });
+      const fPerTeam = result.slice(0, 2).map(t => t.players.filter(x => x.gender === 'F').length);
+      expect(Math.abs(fPerTeam[0] - fPerTeam[1])).toBeLessThanOrEqual(1);
+    }
+  });
+
   test('still respects star balance with mixed levels and genders', () => {
     const ps = [
       p('m1', 5, 'M'), p('m2', 5, 'M'),
