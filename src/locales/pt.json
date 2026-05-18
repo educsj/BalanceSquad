@@ -83,7 +83,7 @@
   },
   "playerList": {
     "selected": "{{selected}} / {{total}} selecionados",
-    "guest": "Diarista",
+    "guest": "Avulso",
     "deselectAll": "Desmarcar todos",
     "selectAll": "Marcar todos",
     "removePlayer": "Remover jogador",
@@ -93,9 +93,9 @@
     "emptyAction": "Cadastrar primeiro jogador",
     "minPlayersHint": "Selecione ao menos 2 jogadores",
     "continueBtn": "Continuar com {{count}} jogadores  →",
-    "addGuest": "Adicionar Diarista",
+    "addGuest": "Adicionar Avulso",
     "guestDesc": "Jogador temporário — não salvo na pelada",
-    "guestName": "Nome do diarista",
+    "guestName": "Nome do avulso",
     "levelLabel": "Nível:"
   },
   "drawConfig": {
@@ -139,9 +139,9 @@
     "shareDataTitle": "Compartilhar sorteio (.json)",
     "addPlayer": "+ Adicionar jogador",
     "addToTeam": "Adicionar ao {{team}}",
-    "addPickerSubtitle": "Escolha alguém da pelada ou crie um diarista",
+    "addPickerSubtitle": "Escolha alguém da pelada ou crie um avulso",
     "noAvailablePlayers": "Todos os jogadores da pelada já estão em algum time.",
-    "addGuest": "+ Diarista",
+    "addGuest": "+ Avulso",
     "guestForTeam": "Jogador avulso para {{team}}",
     "removePlayerTitle": "Remover do time",
     "removePlayerMsg": "Tirar {{name}} deste time?",
