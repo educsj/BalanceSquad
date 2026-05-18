@@ -45,7 +45,14 @@
     "exportDataLabel": "Exportar datos",
     "exportDataDesc": "Guarda todos los grupos e historial",
     "importDataLabel": "Importar datos",
-    "importDataDesc": "Reemplaza los datos actuales"
+    "importDataDesc": "Reemplaza los datos actuales",
+    "importDrawLabel": "Importar sorteo",
+    "importDrawDesc": "Abre un .json y crea un grupo nuevo",
+    "importDrawInvalid": "Archivo de sorteo inválido.",
+    "importDrawConfirmTitle": "Importar sorteo",
+    "importDrawConfirmMsg": "¿Crear un grupo nuevo a partir de \"{{name}}\" ({{teams}} equipos · {{players}} jugadores)?",
+    "importDrawSuccess": "Grupo \"{{name}}\" creado con el sorteo importado.",
+    "importedSuffix": "(importado)"
   },
   "peladaHub": {
     "registerPlayer": "Registrar Jugador(a)",
@@ -126,6 +133,9 @@
     "shareTextDesc": "Mensaje para pegar en cualquier app",
     "shareImage": "Imagen",
     "shareImageDesc": "Tarjeta visual PNG",
+    "shareData": "Datos (.json)",
+    "shareDataDesc": "Archivo para que otro teléfono importe el sorteo",
+    "shareDataTitle": "Compartir sorteo (.json)",
     "addPlayer": "+ Agregar jugador",
     "addToTeam": "Agregar a {{team}}",
     "addPickerSubtitle": "Elige a alguien del grupo o crea un invitado",

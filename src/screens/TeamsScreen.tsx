@@ -16,6 +16,7 @@ import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { useTheme, ThemeColors } from '../theme';
 import { formatStars } from '../utils/stars';
+import { exportDrawToFile } from '../utils/drawShare';
 
 type RouteProps = RouteProp<RootStackParamList, 'Teams'>;
 
@@ -57,6 +58,8 @@ export default function TeamsScreen() {
   const [shareMenuVisible, setShareMenuVisible] = useState(false);
 
   const [basePlayers, setBasePlayers] = useState<Player[]>([]);
+  const [peladaName, setPeladaName] = useState<string>('');
+  const [playersPerTeamCfg, setPlayersPerTeamCfg] = useState<number>(5);
   const [addPickerTeamIdx, setAddPickerTeamIdx] = useState<number | null>(null);
   const [guestModalTeamIdx, setGuestModalTeamIdx] = useState<number | null>(null);
   const [newGuestName, setNewGuestName] = useState('');
@@ -85,7 +88,11 @@ export default function TeamsScreen() {
     useCallback(() => {
       getHideRatings().then(setHideRatings);
       getPeladaById(params.peladaId).then(pelada => {
-        if (pelada) setBasePlayers(pelada.players);
+        if (pelada) {
+          setBasePlayers(pelada.players);
+          setPeladaName(pelada.name);
+          setPlayersPerTeamCfg(pelada.playersPerTeam);
+        }
       });
     }, [params.peladaId])
   );
@@ -220,6 +227,23 @@ export default function TeamsScreen() {
       }
     } catch {
       // silently ignore share failures
+    }
+  }
+
+  async function handleShareData() {
+    setShareMenuVisible(false);
+    try {
+      await exportDrawToFile(
+        {
+          teams: currentTeams,
+          timestamp: new Date().toISOString(),
+          ...(params.balanceByGender ? { balanceByGender: true } : {}),
+        },
+        { name: peladaName || 'Pelada', playersPerTeam: playersPerTeamCfg },
+        t('teams.shareDataTitle'),
+      );
+    } catch {
+      // silently ignore — the user can retry from the menu
     }
   }
 
@@ -409,6 +433,14 @@ export default function TeamsScreen() {
               <View style={styles.shareOptionText}>
                 <Text style={styles.shareOptionLabel}>{t('teams.shareImage')}</Text>
                 <Text style={styles.shareOptionDesc}>{t('teams.shareImageDesc')}</Text>
+              </View>
+              <Feather name="chevron-right" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.shareOption} onPress={handleShareData}>
+              <Feather name="file-text" size={18} color={colors.primary} />
+              <View style={styles.shareOptionText}>
+                <Text style={styles.shareOptionLabel}>{t('teams.shareData')}</Text>
+                <Text style={styles.shareOptionDesc}>{t('teams.shareDataDesc')}</Text>
               </View>
               <Feather name="chevron-right" size={18} color={colors.textMuted} />
             </TouchableOpacity>

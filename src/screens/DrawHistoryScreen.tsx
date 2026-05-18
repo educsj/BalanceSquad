@@ -13,6 +13,7 @@ import { getPeladaById } from '../storage';
 import EmptyState from '../components/EmptyState';
 import { useTheme, ThemeColors } from '../theme';
 import { formatStars } from '../utils/stars';
+import { exportDrawToFile } from '../utils/drawShare';
 
 type RouteProps = RouteProp<RootStackParamList, 'DrawHistory'>;
 type Nav = StackNavigationProp<RootStackParamList>;
@@ -51,6 +52,8 @@ function DrawEntry({
   record,
   index,
   peladaId,
+  peladaName,
+  playersPerTeam,
   navigation,
   colors,
   styles,
@@ -58,6 +61,8 @@ function DrawEntry({
   record: DrawRecord;
   index: number;
   peladaId: string;
+  peladaName: string;
+  playersPerTeam: number;
   navigation: Nav;
   colors: ThemeColors;
   styles: ReturnType<typeof createStyles>;
@@ -86,6 +91,19 @@ function DrawEntry({
       }
     } catch {
       // silently ignore share failures
+    }
+  }
+
+  async function handleShareData() {
+    setShareMenuVisible(false);
+    try {
+      await exportDrawToFile(
+        record,
+        { name: peladaName, playersPerTeam },
+        t('teams.shareDataTitle'),
+      );
+    } catch {
+      // silently ignore — the user can retry from the menu
     }
   }
 
@@ -231,6 +249,14 @@ function DrawEntry({
               </View>
               <Feather name="chevron-right" size={18} color={colors.textMuted} />
             </TouchableOpacity>
+            <TouchableOpacity style={styles.shareOption} onPress={handleShareData}>
+              <Feather name="file-text" size={18} color={colors.primary} />
+              <View style={styles.shareOptionText}>
+                <Text style={styles.shareOptionLabel}>{t('teams.shareData')}</Text>
+                <Text style={styles.shareOptionDesc}>{t('teams.shareDataDesc')}</Text>
+              </View>
+              <Feather name="chevron-right" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
@@ -245,11 +271,17 @@ export default function DrawHistoryScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [history, setHistory] = useState<DrawRecord[]>([]);
+  const [peladaName, setPeladaName] = useState<string>('');
+  const [playersPerTeam, setPlayersPerTeam] = useState<number>(5);
 
   useFocusEffect(
     useCallback(() => {
       getPeladaById(params.peladaId).then(pelada => {
         setHistory(pelada?.drawHistory ?? []);
+        if (pelada) {
+          setPeladaName(pelada.name);
+          setPlayersPerTeam(pelada.playersPerTeam);
+        }
       });
     }, [params.peladaId])
   );
@@ -264,6 +296,8 @@ export default function DrawHistoryScreen() {
             record={item}
             index={index}
             peladaId={params.peladaId}
+            peladaName={peladaName}
+            playersPerTeam={playersPerTeam}
             navigation={navigation}
             colors={colors}
             styles={styles}

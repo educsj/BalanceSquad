@@ -45,7 +45,14 @@
     "exportDataLabel": "Exportar dados",
     "exportDataDesc": "Salva todas as peladas e histórico",
     "importDataLabel": "Importar dados",
-    "importDataDesc": "Substitui os dados atuais"
+    "importDataDesc": "Substitui os dados atuais",
+    "importDrawLabel": "Importar sorteio",
+    "importDrawDesc": "Abre um .json e cria uma pelada nova",
+    "importDrawInvalid": "Arquivo de sorteio inválido.",
+    "importDrawConfirmTitle": "Importar sorteio",
+    "importDrawConfirmMsg": "Criar uma pelada nova com base em \"{{name}}\" ({{teams}} times · {{players}} jogadores)?",
+    "importDrawSuccess": "Pelada \"{{name}}\" criada com o sorteio importado.",
+    "importedSuffix": "(importado)"
   },
   "peladaHub": {
     "registerPlayer": "Cadastrar Jogador(a)",
@@ -126,6 +133,9 @@
     "shareTextDesc": "Mensagem para colar em qualquer app",
     "shareImage": "Imagem",
     "shareImageDesc": "Card visual em PNG",
+    "shareData": "Dados (.json)",
+    "shareDataDesc": "Arquivo para outro celular importar o sorteio",
+    "shareDataTitle": "Compartilhar sorteio (.json)",
     "addPlayer": "+ Adicionar jogador",
     "addToTeam": "Adicionar ao {{team}}",
     "addPickerSubtitle": "Escolha alguém da pelada ou crie um diarista",

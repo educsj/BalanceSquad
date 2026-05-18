@@ -45,7 +45,14 @@
     "exportDataLabel": "Export data",
     "exportDataDesc": "Saves all groups and history",
     "importDataLabel": "Import data",
-    "importDataDesc": "Replaces current data"
+    "importDataDesc": "Replaces current data",
+    "importDrawLabel": "Import draw",
+    "importDrawDesc": "Open a .json and create a new group",
+    "importDrawInvalid": "Invalid draw file.",
+    "importDrawConfirmTitle": "Import draw",
+    "importDrawConfirmMsg": "Create a new group from \"{{name}}\" ({{teams}} teams · {{players}} players)?",
+    "importDrawSuccess": "Group \"{{name}}\" created with the imported draw.",
+    "importedSuffix": "(imported)"
   },
   "peladaHub": {
     "registerPlayer": "Register Player",
@@ -126,6 +133,9 @@
     "shareTextDesc": "Message to paste anywhere",
     "shareImage": "Image",
     "shareImageDesc": "Visual PNG card",
+    "shareData": "Data (.json)",
+    "shareDataDesc": "File another phone can import into the app",
+    "shareDataTitle": "Share draw (.json)",
     "addPlayer": "+ Add player",
     "addToTeam": "Add to {{team}}",
     "addPickerSubtitle": "Pick someone from the group or create a guest",

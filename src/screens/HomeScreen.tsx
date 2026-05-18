@@ -16,6 +16,7 @@ import {
   loadPeladas, savePeladas, getHideRatings, setHideRatings,
   exportData, importData, setLanguage,
 } from '../storage';
+import { parseDrawPayload, importDrawAsPelada } from '../utils/drawShare';
 import EmptyState from '../components/EmptyState';
 import i18n, { SUPPORTED_LANGUAGES, SupportedLanguage } from '../i18n';
 import { useTheme, ThemeColors } from '../theme';
@@ -149,6 +150,48 @@ export default function HomeScreen() {
               setPeladas(updated);
               setBackupModalVisible(false);
               Alert.alert(t('common.success'), t('home.importSuccess'));
+            },
+          },
+        ]
+      );
+    } catch {
+      Alert.alert(t('common.error'), t('home.importError'));
+    }
+  }
+
+  async function handleImportDraw() {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/json',
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+      const uri = result.assets[0].uri;
+      const json = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.UTF8 });
+
+      const payload = parseDrawPayload(json);
+      if (!payload) {
+        Alert.alert(t('common.error'), t('home.importDrawInvalid'));
+        return;
+      }
+
+      const players = payload.teams.reduce((s, x) => s + x.players.length, 0);
+      Alert.alert(
+        t('home.importDrawConfirmTitle'),
+        t('home.importDrawConfirmMsg', {
+          name: payload.sourcePeladaName,
+          teams: payload.teams.length,
+          players,
+        }),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('home.importLabel'), onPress: async () => {
+              const pelada = await importDrawAsPelada(payload, t('home.importedSuffix'));
+              const updated = await loadPeladas();
+              setPeladas(updated);
+              setBackupModalVisible(false);
+              Alert.alert(t('common.success'), t('home.importDrawSuccess', { name: pelada.name }));
             },
           },
         ]
@@ -299,6 +342,13 @@ export default function HomeScreen() {
               <View>
                 <Text style={[styles.backupBtnTitle, { color: colors.text }]}>{t('home.importDataLabel')}</Text>
                 <Text style={[styles.backupBtnSub, { color: colors.textSecondary }]}>{t('home.importDataDesc')}</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.backupBtn, styles.backupBtnSecondary]} onPress={handleImportDraw}>
+              <Feather name="file-text" size={22} color={colors.primary} />
+              <View>
+                <Text style={[styles.backupBtnTitle, { color: colors.text }]}>{t('home.importDrawLabel')}</Text>
+                <Text style={[styles.backupBtnSub, { color: colors.textSecondary }]}>{t('home.importDrawDesc')}</Text>
               </View>
             </TouchableOpacity>
             <TouchableOpacity style={styles.btnSecondary} onPress={() => setBackupModalVisible(false)}>
