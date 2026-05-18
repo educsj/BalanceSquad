@@ -72,6 +72,7 @@
     "namePlaceholder": "Player name",
     "nameLabel": "Name",
     "levelLabel": "Level",
+    "halfStarHint": "tap a half of a star for half a point",
     "genderLabel": "Gender (optional)",
     "gender": {
       "none": "—",

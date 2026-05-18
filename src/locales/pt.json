@@ -72,6 +72,7 @@
     "namePlaceholder": "Nome do jogador",
     "nameLabel": "Nome",
     "levelLabel": "Nível",
+    "halfStarHint": "toque na metade da estrela para meio ponto",
     "genderLabel": "Gênero (opcional)",
     "gender": {
       "none": "—",

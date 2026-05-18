@@ -6,9 +6,11 @@ import {
 import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useTranslation } from 'react-i18next';
+import { Feather } from '@expo/vector-icons';
 import { Player, StarLevel, Gender, RootStackParamList } from '../types';
 import { getPeladaById, updatePelada } from '../storage';
 import StarRating from '../components/StarRating';
+import { formatStars, clampLevel } from '../utils/stars';
 import { useTheme, ThemeColors } from '../theme';
 
 type RouteProps = RouteProp<RootStackParamList, 'PlayerRegister'>;
@@ -98,7 +100,29 @@ export default function PlayerRegisterScreen() {
           </View>
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>{t('playerRegister.levelLabel')}</Text>
-            <StarRating value={level} onChange={setLevel} size={28} />
+            <View style={styles.levelRow}>
+              <StarRating value={level} onChange={setLevel} size={34} />
+              <Text style={styles.levelValue}>{formatStars(level)} ★</Text>
+            </View>
+            <View style={styles.halfBtnRow}>
+              <TouchableOpacity
+                style={[styles.halfBtn, level <= 0.5 && styles.halfBtnDisabled]}
+                onPress={() => setLevel(clampLevel(level - 0.5))}
+                disabled={level <= 0.5}
+              >
+                <Feather name="minus" size={14} color={colors.primary} />
+                <Text style={styles.halfBtnText}>½</Text>
+              </TouchableOpacity>
+              <Text style={styles.halfHint}>{t('playerRegister.halfStarHint')}</Text>
+              <TouchableOpacity
+                style={[styles.halfBtn, level >= 5 && styles.halfBtnDisabled]}
+                onPress={() => setLevel(clampLevel(level + 0.5))}
+                disabled={level >= 5}
+              >
+                <Feather name="plus" size={14} color={colors.primary} />
+                <Text style={styles.halfBtnText}>½</Text>
+              </TouchableOpacity>
+            </View>
           </View>
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>{t('playerRegister.genderLabel')}</Text>
@@ -169,6 +193,23 @@ function createStyles(c: ThemeColors) {
       color: c.inputText,
       backgroundColor: c.inputBg,
     },
+    levelRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    levelValue: { fontSize: 16, fontWeight: '700', color: c.text },
+    halfBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
+    halfBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 2,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.surfaceVariant,
+    },
+    halfBtnDisabled: { opacity: 0.4 },
+    halfBtnText: { color: c.primary, fontWeight: '800', fontSize: 14 },
+    halfHint: { flex: 1, fontSize: 11, color: c.textSecondary, textAlign: 'center' },
     genderRow: { flexDirection: 'row', gap: 8 },
     genderBtn: {
       flex: 1,
