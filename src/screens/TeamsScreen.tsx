@@ -341,10 +341,10 @@ export default function TeamsScreen() {
                 const isSelected =
                   swapSelection?.teamIndex === teamIndex &&
                   swapSelection?.playerIndex === playerIndex;
+                // Under the "sem-gênero = homem" rule, undefined gender gets
+                // the male tint too whenever the draw is gender-balanced.
                 const genderTint = params.balanceByGender
-                  ? player.gender === 'F' ? colors.genderTintFemale
-                  : player.gender === 'M' ? colors.genderTintMale
-                  : undefined
+                  ? (player.gender === 'F' ? colors.genderTintFemale : colors.genderTintMale)
                   : undefined;
 
                 return (

@@ -182,9 +182,7 @@ function DrawEntry({
               </View>
               {team.players.map(player => {
                 const tint = record.balanceByGender
-                  ? player.gender === 'F' ? colors.genderTintFemale
-                  : player.gender === 'M' ? colors.genderTintMale
-                  : undefined
+                  ? (player.gender === 'F' ? colors.genderTintFemale : colors.genderTintMale)
                   : undefined;
                 return (
                   <View

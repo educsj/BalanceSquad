@@ -118,36 +118,36 @@ function distributeGenderGroup(
   }
 }
 
+// Rule: for the gender-balanced draw, a player without a stored gender is
+// treated as male. So the relevant split is F vs everyone-else.
+function isFemale(p: Player): boolean {
+  return p.gender === 'F';
+}
+
 // Belt-and-suspenders safety net: after the round-robin distribution and the
-// optimizer pass, if any gender's count differs by more than 1 across main
-// teams, swap a same-gender excess into the minority team and a non-gender
-// player back the other way. Re-runs until every gender is balanced.
-//
-// Round-robin should already produce this property, but this guards against
-// unexpected interactions (e.g. when a team is full of one gender before the
-// minority gets its turn) and makes the contract explicit.
+// optimizer pass, if the F count differs by more than 1 across main teams,
+// swap an F from the surplus team with a non-F from the deficit team. The
+// non-F count is balanced as a side effect, since total per team is fixed.
 function enforceGenderBalance(teams: Team[], numTeams: number): void {
   const main = teams.slice(0, numTeams);
-  for (const g of ['M', 'F'] as const) {
-    let guard = 0;
-    while (guard++ < 100) {
-      const counts = main.map(t => t.players.filter(p => p.gender === g).length);
-      const maxC = Math.max(...counts);
-      const minC = Math.min(...counts);
-      if (maxC - minC <= 1) break;
-      const maxIdx = counts.indexOf(maxC);
-      const minIdx = counts.indexOf(minC);
-      const gIdx = main[maxIdx].players.findIndex(p => p.gender === g);
-      const nonGIdx = main[minIdx].players.findIndex(p => p.gender !== g);
-      if (gIdx === -1 || nonGIdx === -1) break;
+  let guard = 0;
+  while (guard++ < 100) {
+    const counts = main.map(t => t.players.filter(isFemale).length);
+    const maxC = Math.max(...counts);
+    const minC = Math.min(...counts);
+    if (maxC - minC <= 1) break;
+    const maxIdx = counts.indexOf(maxC);
+    const minIdx = counts.indexOf(minC);
+    const fIdx = main[maxIdx].players.findIndex(isFemale);
+    const nonFIdx = main[minIdx].players.findIndex(p => !isFemale(p));
+    if (fIdx === -1 || nonFIdx === -1) break;
 
-      const a = main[maxIdx].players[gIdx];
-      const b = main[minIdx].players[nonGIdx];
-      main[maxIdx].players[gIdx] = b;
-      main[minIdx].players[nonGIdx] = a;
-      main[maxIdx].totalStars = main[maxIdx].totalStars - a.level + b.level;
-      main[minIdx].totalStars = main[minIdx].totalStars - b.level + a.level;
-    }
+    const a = main[maxIdx].players[fIdx];
+    const b = main[minIdx].players[nonFIdx];
+    main[maxIdx].players[fIdx] = b;
+    main[minIdx].players[nonFIdx] = a;
+    main[maxIdx].totalStars = main[maxIdx].totalStars - a.level + b.level;
+    main[minIdx].totalStars = main[minIdx].totalStars - b.level + a.level;
   }
 }
 
@@ -157,17 +157,15 @@ function applyGenderRoundRobin(
   numTeams: number,
   playersPerTeam: number,
 ): void {
-  const males       = present.filter(p => p.gender === 'M');
-  const females     = present.filter(p => p.gender === 'F');
-  const unspecified = present.filter(p => !p.gender);
+  const females = present.filter(isFemale);
+  // Everyone else (stored M plus unspecified) goes into one bucket per the
+  // "treat sem-gênero como homem" rule.
+  const others  = present.filter(p => !isFemale(p));
 
-  // Place the smaller of M/F first so the minority is spread cleanly before
-  // capacity gets eaten by the larger group. Unspecified always last — no
-  // gender constraint, so they fill whatever slots remain.
-  const gendered = [males, females].sort((a, b) => a.length - b.length);
-  [...gendered, unspecified].forEach(g =>
-    distributeGenderGroup(teams, g, numTeams, playersPerTeam),
-  );
+  // Spread the smaller bucket first so the minority lands evenly before
+  // capacity is eaten by the larger group.
+  const groups = [females, others].sort((a, b) => a.length - b.length);
+  groups.forEach(g => distributeGenderGroup(teams, g, numTeams, playersPerTeam));
 }
 
 export interface RematchOptions {
@@ -228,7 +226,9 @@ function optimizeBalance(teams: Team[], numTeams: number, respectGender = false)
             const pl1 = result[ti].players[pi];
             const pl2 = result[tj].players[pj];
             if (pl1.level === pl2.level) continue;
-            if (respectGender && pl1.gender !== pl2.gender) continue;
+            // F vs non-F is the only forbidden swap when respecting gender;
+            // M ↔ unspecified is free under the "sem-gênero = homem" rule.
+            if (respectGender && isFemale(pl1) !== isFemale(pl2)) continue;
 
             const mainStars = result.slice(0, numTeams).map(t => t.totalStars);
             const currentSpread = Math.max(...mainStars) - Math.min(...mainStars);

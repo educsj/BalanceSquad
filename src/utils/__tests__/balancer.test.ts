@@ -254,6 +254,25 @@ describe('balanceTeams with balanceByGender option', () => {
     }
   });
 
+  test('treats players without gender as male for the gender-balanced draw', () => {
+    // 3 women + 6 unspecified + 3 men, 3 teams of 4 (no overflow).
+    // Under the "sem-gênero = homem" rule, the female count must be balanced
+    // (1 per team) and the male+unspecified count must also be balanced.
+    const ps = [
+      p('f1', 4, 'F'), p('f2', 3, 'F'), p('f3', 2, 'F'),
+      p('m1', 5, 'M'), p('m2', 4, 'M'), p('m3', 3, 'M'),
+      p('u1', 5),      p('u2', 4),      p('u3', 3),
+      p('u4', 2),      p('u5', 2),      p('u6', 1),
+    ];
+    for (let run = 0; run < 30; run++) {
+      const result = balanceTeams(ps, 3, 4, { balanceByGender: true });
+      const fPerTeam = result.slice(0, 3).map(t => t.players.filter(x => x.gender === 'F').length);
+      const nonFPerTeam = result.slice(0, 3).map(t => t.players.filter(x => x.gender !== 'F').length);
+      expect(Math.max(...fPerTeam) - Math.min(...fPerTeam)).toBeLessThanOrEqual(1);
+      expect(Math.max(...nonFPerTeam) - Math.min(...nonFPerTeam)).toBeLessThanOrEqual(1);
+    }
+  });
+
   test('stress: random rosters keep gender-count diff <= 1 across main teams', () => {
     // Fuzz: build random rosters and assert the property the user reported
     // being broken — no team should be 2+ women off another.
