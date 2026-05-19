@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Pelada, DrawRecord, Team, DrawResult } from '../types';
+import { Pelada, DrawRecord, Team, DrawResult, Match } from '../types';
 
 const PELADAS_KEY = '@balancesquad:peladas';
 const HIDE_RATINGS_KEY = '@balancesquad:hideRatings';
@@ -56,6 +56,52 @@ export async function addDrawRecord(
   };
   const history = [record, ...(pelada.drawHistory ?? [])].slice(0, DRAW_HISTORY_LIMIT);
   await updatePelada({ ...pelada, drawHistory: history });
+}
+
+async function updateRecord(
+  peladaId: string,
+  index: number,
+  updater: (r: DrawRecord) => DrawRecord,
+): Promise<void> {
+  const pelada = await getPeladaById(peladaId);
+  if (!pelada) return;
+  const history = pelada.drawHistory ?? [];
+  if (index >= history.length) return;
+  const updated: DrawRecord[] = history.map((r, i) => i === index ? updater(r) : r);
+  await updatePelada({ ...pelada, drawHistory: updated });
+}
+
+export async function addMatch(
+  peladaId: string,
+  historyIndex: number,
+  match: Match,
+): Promise<void> {
+  await updateRecord(peladaId, historyIndex, r => ({
+    ...r,
+    matches: [...(r.matches ?? []), match],
+  }));
+}
+
+export async function updateMatch(
+  peladaId: string,
+  historyIndex: number,
+  match: Match,
+): Promise<void> {
+  await updateRecord(peladaId, historyIndex, r => ({
+    ...r,
+    matches: (r.matches ?? []).map(m => m.id === match.id ? match : m),
+  }));
+}
+
+export async function removeMatch(
+  peladaId: string,
+  historyIndex: number,
+  matchId: string,
+): Promise<void> {
+  await updateRecord(peladaId, historyIndex, r => ({
+    ...r,
+    matches: (r.matches ?? []).filter(m => m.id !== matchId),
+  }));
 }
 
 export async function setDrawResult(

@@ -18,15 +18,35 @@ export interface Team {
   totalStars: number;
 }
 
+// Legacy single-result-per-draw shape. Kept readable on disk so old records
+// don't crash, but the ranking now reads `matches` instead.
 export type DrawResult =
   | { type: 'win'; winnerTeamId: number }
   | { type: 'draw' };
+
+// A single game played within a sortition session. Real peladas have many
+// of these per sorteio, with lineups that can drift from the original team
+// rosters as players swap in and out.
+export type MatchResult =
+  | { type: 'win'; winner: 'home' | 'away' }
+  | { type: 'draw' };
+
+export interface Match {
+  id: string;
+  timestamp: string;        // ISO 8601
+  homeTeamId: number;       // refs Team.id within the same DrawRecord
+  awayTeamId: number;
+  homePlayerIds: string[];  // actual lineup for this match (defaults to team roster)
+  awayPlayerIds: string[];
+  result: MatchResult;
+}
 
 export interface DrawRecord {
   teams: Team[];
   timestamp: string; // ISO 8601
   balanceByGender?: boolean;
-  result?: DrawResult;
+  result?: DrawResult;       // legacy, ignored by ranking
+  matches?: Match[];
 }
 
 export interface Pelada {
@@ -54,6 +74,8 @@ export type RootStackParamList = {
   ManualTeams: { players: Player[]; numTeams: number; peladaId: string; playersPerTeam: number };
   DrawHistory: { peladaId: string };
   Ranking: { peladaId: string };
+  Matches: { peladaId: string; historyIndex: number };
+  MatchEditor: { peladaId: string; historyIndex: number; matchId?: string };
 };
 
 // Kept for backward compatibility with legacy screen files

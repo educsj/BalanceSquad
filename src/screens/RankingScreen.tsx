@@ -20,12 +20,11 @@ interface Stat {
   winRate: number; // 0..1
 }
 
-// Aggregates wins/draws/losses across every draw in the pelada's history that
-// has a `result`. A player counts as participating in a draw if they appear
-// on any team within it (guests included).
+// Aggregates wins/draws/losses across every match in every draw of the pelada.
+// A player is counted on the side(s) they were actually listed for in that
+// match — so swaps between teams are reflected accurately, unlike the old
+// per-sorteio result model.
 function aggregateStats(pelada: Pelada): Stat[] {
-  // name lookup: prefer the current pelada roster; fall back to historical
-  // appearances so guests / removed players still get a row.
   const nameById = new Map<string, string>();
   pelada.players.forEach(p => nameById.set(p.id, p.name));
 
@@ -38,18 +37,31 @@ function aggregateStats(pelada: Pelada): Stat[] {
 
   const history = pelada.drawHistory ?? [];
   for (const record of history) {
-    if (!record.result) continue;
-    const result = record.result;
-    record.teams.forEach(team => {
-      const isWinningTeam = result.type === 'win' && result.winnerTeamId === team.id;
-      team.players.forEach(player => {
-        const stat = ensure(player.id, player.name);
+    // Snapshot player names from this record so deleted/renamed players still
+    // appear in the ranking with the name they had at the time.
+    record.teams.forEach(t => t.players.forEach(p => {
+      if (!nameById.has(p.id)) nameById.set(p.id, p.name);
+    }));
+
+    const matches = record.matches ?? [];
+    for (const m of matches) {
+      const homeWon = m.result.type === 'win' && m.result.winner === 'home';
+      const awayWon = m.result.type === 'win' && m.result.winner === 'away';
+      m.homePlayerIds.forEach(id => {
+        const stat = ensure(id, nameById.get(id) ?? '—');
         stat.played += 1;
-        if (result.type === 'draw') stat.draws += 1;
-        else if (isWinningTeam) stat.wins += 1;
+        if (m.result.type === 'draw') stat.draws += 1;
+        else if (homeWon) stat.wins += 1;
         else stat.losses += 1;
       });
-    });
+      m.awayPlayerIds.forEach(id => {
+        const stat = ensure(id, nameById.get(id) ?? '—');
+        stat.played += 1;
+        if (m.result.type === 'draw') stat.draws += 1;
+        else if (awayWon) stat.wins += 1;
+        else stat.losses += 1;
+      });
+    }
   }
 
   const rows: Stat[] = [];
@@ -73,8 +85,8 @@ function aggregateStats(pelada: Pelada): Stat[] {
   return rows;
 }
 
-function rankedDrawsCount(history: DrawRecord[]): number {
-  return history.filter(r => !!r.result).length;
+function totalMatchesCount(history: DrawRecord[]): number {
+  return history.reduce((s, r) => s + (r.matches?.length ?? 0), 0);
 }
 
 export default function RankingScreen() {
@@ -91,7 +103,7 @@ export default function RankingScreen() {
       getPeladaById(params.peladaId).then(pelada => {
         if (!pelada) return;
         setStats(aggregateStats(pelada));
-        setDraws(rankedDrawsCount(pelada.drawHistory ?? []));
+        setDraws(totalMatchesCount(pelada.drawHistory ?? []));
       });
     }, [params.peladaId])
   );

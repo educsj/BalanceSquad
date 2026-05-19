@@ -36,6 +36,29 @@ function formatTeamsForShare(teams: Team[]): string {
   }).join('\n\n');
 }
 
+// Returns a compact tally like "T1 venceu 2 · T2 venceu 1 · 1 empate".
+function summarizeMatches(record: DrawRecord, t: (k: string, opts?: Record<string, unknown>) => string): string {
+  const matches = record.matches ?? [];
+  if (matches.length === 0) return '';
+  const winsByTeam = new Map<number, number>();
+  let draws = 0;
+  for (const m of matches) {
+    if (m.result.type === 'draw') {
+      draws += 1;
+    } else {
+      const winnerId = m.result.winner === 'home' ? m.homeTeamId : m.awayTeamId;
+      winsByTeam.set(winnerId, (winsByTeam.get(winnerId) ?? 0) + 1);
+    }
+  }
+  const parts: string[] = [];
+  winsByTeam.forEach((count, id) => {
+    const name = record.teams.find(team => team.id === id)?.name ?? `#${id}`;
+    parts.push(t('teams.summaryWins', { name, count }));
+  });
+  if (draws > 0) parts.push(t('teams.summaryDraws', { count: draws }));
+  return parts.join(' · ');
+}
+
 // Per-entry metrics: total players, avg-of-averages, spread of averages.
 // Using per-player averages keeps the metrics comparable even if teams have
 // different sizes (overflow case).
@@ -172,15 +195,11 @@ function DrawEntry({
                 </Text>
               </View>
             )}
-            {record.result && (
+            {(record.matches?.length ?? 0) > 0 && (
               <View style={[styles.metricChip, styles.metricChipResult]}>
                 <Feather name="award" size={11} color="#92400E" />
                 <Text style={styles.metricLabelResult}>
-                  {record.result.type === 'draw'
-                    ? t('teams.resultDraw')
-                    : t('teams.resultWinner', {
-                        name: record.teams.find(team => team.id === (record.result as { type: 'win'; winnerTeamId: number }).winnerTeamId)?.name ?? '',
-                      })}
+                  {summarizeMatches(record, t)}
                 </Text>
               </View>
             )}

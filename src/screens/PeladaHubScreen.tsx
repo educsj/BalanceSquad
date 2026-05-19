@@ -52,7 +52,7 @@ export default function PeladaHubScreen() {
         const history = pelada.drawHistory ?? [];
         setDrawCount(history.length);
         setLastDrawDate(history[0]?.timestamp ?? '');
-        setRankedDraws(history.filter(r => !!r.result).length);
+        setRankedDraws(history.reduce((s, r) => s + (r.matches?.length ?? 0), 0));
       });
     }, [peladaId])
   );
