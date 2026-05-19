@@ -435,9 +435,10 @@
     "deleteMsg": "Removes the session for good. This can't be undone.",
     "removeTitle": "Remove {{name}}?",
     "removeMsg": "{{name}} leaves this session. If there was a waitlist, the next person gets promoted.",
-    "pickerTitle": "Confirm as…",
-    "pickerSubtitle": "Tap your name to confirm.",
-    "pickerSubtitleFull": "Session is full — confirming now puts you on the waiting list.",
+    "pickerTitle": "Confirm players",
+    "pickerSubtitle": "Tap each player you want to confirm. You can pick several — close when done.",
+    "pickerSubtitleFull": "Session is full — anyone you confirm now will join the waiting list.",
+    "pickerDoneCta": "Done",
     "pickerEmpty": "Every player in the squad is already on this session.",
     "unknownPlayer": "Unknown player"
   }

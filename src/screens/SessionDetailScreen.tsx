@@ -80,9 +80,11 @@ export default function SessionDetailScreen() {
   const isCompleted = session.status === 'completed';
   const isFull = session.rsvps.length >= session.maxPlayers;
 
+  // Stays open after each pick so the organizer can batch-confirm a bunch of
+  // players in a row. The picker list updates live (recently-confirmed players
+  // drop out via reload), and the user closes the modal manually when done.
   async function handleConfirm(playerId: string) {
     if (!session) return;
-    setConfirmPickerOpen(false);
     const outcome = await rsvpToSession(params.peladaId, session.id, playerId);
     if (outcome === 'confirmed') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -350,7 +352,7 @@ export default function SessionDetailScreen() {
               onPress={() => setConfirmPickerOpen(false)}
               activeOpacity={0.8}
             >
-              <Text style={styles.btnSecondaryText}>{t('common.cancel')}</Text>
+              <Text style={styles.btnSecondaryText}>{t('sessions.pickerDoneCta')}</Text>
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>

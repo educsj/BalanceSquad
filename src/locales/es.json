@@ -435,9 +435,10 @@
     "deleteMsg": "Borra la sesión definitivamente. No se puede deshacer.",
     "removeTitle": "¿Quitar a {{name}}?",
     "removeMsg": "{{name}} sale de esta sesión. Si había lista de espera, el próximo asciende.",
-    "pickerTitle": "Confirmar como…",
-    "pickerSubtitle": "Toca tu nombre para confirmar.",
-    "pickerSubtitleFull": "Sesión llena — al confirmar ahora vas a la lista de espera.",
+    "pickerTitle": "Confirmar jugadores",
+    "pickerSubtitle": "Toca a cada jugador que va a confirmar. Puedes marcar varios — cierra cuando termines.",
+    "pickerSubtitleFull": "Sesión llena — los jugadores que confirmes irán a la lista de espera.",
+    "pickerDoneCta": "Listo",
     "pickerEmpty": "Todos los jugadores del squad ya están en esta sesión.",
     "unknownPlayer": "Jugador desconocido"
   }

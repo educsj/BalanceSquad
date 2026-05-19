@@ -435,9 +435,10 @@
     "deleteMsg": "Apaga a sessão de vez. Essa ação não pode ser desfeita.",
     "removeTitle": "Remover {{name}}?",
     "removeMsg": "{{name}} sai dessa sessão. Se havia fila, o próximo vira confirmado.",
-    "pickerTitle": "Confirmar como…",
-    "pickerSubtitle": "Toque no seu nome pra entrar na lista de confirmados.",
-    "pickerSubtitleFull": "Sessão lotada — quem confirmar agora entra na fila de espera.",
+    "pickerTitle": "Confirmar jogadores",
+    "pickerSubtitle": "Toque em cada jogador que vai confirmar presença. Pode marcar vários — feche quando terminar.",
+    "pickerSubtitleFull": "Sessão lotada — quem você confirmar entra na fila de espera.",
+    "pickerDoneCta": "Concluir",
     "pickerEmpty": "Todos os jogadores da pelada já estão na sessão.",
     "unknownPlayer": "Jogador desconhecido"
   }
