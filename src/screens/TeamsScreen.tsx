@@ -984,9 +984,6 @@ export default function TeamsScreen() {
             )}
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.btnModalSecondary} onPress={() => setFillTargetIdx(null)}>
-                <Text style={styles.btnModalSecondaryText}>{t('teams.cancelBtn')}</Text>
-              </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.btnModalPrimary, fillSourceTeamId === null && styles.btnModalDisabled]}
                 onPress={() => handleFill('random')}
@@ -995,19 +992,23 @@ export default function TeamsScreen() {
                 <Feather name="shuffle" size={14} color="#fff" />
                 <Text style={styles.btnModalPrimaryText}>{t('teams.fillRandom')}</Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.btnModalPrimary,
+                  (fillSourceTeamId === null || !hasCompleteTeam) && styles.btnModalDisabled,
+                ]}
+                onPress={() => handleFill('balanced')}
+                disabled={fillSourceTeamId === null || !hasCompleteTeam}
+              >
+                <Feather name="bar-chart-2" size={14} color="#fff" />
+                <Text style={styles.btnModalPrimaryText}>{t('teams.fillBalanced')}</Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              style={[
-                styles.btnModalPrimary,
-                { marginTop: 6 },
-                (fillSourceTeamId === null || !hasCompleteTeam) && styles.btnModalDisabled,
-              ]}
-              onPress={() => handleFill('balanced')}
-              disabled={fillSourceTeamId === null || !hasCompleteTeam}
-            >
-              <Feather name="bar-chart-2" size={14} color="#fff" />
-              <Text style={styles.btnModalPrimaryText}>{t('teams.fillBalanced')}</Text>
-            </TouchableOpacity>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.btnModalSecondary} onPress={() => setFillTargetIdx(null)}>
+                <Text style={styles.btnModalSecondaryText}>{t('teams.cancelBtn')}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
