@@ -7,6 +7,9 @@
     "close": "Fechar",
     "add": "Adicionar",
     "remove": "Remover",
+    "delete": "Excluir",
+    "yes": "Sim",
+    "no": "Não",
     "error": "Erro",
     "success": "Sucesso"
   },
@@ -253,7 +256,8 @@
     "matchEditor": "Partida",
     "playerProfile": "Jogador",
     "sessionsCalendar": "Calendário",
-    "sessionCreate": "Nova Sessão"
+    "sessionCreate": "Nova Sessão",
+    "sessionDetail": "Sessão"
   },
   "profile": {
     "empty": "Sem dados deste jogador.",
@@ -406,6 +410,26 @@
     "waitlistCount_one": "{{count}} na fila de espera",
     "waitlistCount_other": "{{count}} na fila de espera",
     "statusCancelled": "Cancelada",
-    "statusCompleted": "Realizada"
+    "statusCompleted": "Realizada",
+    "fullChip": "Lotado",
+    "confirmedSection": "Confirmados",
+    "noConfirmed": "Ninguém confirmou ainda. Toque em \"Confirmar como…\" pra começar.",
+    "waitlistSection": "Lista de Espera",
+    "organizerActions": "Ações do organizador",
+    "confirmAsCta": "Confirmar como…",
+    "drawNowCta": "Sortear agora",
+    "cancelSessionCta": "Cancelar sessão",
+    "cancelSessionTitle": "Cancelar esta sessão?",
+    "cancelSessionMsg": "Ninguém perde a vaga, mas a sessão fica marcada como cancelada.",
+    "deleteCta": "Excluir sessão",
+    "deleteTitle": "Excluir esta sessão?",
+    "deleteMsg": "Apaga a sessão de vez. Essa ação não pode ser desfeita.",
+    "removeTitle": "Remover {{name}}?",
+    "removeMsg": "{{name}} sai dessa sessão. Se havia fila, o próximo vira confirmado.",
+    "pickerTitle": "Confirmar como…",
+    "pickerSubtitle": "Toque no seu nome pra entrar na lista de confirmados.",
+    "pickerSubtitleFull": "Sessão lotada — quem confirmar agora entra na fila de espera.",
+    "pickerEmpty": "Todos os jogadores da pelada já estão na sessão.",
+    "unknownPlayer": "Jogador desconhecido"
   }
 }

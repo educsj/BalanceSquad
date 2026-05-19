@@ -18,6 +18,7 @@ import MatchEditorScreen from '../screens/MatchEditorScreen';
 import PlayerProfileScreen from '../screens/PlayerProfileScreen';
 import SessionsCalendarScreen from '../screens/SessionsCalendarScreen';
 import SessionCreateScreen from '../screens/SessionCreateScreen';
+import SessionDetailScreen from '../screens/SessionDetailScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -48,6 +49,7 @@ export default function AppNavigator() {
         <Stack.Screen name="PlayerProfile" component={PlayerProfileScreen} options={{ title: t('nav.playerProfile') }} />
         <Stack.Screen name="SessionsCalendar" component={SessionsCalendarScreen} options={{ title: t('nav.sessionsCalendar') }} />
         <Stack.Screen name="SessionCreate" component={SessionCreateScreen} options={{ title: t('nav.sessionCreate') }} />
+        <Stack.Screen name="SessionDetail" component={SessionDetailScreen} options={{ title: t('nav.sessionDetail') }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

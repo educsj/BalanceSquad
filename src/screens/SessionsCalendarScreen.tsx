@@ -77,8 +77,8 @@ export default function SessionsCalendarScreen() {
     return { upcoming: up, past: pa };
   }, [sessions, today]);
 
-  function openSession(_session: PeladaSession) {
-    // TODO Fase 2c: navegar pra SessionDetail
+  function openSession(session: PeladaSession) {
+    navigation.navigate('SessionDetail', { peladaId: params.peladaId, sessionId: session.id });
   }
 
   function openCreate() {

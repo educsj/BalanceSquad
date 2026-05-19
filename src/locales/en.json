@@ -7,6 +7,9 @@
     "close": "Close",
     "add": "Add",
     "remove": "Remove",
+    "delete": "Delete",
+    "yes": "Yes",
+    "no": "No",
     "error": "Error",
     "success": "Success"
   },
@@ -253,7 +256,8 @@
     "matchEditor": "Match",
     "playerProfile": "Player",
     "sessionsCalendar": "Calendar",
-    "sessionCreate": "New Session"
+    "sessionCreate": "New Session",
+    "sessionDetail": "Session"
   },
   "profile": {
     "empty": "No data for this player.",
@@ -406,6 +410,26 @@
     "waitlistCount_one": "{{count}} on waiting list",
     "waitlistCount_other": "{{count}} on waiting list",
     "statusCancelled": "Cancelled",
-    "statusCompleted": "Completed"
+    "statusCompleted": "Completed",
+    "fullChip": "Full",
+    "confirmedSection": "Confirmed",
+    "noConfirmed": "No one has confirmed yet. Tap \"Confirm as…\" to start.",
+    "waitlistSection": "Waiting List",
+    "organizerActions": "Organizer actions",
+    "confirmAsCta": "Confirm as…",
+    "drawNowCta": "Draw now",
+    "cancelSessionCta": "Cancel session",
+    "cancelSessionTitle": "Cancel this session?",
+    "cancelSessionMsg": "Nobody loses their spot, but the session is marked as cancelled.",
+    "deleteCta": "Delete session",
+    "deleteTitle": "Delete this session?",
+    "deleteMsg": "Removes the session for good. This can't be undone.",
+    "removeTitle": "Remove {{name}}?",
+    "removeMsg": "{{name}} leaves this session. If there was a waitlist, the next person gets promoted.",
+    "pickerTitle": "Confirm as…",
+    "pickerSubtitle": "Tap your name to confirm.",
+    "pickerSubtitleFull": "Session is full — confirming now puts you on the waiting list.",
+    "pickerEmpty": "Every player in the squad is already on this session.",
+    "unknownPlayer": "Unknown player"
   }
 }

@@ -111,6 +111,7 @@ export type RootStackParamList = {
   PlayerProfile: { peladaId: string; playerId: string };
   SessionsCalendar: { peladaId: string };
   SessionCreate: { peladaId: string };
+  SessionDetail: { peladaId: string; sessionId: string };
 };
 
 // Kept for backward compatibility with legacy screen files

@@ -6,7 +6,10 @@
     "create": "Crear",
     "close": "Cerrar",
     "add": "Agregar",
-    "remove": "Eliminar",
+    "remove": "Quitar",
+    "delete": "Eliminar",
+    "yes": "Sí",
+    "no": "No",
     "error": "Error",
     "success": "Éxito"
   },
@@ -253,7 +256,8 @@
     "matchEditor": "Partido",
     "playerProfile": "Jugador",
     "sessionsCalendar": "Calendario",
-    "sessionCreate": "Nueva Sesión"
+    "sessionCreate": "Nueva Sesión",
+    "sessionDetail": "Sesión"
   },
   "profile": {
     "empty": "Sin datos de este jugador.",
@@ -406,6 +410,26 @@
     "waitlistCount_one": "{{count}} en lista de espera",
     "waitlistCount_other": "{{count}} en lista de espera",
     "statusCancelled": "Cancelada",
-    "statusCompleted": "Realizada"
+    "statusCompleted": "Realizada",
+    "fullChip": "Llena",
+    "confirmedSection": "Confirmados",
+    "noConfirmed": "Nadie ha confirmado todavía. Toca \"Confirmar como…\" para empezar.",
+    "waitlistSection": "Lista de Espera",
+    "organizerActions": "Acciones del organizador",
+    "confirmAsCta": "Confirmar como…",
+    "drawNowCta": "Sortear ahora",
+    "cancelSessionCta": "Cancelar sesión",
+    "cancelSessionTitle": "¿Cancelar esta sesión?",
+    "cancelSessionMsg": "Nadie pierde su lugar, pero la sesión queda marcada como cancelada.",
+    "deleteCta": "Eliminar sesión",
+    "deleteTitle": "¿Eliminar esta sesión?",
+    "deleteMsg": "Borra la sesión definitivamente. No se puede deshacer.",
+    "removeTitle": "¿Quitar a {{name}}?",
+    "removeMsg": "{{name}} sale de esta sesión. Si había lista de espera, el próximo asciende.",
+    "pickerTitle": "Confirmar como…",
+    "pickerSubtitle": "Toca tu nombre para confirmar.",
+    "pickerSubtitleFull": "Sesión llena — al confirmar ahora vas a la lista de espera.",
+    "pickerEmpty": "Todos los jugadores del squad ya están en esta sesión.",
+    "unknownPlayer": "Jugador desconocido"
   }
 }
