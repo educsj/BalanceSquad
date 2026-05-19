@@ -2,101 +2,111 @@
 
 > **Selecionar idioma:** [English](./README.md) | [Português]
 
-Aplicativo mobile para sortear times equilibrados, eliminando a concentração de jogadores fortes ou fracos no mesmo time.
+App mobile para pelada casual: sorteia times equilibrados, registra cada partida da sessão e gera um ranking competitivo compartilhável em imagem pra animar o grupo.
 
-Desenvolvido com **React Native + Expo** (TypeScript).
-
----
-
-## O Problema que Resolve
-
-Nas peladas informais, o sorteio manual costuma gerar times desequilibrados — todos os craques no mesmo time, ou todos os iniciantes juntos. O BalanceSquad distribui os jogadores de forma que a soma de estrelas de cada time seja a mais próxima possível.
+Desenvolvido com **React Native + Expo SDK 54** (TypeScript).
 
 ---
 
-## Para Quem É
+## O que faz
 
-- Organizadores de peladas semanais com amigos
-- Quem quer evitar times "apelões" e reclamações pós-jogo
-- Quem gosta de guardar histórico dos sorteios anteriores
+Uma pelada típica de domingo com o BalanceSquad:
+
+1. **Cadastra os jogadores** uma vez, com meia-estrela (0.5–5) e gênero opcional.
+2. **Sorteia** marcando quem foi e configurando número de times. Algoritmo greedy + otimização local garante times equilibrados; opcionalmente equilibra também por gênero.
+3. **Joga várias partidas na mesma pelada** — registra cada uma com lineup real (quem entrou em campo), placar, gols por jogador e MVP.
+4. **Vê o ranking** filtrado por semana, mês, trimestre, semestre, ano ou histórico todo. Compartilha o pódio Top 3 como imagem direto no grupo.
 
 ---
 
 ## Destaques
 
-- ⚽ Níveis em estrelas garantem times praticamente iguais em todo sorteio
-- 🎲 Sorteio automático rápido e sem discussão — ou monte manualmente
-- 📤 Compartilhamento em um toque para WhatsApp sem revelar notas individuais
-- 📅 Histórico dos últimos 5 sorteios com data, hora, ajuste manual e rebalanceamento automático
+- ⭐ **Meia-estrela** nas notas dos jogadores (0.5 a 5.0)
+- ⚖️ **Balanceamento por gênero opcional** com round-robin que garante distribuição proporcional
+- 🥅 **Partidas com lineup real**: várias partidas por sorteio, jogadores podem trocar de lado, gols e MVP por partida
+- 🏆 **Ranking multi-view**: Vitórias / Artilharia / Destaques / Times campeões, com filtros temporais (semana/mês/trimestre/semestre/ano)
+- 📸 **Compartilhamento de pódio em PNG** + perfil individual do jogador (head-to-head, parceiros frequentes)
+- 🔁 **"Quem perde sai" assistido**: após registrar vencedor, o app sugere a próxima partida com vencedor × time descansando
+- 📤 **Sorteio exportável em .json** — outro celular importa e recria a pelada inteira com partidas
+- 🌙 **Tema** automático do sistema ou forçado (claro / escuro)
+- 🌍 **Trilíngue**: PT / EN / ES com detecção automática
 
 ---
 
-## Fluxo de Uso
-
-1. Abra o app e selecione ou crie uma **Pelada**
-2. Cadastre jogadores com nome e nível de 1 a 5 estrelas
-3. Marque os presentes do dia e escolha **Sorteio Automático** ou **Manual**
-4. Veja os times sorteados, mescle ou compartilhe, e salve no histórico
+## Fluxo de uso
 
 ```
-Home (lista de peladas)
+Home  (peladas)
 └── Pelada Hub
-        ├── 👤 Cadastrar Jogador(a)
-        │     └── Formulário de cadastro/edição com nome e nível (1–5 ★)
-        ├── 📋 Lista de Jogadores
-        │     └── Selecionar presentes → Configurar Sorteio
-        │               ├── ⚽ Sortear automaticamente → Times Sorteados
-        │               └── ✋ Montar manualmente → Times Sorteados
-        └── 📅 Histórico de Sorteios
-                └── Ver, ajustar, rebalancear e compartilhar sorteios anteriores
+      ├── 👤  Cadastrar Jogador     (nome, meia-estrela, gênero)
+      ├── 📋  Lista de Jogadores    (presença + busca + avulsos)
+      │     └── Configurar Sorteio  (times, players/time, toggle gênero)
+      │           └── Times Sorteados
+      │                 ├── ⚖  Rebalancear (mescla 2 times)
+      │                 ├── ✏  Renomear time (toque no nome)
+      │                 ├── 📤  Compartilhar (texto / imagem / .json)
+      │                 └── 🏆  Partidas
+      │                       └── Editor de Partida
+      │                             ├── Mandante × Visitante
+      │                             ├── Lineup com check-in/out
+      │                             ├── Gols (-/+ por jogador, agrupado por lado)
+      │                             ├── MVP (chips agrupados por lado)
+      │                             └── 🎉 celebração + sugestão "próxima partida"
+      ├── 📅  Histórico             (até 20 sorteios, métricas, retomar)
+      └── 🏅  Ranking               (4 abas × 6 filtros temporais)
+            └── Perfil do Jogador   (head-to-head + parceiros + share)
 ```
 
 ---
 
-## Funcionalidades
+## Funcionalidades em detalhe
 
-### Peladas
-- Crie e gerencie múltiplas peladas, cada uma com sua lista de jogadores e histórico próprio
+### Sorteio
+- **Notas fracionadas** (0.5 a 5.0) por meia-estrela
+- **Algoritmo greedy + otimização local** O(n²) pra minimizar a diferença entre as somas dos times
+- **Equilíbrio por gênero** opcional via round-robin estrito (uma jogadora por time por rodada), tratando jogadores sem gênero como masculino
+- **Sobra** quando os jogadores não dividem exatamente: time extra recebe os excedentes
+- **Sorteio manual** alternativo com chips por time
 
-### Jogadores
-- Cadastre jogadores com nome e nível de 1 a 5 estrelas
-- Edite e remova jogadores diretamente pela lista de presença
-- **Ocultar notas** — botão na tela inicial esconde as estrelas individuais na lista de presença e nos times sorteados, mantendo apenas a nota total de cada time; útil para evitar constrangimentos quando outros jogadores estão olhando
+### Partidas (a coleção dentro de cada sorteio)
+- Cada partida tem **mandante, visitante, lineups próprios** (jogadores podem ser emprestados entre times), **resultado, gols por jogador e MVP**
+- **Animação celebratória** com troféu ao registrar vencedor
+- **Sugestão de próxima partida** automática: vencedor permanece, descansando entra
+- Lista todas as partidas do sorteio com hora, lineup count e vencedor
 
-### Sorteio Automático
-- Selecione os presentes do dia e configure número de times e jogadores por time
-- Algoritmo greedy distribui os jogadores garantindo que a soma de estrelas de cada time seja a mais próxima possível
-- Se o número de jogadores não for múltiplo exato, um time de sobra recebe os excedentes
+### Ranking
+- **4 abas**: Vitórias, Artilharia, Destaques (MVP), Times campeões (o time com mais vitórias em cada sorteio)
+- **6 períodos**: Semana ISO, Mês, Trimestre, Semestre, Ano, Tudo (filtro temporal por timestamp da partida)
+- **Threshold opcional** "≥3 jogos" pra esconder quem jogou pouco
+- **Pódio Top 3 compartilhável** em PNG, gerado off-screen via `react-native-view-shot`
 
-### Sorteio Manual
-- Atribua cada jogador a um time tocando nos botões T1 / T2 / T3
-- Times cheios bloqueiam novas adições automaticamente
-- É possível confirmar o sorteio assim que todos os times atingem o limite, mesmo que sobrem jogadores sem time
+### Perfil do jogador
+- Toque em qualquer linha do ranking abre stats detalhadas
+- **Head-to-head** contra os principais oponentes (V/E/D quando jogou no outro lado)
+- **Parceiros mais frequentes** (taxa de vitória quando juntos)
+- Card próprio compartilhável em PNG
+
+### Compartilhamento
+- **Texto** estilo WhatsApp (sem estrelas, ordem dos jogadores embaralhada por time)
+- **Imagem PNG** com card visual do sorteio
+- **Arquivo .json** que outro celular importa via "Importar sorteio" no menu Preferências → cria nova pelada com todos os jogadores + partidas
 
 ### Histórico
-- Os 5 últimos sorteios ficam salvos com data e hora para auditoria
-- Cada registro pode ser expandido para ver os times e então ajustado ou rebalanceado diretamente pelo histórico
-- Compartilhamento disponível individualmente para cada registro
+- **Até 20 sorteios** por pelada, com métricas (diferença, média por time, mix de gênero)
+- **Retomar** abre o sorteio passado em modo de edição (mesma tela de Times Sorteados, full editing)
+- **Indicador no topo** mostra o tally de vitórias por time naquele sorteio
 
-### Ajustar e Rebalancear Times
-- **Ajustar** — toque em jogadores individuais para trocá-los entre times manualmente
-- **Rebalancear** — selecione 2 times para redistribuir automaticamente os jogadores usando o algoritmo de balanceamento (útil quando um time vence consecutivamente)
-- Todas as alterações são salvas automaticamente no histórico
+### Edição pós-sorteio
+- Adicionar/remover jogador de qualquer time, com avulsos criados na hora
+- **Snackbar "Desfazer"** após cada remoção (5s)
+- Aviso visual quando o time ultrapassa o limite de jogadores
+- Toque no nome do time abre rename inline
 
-### Compartilhar
-- Envie os times via WhatsApp ou qualquer app de mensagens
-- O texto compartilhado omite as estrelas e embaralha a ordem dos jogadores
-
----
-
-## Algoritmo de Balanceamento
-
-1. Calcula `totalTimes = Math.ceil(jogadores / jogadoresPorTime)`
-2. Ordena os jogadores do mais forte (5★) ao mais fraco (1★), embaralhando dentro de cada nível
-3. Para cada jogador, escolhe o time elegível com a **menor soma de estrelas atual** (greedy)
-4. Os times principais preenchem até a capacidade antes do time de sobra receber qualquer jogador
-
-Resultado típico para 18 jogadores em 3 times de 6: somas **17 / 17 / 17**.
+### Preferências
+- **Tema** (Sistema / Claro / Escuro), persistido por dispositivo
+- **Ocultar notas** durante o jogo (botão de olho na Home)
+- **Idioma** PT / EN / ES com detecção automática do device
+- **Backup global** export/import JSON
 
 ---
 
@@ -108,55 +118,87 @@ Resultado típico para 18 jogadores em 3 times de 6: somas **17 / 17 / 17**.
 | Linguagem | TypeScript |
 | Navegação | React Navigation (Stack) |
 | Persistência | AsyncStorage (local, por dispositivo) |
-| Estilização | StyleSheet nativo |
+| i18n | react-i18next + expo-localization (PT / EN / ES) |
+| Captura de imagem | react-native-view-shot |
+| Compartilhamento | expo-sharing |
+| Arquivos | expo-file-system (.json export/import) |
+| Estilização | StyleSheet nativo, tema light/dark via Context |
 
 ---
 
-## Estrutura do Projeto
+## Estrutura do projeto
 
 ```
 src/
-├── types/index.ts              # Player, Pelada, Team, DrawRecord, tipos de navegação
-├── storage/index.ts            # CRUD de peladas, histórico de sorteios, preferências
-├── utils/balancer.ts           # Algoritmo de sorteio e mescla
-├── navigation/
-│   └── AppNavigator.tsx        # Stack navigator (todas as telas)
-├── screens/
-│   ├── HomeScreen.tsx          # Lista de peladas + criação/edição + toggle de notas
-│   ├── PeladaHubScreen.tsx     # Hub com 3 ações: cadastrar, listar, histórico
-│   ├── PlayerRegisterScreen.tsx# Formulário de cadastro e edição de jogador
-│   ├── PlayerListScreen.tsx    # Seleção de presença + editar/remover inline
-│   ├── DrawConfigScreen.tsx    # Configurar times e jogadores/time antes do sorteio
-│   ├── TeamsScreen.tsx         # Times sorteados, mescla e compartilhamento
-│   ├── ManualTeamsScreen.tsx   # Distribuição manual de jogadores por time
-│   └── DrawHistoryScreen.tsx   # Histórico dos 5 últimos sorteios com timestamps
-└── components/
-    └── StarRating.tsx          # Seletor de 1–5 estrelas reutilizável
+├── types/index.ts                # Player (level: number, gender?), Team, Match, DrawRecord, RootStackParamList
+├── storage/index.ts              # Peladas CRUD, drawHistory, matches helpers, prefs
+├── theme/index.tsx               # Tema 3-state (system/light/dark) + paleta light/dark
+├── i18n/index.ts                 # Setup react-i18next com detecção de locale
+├── locales/{pt,en,es}.json       # Traduções
+├── utils/
+│   ├── balancer.ts               # Greedy + otimizador local + round-robin por gênero
+│   ├── periods.ts                # Período de calendário (semana ISO, mês, tri, sem, ano)
+│   ├── rankings.ts               # Agregações: stats / scorers / mvps / team champions / player profile
+│   ├── stars.ts                  # formatStars(n), teamAverage(team), clampLevel(v)
+│   └── drawSharePayload.ts       # Build/parse do payload .json (puro, testável)
+├── components/
+│   ├── StarRating.tsx            # Meia-estrela (tap em metades)
+│   ├── PodiumCard.tsx            # Card Top 3 pra share em PNG
+│   ├── AnimatedSplash.tsx
+│   └── EmptyState.tsx
+├── navigation/AppNavigator.tsx   # Stack com 10 telas
+└── screens/
+    ├── HomeScreen.tsx            # Lista de peladas, prefs, onboarding
+    ├── PeladaHubScreen.tsx       # Hub com 4 ações (cadastrar, lista, histórico, ranking)
+    ├── PlayerRegisterScreen.tsx  # Nome + meia-estrela + gênero
+    ├── PlayerListScreen.tsx      # Presença + busca + avulsos
+    ├── DrawConfigScreen.tsx      # Times, jogadores/time, toggle de gênero
+    ├── TeamsScreen.tsx           # Times sorteados, edit completo, share, partidas
+    ├── ManualTeamsScreen.tsx     # Sorteio manual com chips
+    ├── DrawHistoryScreen.tsx     # Histórico (até 20) com métricas + retomar
+    ├── MatchesScreen.tsx         # Lista de partidas de um sorteio
+    ├── MatchEditorScreen.tsx     # Editor de partida (lineup, gols, MVP, resultado)
+    ├── RankingScreen.tsx         # 4 abas × 6 períodos × top 3 compartilhável
+    └── PlayerProfileScreen.tsx   # Stats individuais + head-to-head
 ```
 
-Para detalhes de tipos, fluxo de navegação e regras de negócio, consulte o [CONTEXT.md](./CONTEXT.md).
+Pra referência técnica interna (estrutura de dados, detalhes do algoritmo, decisões de design), veja [CONTEXT.md](./CONTEXT.md).
 
 ---
 
-## Como Rodar
+## Como rodar
 
-**Pré-requisitos:** Node.js 18+, Expo Go no celular (Android ou iOS)
+**Pré-requisitos:** Node.js 18+, app Expo Go no celular (Android ou iOS)
 
 ```bash
 npm install
 npx expo start
 ```
 
-Escaneie o QR code com o app **Expo Go** para abrir no celular.
+Escaneie o QR code com **Expo Go** pra abrir no celular. Ou gera um APK standalone:
+
+```bash
+eas build --profile preview --platform android
+```
 
 ---
 
-## Roadmap
+## Testes
 
-- [ ] Modo convidado para peladas rápidas
-- [ ] Exportar histórico completo em CSV / JSON
-- [ ] Sincronizar peladas na nuvem entre dispositivos
-- [ ] Toggle de tema escuro / claro
+```bash
+npm test
+```
+
+Cobertura: algoritmo de balanceamento (greedy + round-robin por gênero + preservação de tamanho), filtros temporais, agregações do ranking (jogadores/artilheiros/MVPs/campeões) e parser do payload de sorteio.
+
+---
+
+## Roadmap (próximas ideias)
+
+- [ ] Navegar entre meses/semanas no filtro de período
+- [ ] Notificação de "dia da pelada"
+- [ ] Foto/avatar do jogador
+- [ ] Sincronização entre dispositivos (Firebase ou similar)
 
 ---
 
