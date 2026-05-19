@@ -302,6 +302,19 @@
       "emptySubtitle": "For each draw, the team with the most wins appears here.",
       "noDate": "No date",
       "winsOfTotal": "of {{total}}"
+    },
+    "shareTop3": "Share Top 3",
+    "cardTitle": {
+      "wins": "Top 3 — Wins",
+      "scorers": "Top 3 — Scorers",
+      "mvps": "Top 3 — MVPs",
+      "teams": "Top 3 — Champion Teams"
+    },
+    "cardUnit": {
+      "winsCount_one": "{{count}} win",
+      "winsCount_other": "{{count}} wins",
+      "mvpTimes_one": "{{count}} MVP",
+      "mvpTimes_other": "{{count}} MVPs"
     }
   }
 }

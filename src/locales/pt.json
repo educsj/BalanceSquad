@@ -302,6 +302,19 @@
       "emptySubtitle": "Para cada sorteio, o time que vencer mais partidas aparece aqui.",
       "noDate": "Sem data",
       "winsOfTotal": "de {{total}}"
+    },
+    "shareTop3": "Compartilhar Top 3",
+    "cardTitle": {
+      "wins": "Top 3 — Vitórias",
+      "scorers": "Top 3 — Artilharia",
+      "mvps": "Top 3 — Destaques",
+      "teams": "Top 3 — Times Campeões"
+    },
+    "cardUnit": {
+      "winsCount_one": "{{count}} vitória",
+      "winsCount_other": "{{count}} vitórias",
+      "mvpTimes_one": "{{count}} destaque",
+      "mvpTimes_other": "{{count}} destaques"
     }
   }
 }

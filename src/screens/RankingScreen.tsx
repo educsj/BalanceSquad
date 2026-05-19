@@ -1,11 +1,14 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { View, Text, FlatList, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { RouteProp, useRoute, useFocusEffect } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import { RootStackParamList, Pelada } from '../types';
 import { getPeladaById } from '../storage';
 import EmptyState from '../components/EmptyState';
+import PodiumCard, { PodiumEntry } from '../components/PodiumCard';
 import { useTheme, ThemeColors } from '../theme';
 import { PeriodKind, computePeriodRange, PeriodRange } from '../utils/periods';
 import {
@@ -54,6 +57,82 @@ export default function RankingScreen() {
   const totalMatches = useMemo(() => pelada ? periodMatchCount(pelada, range) : 0, [pelada, range]);
 
   const visiblePlayers = minFilter ? players.filter(p => p.played >= MIN_MATCHES) : players;
+
+  const shareCardRef = useRef<View>(null);
+
+  // Builds the podium content for the current active tab. Memoized so the
+  // hidden card re-renders only when the underlying data shifts.
+  const cardData = useMemo((): { title: string; subtitle: string; entries: PodiumEntry[]; footer?: string } | null => {
+    const periodLabel = range?.label ?? t('ranking.period.all');
+    const ctx = `${pelada?.name ?? ''} · ${periodLabel}`;
+    if (tab === 'wins') {
+      const eligible = minFilter ? visiblePlayers : players;
+      const top = eligible.slice(0, 3);
+      if (top.length === 0) return null;
+      return {
+        title: t('ranking.cardTitle.wins'),
+        subtitle: ctx,
+        entries: top.map(p => ({
+          name: p.name,
+          primary: `${Math.round(p.winRate * 100)}%`,
+          secondary: t('ranking.cardUnit.winsCount', { count: p.wins }),
+        })),
+      };
+    }
+    if (tab === 'scorers') {
+      const top = scorers.slice(0, 3);
+      if (top.length === 0) return null;
+      return {
+        title: t('ranking.cardTitle.scorers'),
+        subtitle: ctx,
+        entries: top.map(s => ({
+          name: s.name,
+          primary: String(s.goals),
+          secondary: t('ranking.goalsUnit'),
+        })),
+      };
+    }
+    if (tab === 'mvps') {
+      const top = mvps.slice(0, 3);
+      if (top.length === 0) return null;
+      return {
+        title: t('ranking.cardTitle.mvps'),
+        subtitle: ctx,
+        entries: top.map(m => ({
+          name: m.name,
+          primary: String(m.count),
+          secondary: t('ranking.cardUnit.mvpTimes', { count: m.count }),
+        })),
+      };
+    }
+    if (tab === 'teams') {
+      const top = teamsRanking.slice(0, 3);
+      if (top.length === 0) return null;
+      return {
+        title: t('ranking.cardTitle.teams'),
+        subtitle: ctx,
+        entries: top.map(c => ({
+          name: c.teamName,
+          primary: `${c.wins}/${c.totalMatches}`,
+          secondary: c.recordTimestamp ? new Date(c.recordTimestamp).toLocaleDateString() : '',
+        })),
+      };
+    }
+    return null;
+  }, [tab, range, players, visiblePlayers, scorers, mvps, teamsRanking, pelada, minFilter, t]);
+
+  async function handleShareCard() {
+    if (!cardData) return;
+    try {
+      const uri = await captureRef(shareCardRef, { format: 'png', quality: 0.95 });
+      const can = await Sharing.isAvailableAsync();
+      if (can) {
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: cardData.title });
+      }
+    } catch {
+      // silent — user can retry
+    }
+  }
 
   if (!pelada) return <View style={styles.container} />;
 
@@ -121,6 +200,24 @@ export default function RankingScreen() {
       )}
       {tab === 'teams' && (
         <TeamsTab champions={teamsRanking} styles={styles} t={t} />
+      )}
+
+      {cardData && (
+        <TouchableOpacity style={styles.shareBtn} onPress={handleShareCard} activeOpacity={0.85}>
+          <Feather name="share-2" size={16} color="#fff" />
+          <Text style={styles.shareBtnText}>{t('ranking.shareTop3')}</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Hidden capture card for the share image */}
+      {cardData && (
+        <View ref={shareCardRef} style={styles.hiddenCard} collapsable={false}>
+          <PodiumCard
+            title={cardData.title}
+            subtitle={cardData.subtitle}
+            entries={cardData.entries}
+          />
+        </View>
       )}
     </View>
   );
@@ -406,5 +503,23 @@ function createStyles(c: ThemeColors) {
     teamChampDate: { fontSize: 11, color: c.textMuted, marginTop: 2 },
 
     emptyTabHint: { color: c.textMuted, textAlign: 'center', marginTop: 30, fontSize: 13 },
+
+    shareBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: c.primary,
+      borderRadius: 12,
+      paddingVertical: 12,
+      marginTop: 10,
+      marginBottom: 16,
+      elevation: 4,
+      shadowColor: c.primary,
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
+    },
+    shareBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+    hiddenCard: { position: 'absolute', left: -9999, top: 0 },
   });
 }

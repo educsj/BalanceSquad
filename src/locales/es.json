@@ -302,6 +302,19 @@
       "emptySubtitle": "Para cada sorteo, el equipo con más victorias aparece aquí.",
       "noDate": "Sin fecha",
       "winsOfTotal": "de {{total}}"
+    },
+    "shareTop3": "Compartir Top 3",
+    "cardTitle": {
+      "wins": "Top 3 — Victorias",
+      "scorers": "Top 3 — Goleadores",
+      "mvps": "Top 3 — MVPs",
+      "teams": "Top 3 — Equipos Campeones"
+    },
+    "cardUnit": {
+      "winsCount_one": "{{count}} victoria",
+      "winsCount_other": "{{count}} victorias",
+      "mvpTimes_one": "{{count}} MVP",
+      "mvpTimes_other": "{{count}} MVPs"
     }
   }
 }
