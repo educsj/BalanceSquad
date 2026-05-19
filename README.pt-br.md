@@ -221,14 +221,22 @@ A próxima fase transforma o BalanceSquad numa ferramenta completa de gestão pr
 
 **Presença e convocação**
 - [ ] RSVP pras próximas peladas (confirmação antecipada)
-- [ ] Lista de espera quando passa do limite
+- [ ] Lista de espera da partida quando passa do limite
 - [ ] Histórico de presença por jogador (% de comparecimento)
+- [ ] **Ranking de assiduidade** com card Top 3 compartilhável (mais fiéis da galera)
 - [ ] Visão de calendário (peladas passadas + futuras)
+
+**Mensalistas e fila de espera**
+- [ ] **Tier "mensalista"** com vaga garantida em toda sessão
+- [ ] Limite de mensalistas configurável por pelada (ex: 20)
+- [ ] **Fila de espera de mensalidade**: ao abrir uma vaga, o próximo da fila vira mensalista automaticamente
+- [ ] Histórico de mensalidade (quem entrou, quem saiu, tempo como mensalista)
 
 **Notificações**
 - [ ] Lembrete de dia da pelada (X horas antes)
 - [ ] Lembrete de pagamento pendente
 - [ ] Aviso de cancelamento ou mudança de horário
+- [ ] **Lembrete pro admin da lista semanal** — alerta o organizador de mandar a lista da semana, com botão "rascunhar e mandar no WhatsApp" pré-preenchido com mensalistas confirmados + lista de espera
 
 **Outras ferramentas do organizador**
 - [ ] Multi-organizador (admin compartilhado entre 2+ pessoas)

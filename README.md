@@ -221,14 +221,22 @@ The next phase turns BalanceSquad into a full management tool for pelada organiz
 
 **Attendance and scheduling**
 - [ ] RSVP for upcoming sessions (confirm presence in advance)
-- [ ] Waiting list when capacity is exceeded
+- [ ] Per-game waiting list when capacity is exceeded
 - [ ] Attendance history per player (% participation over time)
+- [ ] **Attendance ranking** with shareable Top 3 card (most loyal players)
 - [ ] Calendar view of past + upcoming sessions
+
+**Membership and waiting list (mensalistas)**
+- [ ] **Monthly-member tier** with guaranteed spot per session
+- [ ] Configurable monthly-member cap per squad (e.g., 20 mensalistas)
+- [ ] **Waiting list for membership**: queued players auto-promote when a monthly slot opens
+- [ ] Membership tenure history (who joined, who dropped, time as member)
 
 **Notifications**
 - [ ] Pelada-day reminder (X hours before)
 - [ ] Payment-due reminder
 - [ ] Cancellation / schedule-change broadcast
+- [ ] **Admin weekly-list reminder** — nudge the organizer to send out the week's list, with one-tap "draft and share to WhatsApp" prefilled with confirmed players + waiting list
 
 **Other organizer tools**
 - [ ] Multi-organizer (admin shared between 2+ people)
