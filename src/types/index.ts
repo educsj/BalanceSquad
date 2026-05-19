@@ -109,6 +109,8 @@ export type RootStackParamList = {
     prefillAwayTeamId?: number;
   };
   PlayerProfile: { peladaId: string; playerId: string };
+  SessionsCalendar: { peladaId: string };
+  SessionCreate: { peladaId: string };
 };
 
 // Kept for backward compatibility with legacy screen files

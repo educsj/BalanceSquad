@@ -16,6 +16,8 @@ import RankingScreen from '../screens/RankingScreen';
 import MatchesScreen from '../screens/MatchesScreen';
 import MatchEditorScreen from '../screens/MatchEditorScreen';
 import PlayerProfileScreen from '../screens/PlayerProfileScreen';
+import SessionsCalendarScreen from '../screens/SessionsCalendarScreen';
+import SessionCreateScreen from '../screens/SessionCreateScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -44,6 +46,8 @@ export default function AppNavigator() {
         <Stack.Screen name="Matches" component={MatchesScreen} options={{ title: t('nav.matches') }} />
         <Stack.Screen name="MatchEditor" component={MatchEditorScreen} options={{ title: t('nav.matchEditor') }} />
         <Stack.Screen name="PlayerProfile" component={PlayerProfileScreen} options={{ title: t('nav.playerProfile') }} />
+        <Stack.Screen name="SessionsCalendar" component={SessionsCalendarScreen} options={{ title: t('nav.sessionsCalendar') }} />
+        <Stack.Screen name="SessionCreate" component={SessionCreateScreen} options={{ title: t('nav.sessionCreate') }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

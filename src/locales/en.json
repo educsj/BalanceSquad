@@ -83,7 +83,10 @@
     "ranking": "Ranking",
     "rankingDesc_one": "{{count}} draw with a result",
     "rankingDesc_other": "{{count}} draws with results",
-    "rankingEmpty": "Mark a winner after a draw to start the table"
+    "rankingEmpty": "Mark a winner after a draw to start the table",
+    "calendar": "Calendar",
+    "calendarNext": "Next: {{date}}",
+    "calendarEmpty": "No sessions scheduled"
   },
   "playerRegister": {
     "playersCount_one": "{{count}} player registered",
@@ -248,7 +251,9 @@
     "ranking": "Ranking",
     "matches": "Matches",
     "matchEditor": "Match",
-    "playerProfile": "Player"
+    "playerProfile": "Player",
+    "sessionsCalendar": "Calendar",
+    "sessionCreate": "New Session"
   },
   "profile": {
     "empty": "No data for this player.",
@@ -366,5 +371,41 @@
       "mvpTimes_one": "{{count}} MVP",
       "mvpTimes_other": "{{count}} MVPs"
     }
+  },
+  "calendar": {
+    "emptyTitle": "No pelada scheduled",
+    "emptySubtitle": "Schedule the next pelada so players can RSVP.",
+    "createFirst": "Schedule Pelada",
+    "upcomingHeader": "Upcoming",
+    "pastHeader": "Past",
+    "today": "Today",
+    "month": {
+      "1": "January", "2": "February", "3": "March", "4": "April",
+      "5": "May", "6": "June", "7": "July", "8": "August",
+      "9": "September", "10": "October", "11": "November", "12": "December"
+    },
+    "weekday": {
+      "0": "Sun", "1": "Mon", "2": "Tue", "3": "Wed", "4": "Thu", "5": "Fri", "6": "Sat"
+    }
+  },
+  "sessions": {
+    "dateLabel": "Date",
+    "timeLabel": "Time (optional)",
+    "timeHint": "e.g. 19:30",
+    "maxPlayersLabel": "Capacity",
+    "maxPlayersHint": "Players that fit before the waiting list kicks in.",
+    "notesLabel": "Notes (optional)",
+    "notesPlaceholder": "Court 3, bring black bibs…",
+    "presetToday": "Today",
+    "presetTomorrow": "Tomorrow",
+    "presetWeek": "+7 days",
+    "createCta": "Schedule",
+    "createErrorTitle": "Could not schedule",
+    "createErrorMsg": "Try again.",
+    "rsvpCount": "{{confirmed}}/{{max}} confirmed",
+    "waitlistCount_one": "{{count}} on waiting list",
+    "waitlistCount_other": "{{count}} on waiting list",
+    "statusCancelled": "Cancelled",
+    "statusCompleted": "Completed"
   }
 }

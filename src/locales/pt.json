@@ -83,7 +83,10 @@
     "ranking": "Ranking",
     "rankingDesc_one": "{{count}} sorteio com resultado",
     "rankingDesc_other": "{{count}} sorteios com resultado",
-    "rankingEmpty": "Marque o vencedor após um sorteio pra começar"
+    "rankingEmpty": "Marque o vencedor após um sorteio pra começar",
+    "calendar": "Calendário",
+    "calendarNext": "Próxima: {{date}}",
+    "calendarEmpty": "Sem sessões agendadas"
   },
   "playerRegister": {
     "playersCount_one": "{{count}} jogador cadastrado",
@@ -248,7 +251,9 @@
     "ranking": "Ranking",
     "matches": "Partidas",
     "matchEditor": "Partida",
-    "playerProfile": "Jogador"
+    "playerProfile": "Jogador",
+    "sessionsCalendar": "Calendário",
+    "sessionCreate": "Nova Sessão"
   },
   "profile": {
     "empty": "Sem dados deste jogador.",
@@ -366,5 +371,41 @@
       "mvpTimes_one": "{{count}} destaque",
       "mvpTimes_other": "{{count}} destaques"
     }
+  },
+  "calendar": {
+    "emptyTitle": "Nenhuma pelada agendada",
+    "emptySubtitle": "Crie a próxima pelada pra os jogadores confirmarem presença.",
+    "createFirst": "Agendar Pelada",
+    "upcomingHeader": "Próximas",
+    "pastHeader": "Anteriores",
+    "today": "Hoje",
+    "month": {
+      "1": "Janeiro", "2": "Fevereiro", "3": "Março", "4": "Abril",
+      "5": "Maio", "6": "Junho", "7": "Julho", "8": "Agosto",
+      "9": "Setembro", "10": "Outubro", "11": "Novembro", "12": "Dezembro"
+    },
+    "weekday": {
+      "0": "Dom", "1": "Seg", "2": "Ter", "3": "Qua", "4": "Qui", "5": "Sex", "6": "Sáb"
+    }
+  },
+  "sessions": {
+    "dateLabel": "Data",
+    "timeLabel": "Hora (opcional)",
+    "timeHint": "Ex: 19:30",
+    "maxPlayersLabel": "Capacidade",
+    "maxPlayersHint": "Quantos jogadores cabem antes da fila de espera.",
+    "notesLabel": "Observações (opcional)",
+    "notesPlaceholder": "Quadra X, levar coletes pretos…",
+    "presetToday": "Hoje",
+    "presetTomorrow": "Amanhã",
+    "presetWeek": "+7 dias",
+    "createCta": "Agendar",
+    "createErrorTitle": "Não deu pra agendar",
+    "createErrorMsg": "Tente de novo.",
+    "rsvpCount": "{{confirmed}}/{{max}} confirmados",
+    "waitlistCount_one": "{{count}} na fila de espera",
+    "waitlistCount_other": "{{count}} na fila de espera",
+    "statusCancelled": "Cancelada",
+    "statusCompleted": "Realizada"
   }
 }

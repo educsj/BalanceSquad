@@ -83,7 +83,10 @@
     "ranking": "Ranking",
     "rankingDesc_one": "{{count}} sorteo con resultado",
     "rankingDesc_other": "{{count}} sorteos con resultado",
-    "rankingEmpty": "Marca el ganador tras un sorteo para empezar"
+    "rankingEmpty": "Marca el ganador tras un sorteo para empezar",
+    "calendar": "Calendario",
+    "calendarNext": "Próxima: {{date}}",
+    "calendarEmpty": "Sin sesiones programadas"
   },
   "playerRegister": {
     "playersCount_one": "{{count}} jugador registrado",
@@ -248,7 +251,9 @@
     "ranking": "Ranking",
     "matches": "Partidos",
     "matchEditor": "Partido",
-    "playerProfile": "Jugador"
+    "playerProfile": "Jugador",
+    "sessionsCalendar": "Calendario",
+    "sessionCreate": "Nueva Sesión"
   },
   "profile": {
     "empty": "Sin datos de este jugador.",
@@ -366,5 +371,41 @@
       "mvpTimes_one": "{{count}} MVP",
       "mvpTimes_other": "{{count}} MVPs"
     }
+  },
+  "calendar": {
+    "emptyTitle": "Sin peladas programadas",
+    "emptySubtitle": "Programa la próxima pelada para que los jugadores confirmen.",
+    "createFirst": "Programar Pelada",
+    "upcomingHeader": "Próximas",
+    "pastHeader": "Anteriores",
+    "today": "Hoy",
+    "month": {
+      "1": "Enero", "2": "Febrero", "3": "Marzo", "4": "Abril",
+      "5": "Mayo", "6": "Junio", "7": "Julio", "8": "Agosto",
+      "9": "Septiembre", "10": "Octubre", "11": "Noviembre", "12": "Diciembre"
+    },
+    "weekday": {
+      "0": "Dom", "1": "Lun", "2": "Mar", "3": "Mié", "4": "Jue", "5": "Vie", "6": "Sáb"
+    }
+  },
+  "sessions": {
+    "dateLabel": "Fecha",
+    "timeLabel": "Hora (opcional)",
+    "timeHint": "Ej. 19:30",
+    "maxPlayersLabel": "Capacidad",
+    "maxPlayersHint": "Jugadores que caben antes de la lista de espera.",
+    "notesLabel": "Notas (opcional)",
+    "notesPlaceholder": "Cancha X, llevar petos…",
+    "presetToday": "Hoy",
+    "presetTomorrow": "Mañana",
+    "presetWeek": "+7 días",
+    "createCta": "Programar",
+    "createErrorTitle": "No se pudo programar",
+    "createErrorMsg": "Inténtalo de nuevo.",
+    "rsvpCount": "{{confirmed}}/{{max}} confirmados",
+    "waitlistCount_one": "{{count}} en lista de espera",
+    "waitlistCount_other": "{{count}} en lista de espera",
+    "statusCancelled": "Cancelada",
+    "statusCompleted": "Realizada"
   }
 }

@@ -4,7 +4,7 @@ import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navig
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { RootStackParamList } from '../types';
+import { RootStackParamList, PeladaSession } from '../types';
 import { getPeladaById } from '../storage';
 import { useTheme, ThemeColors } from '../theme';
 
@@ -19,6 +19,12 @@ function formatShortDate(iso: string): string {
   const hours = String(d.getHours()).padStart(2, '0');
   const mins = String(d.getMinutes()).padStart(2, '0');
   return `${day}/${month} ${hours}:${mins}`;
+}
+
+// Session.date is already YYYY-MM-DD; format as DD/MM/YYYY for display.
+function formatSessionDate(iso: string): string {
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
 }
 
 type Action = {
@@ -42,6 +48,7 @@ export default function PeladaHubScreen() {
   const [drawCount, setDrawCount] = useState(0);
   const [lastDrawDate, setLastDrawDate] = useState('');
   const [rankedDraws, setRankedDraws] = useState(0);
+  const [nextSession, setNextSession] = useState<PeladaSession | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -53,6 +60,14 @@ export default function PeladaHubScreen() {
         setDrawCount(history.length);
         setLastDrawDate(history[0]?.timestamp ?? '');
         setRankedDraws(history.reduce((s, r) => s + (r.matches?.length ?? 0), 0));
+
+        // Find the soonest upcoming scheduled session (date >= today).
+        const today = new Date();
+        const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        const upcoming = (pelada.sessions ?? [])
+          .filter(s => s.status === 'scheduled' && s.date >= todayIso)
+          .sort((a, b) => a.date.localeCompare(b.date));
+        setNextSession(upcoming[0] ?? null);
       });
     }, [peladaId])
   );
@@ -95,6 +110,16 @@ export default function PeladaHubScreen() {
         ? t('peladaHub.rankingDesc', { count: rankedDraws })
         : t('peladaHub.rankingEmpty'),
       onPress: () => navigation.navigate('Ranking', { peladaId }),
+    },
+    {
+      featherIcon: 'calendar',
+      iconBg: '#E0E7FF',
+      iconColor: '#4338CA',
+      title: t('peladaHub.calendar'),
+      subtitle: nextSession
+        ? t('peladaHub.calendarNext', { date: formatSessionDate(nextSession.date) })
+        : t('peladaHub.calendarEmpty'),
+      onPress: () => navigation.navigate('SessionsCalendar', { peladaId }),
     },
   ];
 
