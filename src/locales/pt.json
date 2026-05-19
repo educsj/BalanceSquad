@@ -261,7 +261,7 @@
   },
   "ranking": {
     "emptyTitle": "Sem ranking ainda",
-    "emptySubtitle": "Marque o vencedor em pelo menos um sorteio pra ver as estatísticas dos jogadores.",
+    "emptySubtitle": "Registre partidas para ver as estatísticas dos jogadores.",
     "hint_one": "{{count}} sorteio considerado",
     "hint_other": "{{count}} sorteios considerados",
     "player": "Jogador",
@@ -269,6 +269,39 @@
     "wins": "V",
     "draws": "E",
     "losses": "D",
-    "minMatches": "≥{{count}} jogos"
+    "minMatches": "≥{{count}} jogos",
+    "matchesInPeriod_one": "{{count}} partida no período",
+    "matchesInPeriod_other": "{{count}} partidas no período",
+    "emptyAfterFilter": "Nenhum jogador atende o filtro.",
+    "goalsUnit": "gols",
+    "matchesUnit": "jogos",
+    "period": {
+      "week": "Semana",
+      "month": "Mês",
+      "quarter": "Trimestre",
+      "semester": "Semestre",
+      "year": "Ano",
+      "all": "Tudo"
+    },
+    "tab": {
+      "wins": "Vitórias",
+      "scorers": "Artilharia",
+      "mvps": "Destaques",
+      "teams": "Times"
+    },
+    "scorers": {
+      "emptyTitle": "Sem gols registrados",
+      "emptySubtitle": "Toque numa partida e adicione gols por jogador na seção \"Gols\"."
+    },
+    "mvps": {
+      "emptyTitle": "Sem destaques marcados",
+      "emptySubtitle": "Quando registrar uma partida, marque o destaque (MVP)."
+    },
+    "teams": {
+      "emptyTitle": "Sem campeões no período",
+      "emptySubtitle": "Para cada sorteio, o time que vencer mais partidas aparece aqui.",
+      "noDate": "Sem data",
+      "winsOfTotal": "de {{total}}"
+    }
   }
 }

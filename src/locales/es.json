@@ -261,7 +261,7 @@
   },
   "ranking": {
     "emptyTitle": "Sin ranking aún",
-    "emptySubtitle": "Marca un ganador en al menos un sorteo para ver las estadísticas.",
+    "emptySubtitle": "Registra partidos para ver las estadísticas.",
     "hint_one": "{{count}} sorteo contabilizado",
     "hint_other": "{{count}} sorteos contabilizados",
     "player": "Jugador",
@@ -269,6 +269,39 @@
     "wins": "G",
     "draws": "E",
     "losses": "P",
-    "minMatches": "≥{{count}} partidos"
+    "minMatches": "≥{{count}} partidos",
+    "matchesInPeriod_one": "{{count}} partido en el período",
+    "matchesInPeriod_other": "{{count}} partidos en el período",
+    "emptyAfterFilter": "Ningún jugador cumple el filtro.",
+    "goalsUnit": "goles",
+    "matchesUnit": "partidos",
+    "period": {
+      "week": "Semana",
+      "month": "Mes",
+      "quarter": "Trimestre",
+      "semester": "Semestre",
+      "year": "Año",
+      "all": "Todo"
+    },
+    "tab": {
+      "wins": "Victorias",
+      "scorers": "Goleadores",
+      "mvps": "MVPs",
+      "teams": "Equipos"
+    },
+    "scorers": {
+      "emptyTitle": "Sin goles registrados",
+      "emptySubtitle": "Abre un partido y registra goles por jugador en la sección \"Goles\"."
+    },
+    "mvps": {
+      "emptyTitle": "Sin MVPs marcados",
+      "emptySubtitle": "Al registrar un partido, marca el MVP."
+    },
+    "teams": {
+      "emptyTitle": "Sin campeones en el período",
+      "emptySubtitle": "Para cada sorteo, el equipo con más victorias aparece aquí.",
+      "noDate": "Sin fecha",
+      "winsOfTotal": "de {{total}}"
+    }
   }
 }

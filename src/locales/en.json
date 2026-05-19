@@ -261,7 +261,7 @@
   },
   "ranking": {
     "emptyTitle": "No ranking yet",
-    "emptySubtitle": "Mark a winner on at least one draw to see player stats.",
+    "emptySubtitle": "Log matches to see player stats.",
     "hint_one": "{{count}} draw counted",
     "hint_other": "{{count}} draws counted",
     "player": "Player",
@@ -269,6 +269,39 @@
     "wins": "W",
     "draws": "D",
     "losses": "L",
-    "minMatches": "≥{{count}} games"
+    "minMatches": "≥{{count}} games",
+    "matchesInPeriod_one": "{{count}} match in period",
+    "matchesInPeriod_other": "{{count}} matches in period",
+    "emptyAfterFilter": "No player matches the filter.",
+    "goalsUnit": "goals",
+    "matchesUnit": "matches",
+    "period": {
+      "week": "Week",
+      "month": "Month",
+      "quarter": "Quarter",
+      "semester": "Semester",
+      "year": "Year",
+      "all": "All"
+    },
+    "tab": {
+      "wins": "Wins",
+      "scorers": "Top scorers",
+      "mvps": "MVPs",
+      "teams": "Teams"
+    },
+    "scorers": {
+      "emptyTitle": "No goals logged",
+      "emptySubtitle": "Open a match and add goals per player in the \"Goals\" section."
+    },
+    "mvps": {
+      "emptyTitle": "No MVPs marked",
+      "emptySubtitle": "When logging a match, pick the MVP."
+    },
+    "teams": {
+      "emptyTitle": "No champions in period",
+      "emptySubtitle": "For each draw, the team with the most wins appears here.",
+      "noDate": "No date",
+      "winsOfTotal": "of {{total}}"
+    }
   }
 }
