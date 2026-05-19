@@ -34,6 +34,7 @@ export default function PlayerListScreen() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [hideRatings, setHideRatingsState] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [guestPlayers, setGuestPlayers] = useState<Player[]>([]);
   const [guestModalVisible, setGuestModalVisible] = useState(false);
@@ -121,6 +122,14 @@ export default function PlayerListScreen() {
   const totalSelected = selected.size;
   const totalCount = players.length + guestPlayers.length;
 
+  // Filtering matters only for the base roster — guests entered for this
+  // sortition stay visible regardless so the user doesn't lose track.
+  const filterTerm = searchTerm.trim().toLowerCase();
+  const visibleBase = filterTerm
+    ? players.filter(p => p.name.toLowerCase().includes(filterTerm))
+    : players;
+  const visibleList = [...visibleBase, ...guestPlayers];
+
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
@@ -142,8 +151,29 @@ export default function PlayerListScreen() {
         </View>
       </View>
 
+      {players.length > 5 && (
+        <View style={styles.searchRow}>
+          <Feather name="search" size={14} color={colors.textMuted} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t('playerList.searchPlaceholder')}
+            placeholderTextColor={colors.textMuted}
+            value={searchTerm}
+            onChangeText={setSearchTerm}
+          />
+          {searchTerm.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setSearchTerm('')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Feather name="x-circle" size={16} color={colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       <FlatList
-        data={[...players, ...guestPlayers]}
+        data={visibleList}
         keyExtractor={p => p.id}
         renderItem={({ item }) => {
           const isGuest = guestPlayers.some(g => g.id === item.id);
@@ -210,13 +240,21 @@ export default function PlayerListScreen() {
         }}
         contentContainerStyle={{ paddingBottom: 110 }}
         ListEmptyComponent={
-          <EmptyState
-            icon="user-plus"
-            title={t('playerList.emptyTitle')}
-            subtitle={t('playerList.emptySubtitle')}
-            actionLabel={t('playerList.emptyAction')}
-            onAction={() => navigation.navigate('PlayerRegister', { peladaId })}
-          />
+          filterTerm && players.length > 0 ? (
+            <EmptyState
+              icon="search"
+              title={t('playerList.searchEmptyTitle')}
+              subtitle={t('playerList.searchEmptySubtitle', { term: searchTerm })}
+            />
+          ) : (
+            <EmptyState
+              icon="user-plus"
+              title={t('playerList.emptyTitle')}
+              subtitle={t('playerList.emptySubtitle')}
+              actionLabel={t('playerList.emptyAction')}
+              onAction={() => navigation.navigate('PlayerRegister', { peladaId })}
+            />
+          )
         }
       />
 
@@ -274,6 +312,24 @@ function createStyles(c: ThemeColors) {
       marginBottom: 12,
     },
     headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    searchRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: c.surface,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      marginBottom: 10,
+      borderWidth: 1,
+      borderColor: c.borderLight,
+    },
+    searchInput: {
+      flex: 1,
+      paddingVertical: 8,
+      fontSize: 14,
+      color: c.inputText,
+    },
     sectionTitle: { color: c.textSecondary, fontSize: 13, fontWeight: '500' },
     toggleAll: { color: c.primary, fontSize: 13, fontWeight: '600' },
     guestBtn: {
