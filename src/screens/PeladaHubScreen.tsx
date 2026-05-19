@@ -41,6 +41,7 @@ export default function PeladaHubScreen() {
   const [playerCount, setPlayerCount] = useState(0);
   const [drawCount, setDrawCount] = useState(0);
   const [lastDrawDate, setLastDrawDate] = useState('');
+  const [rankedDraws, setRankedDraws] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -51,6 +52,7 @@ export default function PeladaHubScreen() {
         const history = pelada.drawHistory ?? [];
         setDrawCount(history.length);
         setLastDrawDate(history[0]?.timestamp ?? '');
+        setRankedDraws(history.filter(r => !!r.result).length);
       });
     }, [peladaId])
   );
@@ -83,6 +85,16 @@ export default function PeladaHubScreen() {
         ? t('peladaHub.lastDraw', { date: formatShortDate(lastDrawDate), count: drawCount })
         : t('peladaHub.noDraw'),
       onPress: () => navigation.navigate('DrawHistory', { peladaId }),
+    },
+    {
+      featherIcon: 'award',
+      iconBg: '#FEF3C7',
+      iconColor: '#B45309',
+      title: t('peladaHub.ranking'),
+      subtitle: rankedDraws > 0
+        ? t('peladaHub.rankingDesc', { count: rankedDraws })
+        : t('peladaHub.rankingEmpty'),
+      onPress: () => navigation.navigate('Ranking', { peladaId }),
     },
   ];
 

@@ -7,10 +7,10 @@ import { RouteProp, useRoute, useNavigation, useFocusEffect } from '@react-navig
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
-import { RootStackParamList, Team, Player, StarLevel, Gender } from '../types';
+import { RootStackParamList, Team, Player, StarLevel, Gender, DrawResult } from '../types';
 import StarRating from '../components/StarRating';
 import { rematchTwoTeams, recalcTeams } from '../utils/balancer';
-import { updateDrawRecord, addDrawRecord, getHideRatings, getPeladaById } from '../storage';
+import { updateDrawRecord, addDrawRecord, getHideRatings, getPeladaById, setDrawResult } from '../storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -72,6 +72,9 @@ export default function TeamsScreen() {
 
   const [renameTeamIdx, setRenameTeamIdx] = useState<number | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
+
+  const [currentResult, setCurrentResult] = useState<DrawResult | undefined>(undefined);
+  const [resultModalVisible, setResultModalVisible] = useState(false);
   const [addPickerTeamIdx, setAddPickerTeamIdx] = useState<number | null>(null);
   const [guestModalTeamIdx, setGuestModalTeamIdx] = useState<number | null>(null);
   const [newGuestName, setNewGuestName] = useState('');
@@ -104,6 +107,8 @@ export default function TeamsScreen() {
           setBasePlayers(pelada.players);
           setPeladaName(pelada.name);
           setPlayersPerTeamCfg(pelada.playersPerTeam);
+          const rec = (pelada.drawHistory ?? [])[params.historyIndex ?? 0];
+          setCurrentResult(rec?.result);
         }
       });
     }, [params.peladaId])
@@ -199,6 +204,20 @@ export default function TeamsScreen() {
   function openRename(teamIndex: number) {
     setRenameDraft(currentTeams[teamIndex]?.name ?? '');
     setRenameTeamIdx(teamIndex);
+  }
+
+  async function applyResult(next: DrawResult | undefined) {
+    setCurrentResult(next);
+    setResultModalVisible(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    await setDrawResult(params.peladaId, params.historyIndex ?? 0, next);
+  }
+
+  function resultLabel(): string {
+    if (!currentResult) return t('teams.markResult');
+    if (currentResult.type === 'draw') return t('teams.resultDraw');
+    const team = currentTeams.find(t => t.id === currentResult.winnerTeamId);
+    return t('teams.resultWinner', { name: team?.name ?? `#${currentResult.winnerTeamId}` });
   }
 
   async function confirmRename() {
@@ -377,6 +396,9 @@ export default function TeamsScreen() {
                   activeOpacity={0.7}
                   hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
                 >
+                  {currentResult?.type === 'win' && currentResult.winnerTeamId === team.id && (
+                    <Feather name="award" size={16} color="#F59E0B" />
+                  )}
                   <Text style={[styles.teamName, { color }]} numberOfLines={1}>
                     {team.name}
                   </Text>
@@ -498,10 +520,24 @@ export default function TeamsScreen() {
       )}
 
       <View style={[styles.footer, { bottom: 24 + insets.bottom }]}>
-        <TouchableOpacity style={styles.btnMerge} onPress={openMergeModal}>
-          <Feather name="shuffle" size={16} color={colors.primary} />
-          <Text style={styles.btnMergeText}>{t('teams.rebalanceTeams')}</Text>
-        </TouchableOpacity>
+        <View style={styles.footerRow}>
+          <TouchableOpacity style={styles.btnMerge} onPress={openMergeModal}>
+            <Feather name="shuffle" size={16} color={colors.primary} />
+            <Text style={styles.btnMergeText}>{t('teams.rebalanceTeams')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.btnMerge,
+              currentResult && styles.btnMergeFilled,
+            ]}
+            onPress={() => setResultModalVisible(true)}
+          >
+            <Feather name="award" size={16} color={currentResult ? '#fff' : colors.primary} />
+            <Text style={[styles.btnMergeText, currentResult && { color: '#fff' }]} numberOfLines={1}>
+              {resultLabel()}
+            </Text>
+          </TouchableOpacity>
+        </View>
         <View style={styles.footerRow}>
           <TouchableOpacity style={styles.btnSecondary} onPress={() => navigation.goBack()}>
             <Feather name="rotate-ccw" size={15} color={colors.primary} />
@@ -662,6 +698,74 @@ export default function TeamsScreen() {
               >
                 <Feather name="user-plus" size={14} color="#fff" />
                 <Text style={styles.btnModalPrimaryText}>{t('teams.addGuest')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Result modal */}
+      <Modal
+        visible={resultModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setResultModalVisible(false)}
+      >
+        <View style={styles.overlay}>
+          <View style={styles.modal}>
+            <Text style={styles.modalTitle}>{t('teams.resultModalTitle')}</Text>
+            <Text style={styles.modalSubtitle}>{t('teams.resultModalSubtitle')}</Text>
+
+            <View style={{ gap: 8 }}>
+              {currentTeams.map((team, idx) => {
+                const isWinner = currentResult?.type === 'win' && currentResult.winnerTeamId === team.id;
+                const color = TEAM_COLORS[idx % TEAM_COLORS.length];
+                return (
+                  <TouchableOpacity
+                    key={team.id}
+                    style={[
+                      styles.resultOption,
+                      isWinner && { borderColor: color, backgroundColor: colors.primaryLight },
+                    ]}
+                    onPress={() => applyResult({ type: 'win', winnerTeamId: team.id })}
+                    activeOpacity={0.8}
+                  >
+                    <Feather name="award" size={16} color={isWinner ? color : colors.textMuted} />
+                    <Text style={[styles.resultOptionText, isWinner && { color, fontWeight: '700' }]}>
+                      {team.name}
+                    </Text>
+                    {isWinner && <Feather name="check" size={16} color={color} />}
+                  </TouchableOpacity>
+                );
+              })}
+              <TouchableOpacity
+                style={[
+                  styles.resultOption,
+                  currentResult?.type === 'draw' && { borderColor: colors.textSecondary, backgroundColor: colors.surfaceVariant },
+                ]}
+                onPress={() => applyResult({ type: 'draw' })}
+                activeOpacity={0.8}
+              >
+                <Feather name="minus" size={16} color={colors.textMuted} />
+                <Text style={styles.resultOptionText}>{t('teams.resultDraw')}</Text>
+                {currentResult?.type === 'draw' && <Feather name="check" size={16} color={colors.textSecondary} />}
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalButtons}>
+              {currentResult && (
+                <TouchableOpacity
+                  style={styles.btnModalSecondary}
+                  onPress={() => applyResult(undefined)}
+                >
+                  <Text style={styles.btnModalSecondaryText}>{t('teams.resultClear')}</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={styles.btnModalPrimary}
+                onPress={() => setResultModalVisible(false)}
+              >
+                <Text style={styles.btnModalPrimaryText}>{t('common.close')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -934,18 +1038,21 @@ function createStyles(c: ThemeColors) {
     },
     btnSecondaryText: { color: c.primary, fontWeight: '600', fontSize: 15 },
     btnMerge: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 8,
+      gap: 6,
       backgroundColor: c.surface,
       borderRadius: 12,
-      padding: 14,
+      paddingVertical: 12,
+      paddingHorizontal: 10,
       borderWidth: 2,
       borderColor: c.primary,
       elevation: 2,
     },
-    btnMergeText: { color: c.primary, fontWeight: '700', fontSize: 15 },
+    btnMergeFilled: { backgroundColor: c.primary },
+    btnMergeText: { color: c.primary, fontWeight: '700', fontSize: 13, flexShrink: 1 },
 
     shareCard: { position: 'absolute', left: -9999, top: 0 },
     shareCardInner: { backgroundColor: '#F0F4FF', padding: 20, width: 320, gap: 10 },
@@ -1059,5 +1166,16 @@ function createStyles(c: ThemeColors) {
     },
     btnModalSecondaryText: { color: c.text, fontWeight: '600', fontSize: 15 },
     btnModalDisabled: { backgroundColor: c.disabled },
+    resultOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      padding: 13,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: c.borderLight,
+      backgroundColor: c.surfaceVariant,
+    },
+    resultOptionText: { flex: 1, fontSize: 15, color: c.text, fontWeight: '600' },
   });
 }

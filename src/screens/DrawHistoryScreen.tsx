@@ -172,6 +172,18 @@ function DrawEntry({
                 </Text>
               </View>
             )}
+            {record.result && (
+              <View style={[styles.metricChip, styles.metricChipResult]}>
+                <Feather name="award" size={11} color="#92400E" />
+                <Text style={styles.metricLabelResult}>
+                  {record.result.type === 'draw'
+                    ? t('teams.resultDraw')
+                    : t('teams.resultWinner', {
+                        name: record.teams.find(team => team.id === (record.result as { type: 'win'; winnerTeamId: number }).winnerTeamId)?.name ?? '',
+                      })}
+                </Text>
+              </View>
+            )}
           </View>
 
           {record.teams.map((team, ti) => (
@@ -380,8 +392,10 @@ function createStyles(c: ThemeColors) {
       paddingVertical: 5,
     },
     metricChipAccent: { backgroundColor: c.primaryLight },
+    metricChipResult: { backgroundColor: 'rgba(245, 158, 11, 0.15)' },
     metricLabel: { fontSize: 11, color: c.textSecondary, fontWeight: '600' },
     metricLabelAccent: { color: c.primary },
+    metricLabelResult: { fontSize: 11, color: '#92400E', fontWeight: '700' },
     metricValue: { fontSize: 12, color: c.text, fontWeight: '700', marginLeft: 4 },
 
     teamSection: { gap: 4 },

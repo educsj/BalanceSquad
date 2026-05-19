@@ -72,7 +72,11 @@
     "history": "Draw History",
     "lastDraw_one": "Last: {{date}} · {{count}} record",
     "lastDraw_other": "Last: {{date}} · {{count}} records",
-    "noDraw": "No draws yet"
+    "noDraw": "No draws yet",
+    "ranking": "Ranking",
+    "rankingDesc_one": "{{count}} draw with a result",
+    "rankingDesc_other": "{{count}} draws with results",
+    "rankingEmpty": "Mark a winner after a draw to start the table"
   },
   "playerRegister": {
     "playersCount_one": "{{count}} player registered",
@@ -154,6 +158,12 @@
     "emptyTeam": "No players on this team",
     "renameTitle": "Rename team",
     "renameHint": "Use whatever name fits — Reds, Bibs, etc.",
+    "markResult": "Mark result",
+    "resultDraw": "Draw",
+    "resultWinner": "Winner: {{name}}",
+    "resultModalTitle": "Game result",
+    "resultModalSubtitle": "Who won?",
+    "resultClear": "Clear",
     "addToTeam": "Add to {{team}}",
     "addPickerSubtitle": "Pick someone from the group or create a guest",
     "noAvailablePlayers": "Every group player is already on a team.",
@@ -203,6 +213,18 @@
     "drawConfig": "Configure Draw",
     "teams": "Sorted Teams",
     "manualTeams": "Assign Teams",
-    "drawHistory": "Draw History"
+    "drawHistory": "Draw History",
+    "ranking": "Ranking"
+  },
+  "ranking": {
+    "emptyTitle": "No ranking yet",
+    "emptySubtitle": "Mark a winner on at least one draw to see player stats.",
+    "hint_one": "{{count}} draw counted",
+    "hint_other": "{{count}} draws counted",
+    "player": "Player",
+    "played": "P",
+    "wins": "W",
+    "draws": "D",
+    "losses": "L"
   }
 }

@@ -18,10 +18,15 @@ export interface Team {
   totalStars: number;
 }
 
+export type DrawResult =
+  | { type: 'win'; winnerTeamId: number }
+  | { type: 'draw' };
+
 export interface DrawRecord {
   teams: Team[];
   timestamp: string; // ISO 8601
   balanceByGender?: boolean;
+  result?: DrawResult;
 }
 
 export interface Pelada {
@@ -48,6 +53,7 @@ export type RootStackParamList = {
   };
   ManualTeams: { players: Player[]; numTeams: number; peladaId: string; playersPerTeam: number };
   DrawHistory: { peladaId: string };
+  Ranking: { peladaId: string };
 };
 
 // Kept for backward compatibility with legacy screen files

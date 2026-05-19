@@ -72,7 +72,11 @@
     "history": "Histórico de Sorteios",
     "lastDraw_one": "Último: {{date}} · {{count}} registro",
     "lastDraw_other": "Último: {{date}} · {{count}} registros",
-    "noDraw": "Nenhum sorteio realizado ainda"
+    "noDraw": "Nenhum sorteio realizado ainda",
+    "ranking": "Ranking",
+    "rankingDesc_one": "{{count}} sorteio com resultado",
+    "rankingDesc_other": "{{count}} sorteios com resultado",
+    "rankingEmpty": "Marque o vencedor após um sorteio pra começar"
   },
   "playerRegister": {
     "playersCount_one": "{{count}} jogador cadastrado",
@@ -154,6 +158,12 @@
     "emptyTeam": "Sem jogadores neste time",
     "renameTitle": "Renomear time",
     "renameHint": "Use o nome que combinar — Vermelho, Coletes, etc.",
+    "markResult": "Marcar resultado",
+    "resultDraw": "Empate",
+    "resultWinner": "Vencedor: {{name}}",
+    "resultModalTitle": "Resultado do jogo",
+    "resultModalSubtitle": "Quem venceu?",
+    "resultClear": "Limpar",
     "addToTeam": "Adicionar ao {{team}}",
     "addPickerSubtitle": "Escolha alguém da pelada ou crie um avulso",
     "noAvailablePlayers": "Todos os jogadores da pelada já estão em algum time.",
@@ -203,6 +213,18 @@
     "drawConfig": "Configurar Sorteio",
     "teams": "Times Sorteados",
     "manualTeams": "Montar Times",
-    "drawHistory": "Histórico de Sorteios"
+    "drawHistory": "Histórico de Sorteios",
+    "ranking": "Ranking"
+  },
+  "ranking": {
+    "emptyTitle": "Sem ranking ainda",
+    "emptySubtitle": "Marque o vencedor em pelo menos um sorteio pra ver as estatísticas dos jogadores.",
+    "hint_one": "{{count}} sorteio considerado",
+    "hint_other": "{{count}} sorteios considerados",
+    "player": "Jogador",
+    "played": "J",
+    "wins": "V",
+    "draws": "E",
+    "losses": "D"
   }
 }

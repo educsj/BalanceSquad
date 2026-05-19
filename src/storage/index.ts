@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Pelada, DrawRecord, Team } from '../types';
+import { Pelada, DrawRecord, Team, DrawResult } from '../types';
 
 const PELADAS_KEY = '@balancesquad:peladas';
 const HIDE_RATINGS_KEY = '@balancesquad:hideRatings';
@@ -56,6 +56,26 @@ export async function addDrawRecord(
   };
   const history = [record, ...(pelada.drawHistory ?? [])].slice(0, DRAW_HISTORY_LIMIT);
   await updatePelada({ ...pelada, drawHistory: history });
+}
+
+export async function setDrawResult(
+  peladaId: string,
+  index: number,
+  result: DrawResult | undefined,
+): Promise<void> {
+  const pelada = await getPeladaById(peladaId);
+  if (!pelada) return;
+  const history = pelada.drawHistory ?? [];
+  if (index >= history.length) return;
+  const updated: DrawRecord[] = history.map((r, i) => {
+    if (i !== index) return r;
+    if (!result) {
+      const { result: _omit, ...rest } = r;
+      return rest as DrawRecord;
+    }
+    return { ...r, result };
+  });
+  await updatePelada({ ...pelada, drawHistory: updated });
 }
 
 export async function updateDrawRecord(peladaId: string, teams: Team[], index = 0): Promise<void> {

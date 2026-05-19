@@ -72,7 +72,11 @@
     "history": "Historial de Sorteos",
     "lastDraw_one": "Último: {{date}} · {{count}} registro",
     "lastDraw_other": "Último: {{date}} · {{count}} registros",
-    "noDraw": "Sin sorteos realizados aún"
+    "noDraw": "Sin sorteos realizados aún",
+    "ranking": "Ranking",
+    "rankingDesc_one": "{{count}} sorteo con resultado",
+    "rankingDesc_other": "{{count}} sorteos con resultado",
+    "rankingEmpty": "Marca el ganador tras un sorteo para empezar"
   },
   "playerRegister": {
     "playersCount_one": "{{count}} jugador registrado",
@@ -154,6 +158,12 @@
     "emptyTeam": "Sin jugadores en este equipo",
     "renameTitle": "Renombrar equipo",
     "renameHint": "Usa el nombre que prefieras — Rojos, Petos, etc.",
+    "markResult": "Marcar resultado",
+    "resultDraw": "Empate",
+    "resultWinner": "Ganador: {{name}}",
+    "resultModalTitle": "Resultado del partido",
+    "resultModalSubtitle": "¿Quién ganó?",
+    "resultClear": "Limpiar",
     "addToTeam": "Agregar a {{team}}",
     "addPickerSubtitle": "Elige a alguien del grupo o crea un invitado",
     "noAvailablePlayers": "Todos los jugadores del grupo ya están en un equipo.",
@@ -203,6 +213,18 @@
     "drawConfig": "Configurar Sorteo",
     "teams": "Equipos Sorteados",
     "manualTeams": "Asignar Equipos",
-    "drawHistory": "Historial de Sorteos"
+    "drawHistory": "Historial de Sorteos",
+    "ranking": "Ranking"
+  },
+  "ranking": {
+    "emptyTitle": "Sin ranking aún",
+    "emptySubtitle": "Marca un ganador en al menos un sorteo para ver las estadísticas.",
+    "hint_one": "{{count}} sorteo contabilizado",
+    "hint_other": "{{count}} sorteos contabilizados",
+    "player": "Jugador",
+    "played": "J",
+    "wins": "G",
+    "draws": "E",
+    "losses": "P"
   }
 }
