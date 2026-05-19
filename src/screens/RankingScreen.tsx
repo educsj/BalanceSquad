@@ -6,6 +6,7 @@ import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList, Pelada } from '../types';
 import { getPeladaById } from '../storage';
 import EmptyState from '../components/EmptyState';
@@ -39,6 +40,7 @@ export default function RankingScreen() {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const openProfile = useCallback((playerId: string) => {
@@ -184,7 +186,7 @@ export default function RankingScreen() {
   if (!pelada) return <View style={styles.container} />;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.periodBar}>
         {PERIODS.map(p => {
           const active = period === p;

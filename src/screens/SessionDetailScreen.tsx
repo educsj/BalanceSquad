@@ -97,7 +97,7 @@ export default function SessionDetailScreen() {
   async function handleRemove(playerId: string, playerName: string) {
     if (!session) return;
     Alert.alert(
-      t('sessions.removeTitle'),
+      t('sessions.removeTitle', { name: playerName }),
       t('sessions.removeMsg', { name: playerName }),
       [
         { text: t('common.cancel'), style: 'cancel' },
