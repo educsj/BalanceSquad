@@ -72,6 +72,11 @@ export interface PeladaSession {
   status: SessionStatus;
   drawHistoryIndex?: number; // link to drawHistory[i] once the draw happens
   notes?: string;
+  // One-off players ("avulsos") added directly to this session — kept here
+  // so they don't pollute the permanent pelada.players roster. IDs in
+  // rsvps/waitlist may reference these. Carried through to DrawConfig via
+  // the existing `guestPlayers` param when the draw runs.
+  guestPlayers?: Player[];
 }
 
 export interface Pelada {

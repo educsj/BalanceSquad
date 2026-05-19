@@ -439,7 +439,13 @@
     "pickerSubtitle": "Toque em cada jogador que vai confirmar presença. Pode marcar vários — feche quando terminar.",
     "pickerSubtitleFull": "Sessão lotada — quem você confirmar entra na fila de espera.",
     "pickerDoneCta": "Concluir",
-    "pickerEmpty": "Todos os jogadores da pelada já estão na sessão.",
-    "unknownPlayer": "Jogador desconhecido"
+    "pickerEmpty": "Todos os jogadores da pelada já estão na sessão. Use \"+ Avulso\" pra adicionar alguém que não é cadastrado.",
+    "unknownPlayer": "Jogador desconhecido",
+    "addGuestCta": "+ Avulso",
+    "guestChip": "Avulso",
+    "guestModalTitle": "Novo jogador avulso",
+    "guestModalSubtitle": "Entra direto nesta sessão sem virar membro permanente da pelada.",
+    "guestNamePlaceholder": "Nome do avulso",
+    "guestLevelLabel": "Nível"
   }
 }

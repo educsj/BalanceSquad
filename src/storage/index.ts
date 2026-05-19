@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Pelada, DrawRecord, Team, DrawResult, Match, PeladaSession, SessionStatus } from '../types';
+import { Pelada, DrawRecord, Team, DrawResult, Match, PeladaSession, SessionStatus, Player } from '../types';
 import { applyRsvp, applyCancel, RsvpOutcome } from '../utils/sessions';
 
 export type { RsvpOutcome } from '../utils/sessions';
@@ -249,15 +249,51 @@ export async function rsvpToSession(
   return outcome;
 }
 
+// Adds a one-off guest player to a session and immediately RSVPs them. The
+// guest lives inside the session (not in pelada.players) so they don't
+// pollute the permanent roster — same semantics as TeamsScreen's "+ Avulso".
+// Returns the outcome ('confirmed' | 'waitlisted') so the UI can react.
+export async function addSessionGuest(
+  peladaId: string,
+  sessionId: string,
+  guest: Player,
+): Promise<RsvpOutcome | 'not_found'> {
+  let outcome: RsvpOutcome | 'not_found' = 'not_found';
+  const result = await updateSessionInternal(peladaId, sessionId, s => {
+    const withGuest: PeladaSession = {
+      ...s,
+      guestPlayers: [...(s.guestPlayers ?? []), guest],
+    };
+    const r = applyRsvp(withGuest, guest.id);
+    outcome = r.outcome;
+    return r.session;
+  });
+  if (!result) return 'not_found';
+  return outcome;
+}
+
 // Removes a player from the session. If they were confirmed and the waitlist
 // is non-empty, auto-promotes the first person in the waitlist to rsvps.
 // Idempotent — calling on a non-RSVPd player is a no-op.
+//
+// If the removed player is a one-off guest, they're also wiped from
+// session.guestPlayers (avulsos are session-scoped, no point keeping the
+// stub around once they leave).
 export async function cancelRsvp(
   peladaId: string,
   sessionId: string,
   playerId: string,
 ): Promise<void> {
-  await updateSessionInternal(peladaId, sessionId, s => applyCancel(s, playerId));
+  await updateSessionInternal(peladaId, sessionId, s => {
+    const next = applyCancel(s, playerId);
+    if (s.guestPlayers?.some(g => g.id === playerId)) {
+      return {
+        ...next,
+        guestPlayers: next.guestPlayers?.filter(g => g.id !== playerId),
+      };
+    }
+    return next;
+  });
 }
 
 // Called by the draw flow when a session "goes live" — links it to the

@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Alert,
+  TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { RouteProp, useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -8,11 +9,16 @@ import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { RootStackParamList, Pelada, PeladaSession, Player } from '../types';
+import { RootStackParamList, Pelada, PeladaSession, Player, StarLevel, Gender } from '../types';
 import {
-  getPeladaById, rsvpToSession, cancelRsvp, setSessionStatus, removeSession,
+  getPeladaById, rsvpToSession, cancelRsvp, setSessionStatus, removeSession, addSessionGuest,
 } from '../storage';
 import { useTheme, ThemeColors } from '../theme';
+import StarRating from '../components/StarRating';
+
+function generateId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
 
 type RouteProps = RouteProp<RootStackParamList, 'SessionDetail'>;
 type Nav = StackNavigationProp<RootStackParamList>;
@@ -41,6 +47,10 @@ export default function SessionDetailScreen() {
   const [pelada, setPelada] = useState<Pelada | null>(null);
   const [session, setSession] = useState<PeladaSession | null>(null);
   const [confirmPickerOpen, setConfirmPickerOpen] = useState(false);
+  const [guestModalOpen, setGuestModalOpen] = useState(false);
+  const [newGuestName, setNewGuestName] = useState('');
+  const [newGuestLevel, setNewGuestLevel] = useState<StarLevel>(3);
+  const [newGuestGender, setNewGuestGender] = useState<Gender | undefined>(undefined);
 
   const reload = useCallback(async () => {
     const p = await getPeladaById(params.peladaId);
@@ -52,13 +62,20 @@ export default function SessionDetailScreen() {
 
   useFocusEffect(useCallback(() => { reload(); }, [reload]));
 
-  // Map player ids → Player for the lists. Falls back to a placeholder when
-  // a player has been deleted from the pelada (shouldn't happen normally).
+  // Map player ids → Player for the lists. Merges pelada roster + session
+  // guests so confirmed/waitlisted avulsos render with name + ★.
   const playerById = useMemo(() => {
     const map = new Map<string, Player>();
     pelada?.players.forEach(pl => map.set(pl.id, pl));
+    session?.guestPlayers?.forEach(pl => map.set(pl.id, pl));
     return map;
-  }, [pelada]);
+  }, [pelada, session]);
+
+  // Guests can only have their name resolved through session.guestPlayers, so
+  // the UI uses this set to render a "Avulso" chip next to their name.
+  const guestIds = useMemo(() => {
+    return new Set((session?.guestPlayers ?? []).map(g => g.id));
+  }, [session]);
 
   // Pool of players NOT yet confirmed or waitlisted, for the "Confirmar como…"
   // picker. Sorted alphabetically.
@@ -154,11 +171,48 @@ export default function SessionDetailScreen() {
 
   function handleDrawNow() {
     if (!session) return;
-    // Pré-seleciona os jogadores confirmados na sessão.
+    // Pré-seleciona os jogadores confirmados na sessão. RSVPs podem incluir
+    // ids de jogadores avulsos (guestPlayers) — esses não estão em
+    // pelada.players, então passamos eles via `guestPlayers` (o DrawConfig
+    // já mescla com `selectedPlayerIds`).
+    const guestIdsInRsvp = new Set(session.guestPlayers?.map(g => g.id) ?? []);
+    const regularSelected = session.rsvps.filter(id => !guestIdsInRsvp.has(id));
+    const guestsInRsvp = (session.guestPlayers ?? []).filter(g => session.rsvps.includes(g.id));
     navigation.navigate('DrawConfig', {
       peladaId: params.peladaId,
-      selectedPlayerIds: session.rsvps,
+      selectedPlayerIds: regularSelected,
+      guestPlayers: guestsInRsvp,
     });
+  }
+
+  function openGuestModal() {
+    setNewGuestName('');
+    setNewGuestLevel(3);
+    setNewGuestGender(undefined);
+    setConfirmPickerOpen(false);
+    setGuestModalOpen(true);
+  }
+
+  async function handleCreateGuest() {
+    if (!session) return;
+    const name = newGuestName.trim();
+    if (!name) return;
+    const guest: Player = {
+      id: generateId(),
+      name,
+      level: newGuestLevel,
+      ...(newGuestGender ? { gender: newGuestGender } : {}),
+    };
+    setGuestModalOpen(false);
+    const outcome = await addSessionGuest(params.peladaId, session.id, guest);
+    if (outcome === 'confirmed') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    } else if (outcome === 'waitlisted') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    }
+    await reload();
+    // Reopen the picker so the organizer can keep adding (regulars or guests).
+    setConfirmPickerOpen(true);
   }
 
   return (
@@ -217,10 +271,16 @@ export default function SessionDetailScreen() {
           session.rsvps.map(playerId => {
             const player = playerById.get(playerId);
             const name = player?.name ?? t('sessions.unknownPlayer');
+            const isGuest = guestIds.has(playerId);
             return (
               <View key={playerId} style={styles.playerRow}>
                 <Feather name="check-circle" size={16} color="#15803D" />
                 <Text style={styles.playerName} numberOfLines={1}>{name}</Text>
+                {isGuest && (
+                  <View style={styles.guestChip}>
+                    <Text style={styles.guestChipText}>{t('sessions.guestChip')}</Text>
+                  </View>
+                )}
                 {!isCancelled && !isCompleted && (
                   <TouchableOpacity
                     onPress={() => handleRemove(playerId, name)}
@@ -244,12 +304,18 @@ export default function SessionDetailScreen() {
             {session.waitlist.map((playerId, idx) => {
               const player = playerById.get(playerId);
               const name = player?.name ?? t('sessions.unknownPlayer');
+              const isGuest = guestIds.has(playerId);
               return (
                 <View key={playerId} style={styles.playerRow}>
                   <View style={styles.waitlistOrderBubble}>
                     <Text style={styles.waitlistOrderText}>{idx + 1}</Text>
                   </View>
                   <Text style={styles.playerName} numberOfLines={1}>{name}</Text>
+                  {isGuest && (
+                    <View style={styles.guestChip}>
+                      <Text style={styles.guestChipText}>{t('sessions.guestChip')}</Text>
+                    </View>
+                  )}
                   {!isCancelled && !isCompleted && (
                     <TouchableOpacity
                       onPress={() => handleRemove(playerId, name)}
@@ -347,15 +413,95 @@ export default function SessionDetailScreen() {
                 ))
               )}
             </ScrollView>
-            <TouchableOpacity
-              style={styles.btnSecondary}
-              onPress={() => setConfirmPickerOpen(false)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.btnSecondaryText}>{t('sessions.pickerDoneCta')}</Text>
-            </TouchableOpacity>
+            <View style={styles.pickerFooter}>
+              <TouchableOpacity
+                style={styles.btnGuest}
+                onPress={openGuestModal}
+                activeOpacity={0.8}
+              >
+                <Feather name="user-plus" size={14} color={colors.primary} />
+                <Text style={styles.btnGuestText}>{t('sessions.addGuestCta')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.btnDone}
+                onPress={() => setConfirmPickerOpen(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.btnDoneText}>{t('sessions.pickerDoneCta')}</Text>
+              </TouchableOpacity>
+            </View>
           </TouchableOpacity>
         </TouchableOpacity>
+      </Modal>
+
+      {/* Guest creation modal */}
+      <Modal
+        visible={guestModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setGuestModalOpen(false)}
+      >
+        <KeyboardAvoidingView
+          style={styles.overlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.pickerModal}>
+            <Text style={styles.modalTitle}>{t('sessions.guestModalTitle')}</Text>
+            <Text style={styles.modalSubtitle}>{t('sessions.guestModalSubtitle')}</Text>
+            <TextInput
+              style={styles.guestInput}
+              placeholder={t('sessions.guestNamePlaceholder')}
+              placeholderTextColor={colors.textMuted}
+              value={newGuestName}
+              onChangeText={setNewGuestName}
+              autoFocus
+              maxLength={40}
+            />
+            <View style={styles.guestLevelRow}>
+              <Text style={styles.guestLevelLabel}>{t('sessions.guestLevelLabel')}</Text>
+              <StarRating value={newGuestLevel} onChange={lvl => setNewGuestLevel(lvl)} size={26} />
+            </View>
+            <View style={styles.guestGenderRow}>
+              {([
+                { value: undefined, key: 'none' },
+                { value: 'M' as const, key: 'male' },
+                { value: 'F' as const, key: 'female' },
+              ]).map(opt => {
+                const active = newGuestGender === opt.value;
+                return (
+                  <TouchableOpacity
+                    key={opt.key}
+                    style={[styles.guestGenderBtn, active && styles.guestGenderBtnActive]}
+                    onPress={() => setNewGuestGender(opt.value)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.guestGenderBtnText, active && styles.guestGenderBtnTextActive]}>
+                      {t(`playerRegister.gender.${opt.key}`)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <View style={styles.pickerFooter}>
+              <TouchableOpacity
+                style={styles.btnDone}
+                onPress={() => { setGuestModalOpen(false); setConfirmPickerOpen(true); }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.btnDoneText}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.btnGuestPrimary, !newGuestName.trim() && styles.btnDisabled]}
+                onPress={handleCreateGuest}
+                disabled={!newGuestName.trim()}
+                activeOpacity={0.85}
+              >
+                <Feather name="check" size={14} color="#fff" />
+                <Text style={styles.btnGuestPrimaryText}>{t('common.add')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -518,5 +664,75 @@ function createStyles(c: ThemeColors) {
       alignItems: 'center',
     },
     btnSecondaryText: { color: c.text, fontWeight: '600', fontSize: 15 },
+
+    pickerFooter: { flexDirection: 'row', gap: 8, marginTop: 4 },
+    btnGuest: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      paddingVertical: 13,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderStyle: 'dashed',
+      borderColor: c.primary,
+      backgroundColor: c.primaryLight,
+    },
+    btnGuestText: { color: c.primary, fontWeight: '700', fontSize: 14 },
+    btnDone: {
+      flex: 1,
+      backgroundColor: c.borderLight,
+      borderRadius: 10,
+      paddingVertical: 13,
+      alignItems: 'center',
+    },
+    btnDoneText: { color: c.text, fontWeight: '600', fontSize: 15 },
+
+    btnGuestPrimary: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      paddingVertical: 13,
+    },
+    btnGuestPrimaryText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+
+    guestInput: {
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 11,
+      fontSize: 15,
+      color: c.inputText,
+      backgroundColor: c.inputBg,
+    },
+    guestLevelRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    guestLevelLabel: { fontSize: 14, fontWeight: '600', color: c.text },
+    guestGenderRow: { flexDirection: 'row', gap: 8 },
+    guestGenderBtn: {
+      flex: 1,
+      paddingVertical: 10,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: c.border,
+      alignItems: 'center',
+      backgroundColor: c.surfaceVariant,
+    },
+    guestGenderBtnActive: { borderColor: c.primary, backgroundColor: c.primaryLight },
+    guestGenderBtnText: { color: c.textSecondary, fontWeight: '600', fontSize: 13 },
+    guestGenderBtnTextActive: { color: c.primary, fontWeight: '700' },
+
+    guestChip: {
+      backgroundColor: c.primaryLight,
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+      borderRadius: 6,
+    },
+    guestChipText: { color: c.primary, fontWeight: '700', fontSize: 10, textTransform: 'uppercase' },
   });
 }

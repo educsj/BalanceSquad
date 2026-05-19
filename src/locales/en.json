@@ -439,7 +439,13 @@
     "pickerSubtitle": "Tap each player you want to confirm. You can pick several — close when done.",
     "pickerSubtitleFull": "Session is full — anyone you confirm now will join the waiting list.",
     "pickerDoneCta": "Done",
-    "pickerEmpty": "Every player in the squad is already on this session.",
-    "unknownPlayer": "Unknown player"
+    "pickerEmpty": "Every player in the squad is already on this session. Use \"+ Guest\" to add someone who's not in the roster.",
+    "unknownPlayer": "Unknown player",
+    "addGuestCta": "+ Guest",
+    "guestChip": "Guest",
+    "guestModalTitle": "New one-off guest",
+    "guestModalSubtitle": "Joins this session only — doesn't become a permanent squad member.",
+    "guestNamePlaceholder": "Guest name",
+    "guestLevelLabel": "Level"
   }
 }

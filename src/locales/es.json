@@ -439,7 +439,13 @@
     "pickerSubtitle": "Toca a cada jugador que va a confirmar. Puedes marcar varios — cierra cuando termines.",
     "pickerSubtitleFull": "Sesión llena — los jugadores que confirmes irán a la lista de espera.",
     "pickerDoneCta": "Listo",
-    "pickerEmpty": "Todos los jugadores del squad ya están en esta sesión.",
-    "unknownPlayer": "Jugador desconocido"
+    "pickerEmpty": "Todos los jugadores del squad ya están en esta sesión. Usa \"+ Invitado\" para agregar a alguien que no está en el roster.",
+    "unknownPlayer": "Jugador desconocido",
+    "addGuestCta": "+ Invitado",
+    "guestChip": "Invitado",
+    "guestModalTitle": "Nuevo invitado",
+    "guestModalSubtitle": "Solo entra en esta sesión — no se vuelve miembro permanente del squad.",
+    "guestNamePlaceholder": "Nombre del invitado",
+    "guestLevelLabel": "Nivel"
   }
 }
