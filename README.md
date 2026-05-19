@@ -197,7 +197,7 @@ Covers the balancing algorithm (greedy + gender round-robin + size preservation)
 
 ### Near-term (small wins)
 
-- [ ] Navigate prev/next inside the period filter (other months, other weeks)
+- [x] Navigate prev/next inside the period filter (other months, other weeks)
 - [ ] Push notification for "pelada day"
 - [ ] Player photo / avatar
 - [ ] Cloud sync across devices (Firebase or similar)
@@ -206,21 +206,21 @@ Covers the balancing algorithm (greedy + gender round-robin + size preservation)
 
 Quick repechage when a team ends up below the player cap — instead of adding manually, the app pulls players from the "losing team" to fill the empty slot.
 
-- [ ] **"Fill Team"** button on `TeamsScreen`, visible only on teams with fewer players than the configured cap
-- [ ] Repechage modal: pick the **"Losing Team"** (source) the players will be pulled from
-- [ ] **Random Draw**: picks players from the losing team 100% randomly, in the exact missing amount
-- [ ] **Balanced Draw**: looks at the stars of who's missing and pulls the player(s) from the losing team that best bring the incomplete team's score closer to the overall average (compared against the other complete team)
-- [ ] On confirm, moves the chosen players to the incomplete team and updates stars/totals in the UI
+- [x] **"Fill Team"** button on `TeamsScreen`, visible only on teams with fewer players than the configured cap
+- [x] Repechage modal: pick the **"Losing Team"** (source) the players will be pulled from
+- [x] **Random Draw**: picks players from the losing team 100% randomly, in the exact missing amount
+- [x] **Balanced Draw**: looks at the stars of who's missing and pulls the player(s) from the losing team that best bring the incomplete team's score closer to the overall average (compared against the other complete team)
+- [x] On confirm, moves the chosen players to the incomplete team and updates stars/totals in the UI
 
 ### Injury Substitution
 
 When a player has to leave mid-game (usually injury), the app suggests a substitute **at the same level** to keep the teams balanced without having to redraw everything.
 
-- [ ] **Long-press** on a player opens a menu with **"Substitute (injury)"** and "Remove"
-- [ ] Substitution modal lists candidates (unassigned players + players from other teams) ordered by **star proximity** to the injured player
-- [ ] Highlight **"Same level ✓"** when the level matches exactly
-- [ ] On confirm, swaps the injured player for the sub; if the sub came from another team, that donor team is left with an open slot (and can use "Fill Team" to refill)
-- [ ] **Undo** snackbar after the substitution (5s, reuses the existing remove pattern)
+- [x] **Long-press** on a player opens a menu with **"Substitute (injury)"** and "Remove"
+- [x] Substitution modal lists candidates (unassigned players + players from other teams) ordered by **star proximity** to the injured player
+- [x] Highlight **"Same level ✓"** when the level matches exactly
+- [x] On confirm, swaps the injured player for the sub; if the sub came from another team, that donor team is left with an open slot (and can use "Fill Team" to refill)
+- [x] **Undo** snackbar after the substitution (5s, reuses the existing remove pattern)
 
 ### Vision: from team-balancer to **pelada admin platform**
 
@@ -240,11 +240,11 @@ The next phase turns BalanceSquad into a full management tool for pelada organiz
 - [ ] Export full financial history to CSV / JSON
 
 **Attendance and scheduling**
-- [ ] RSVP for upcoming sessions (confirm presence in advance)
-- [ ] Per-game waiting list when capacity is exceeded
-- [ ] Attendance history per player (% participation over time)
-- [ ] **Attendance ranking** with shareable Top 3 card (most loyal players)
-- [ ] Calendar view of past + upcoming sessions
+- [x] RSVP for upcoming sessions (confirm presence in advance)
+- [x] Per-game waiting list when capacity is exceeded
+- [x] Attendance history per player (% participation over time)
+- [x] **Attendance ranking** with shareable Top 3 card (most loyal players)
+- [x] Calendar view of past + upcoming sessions
 
 **Membership and waiting list (mensalistas)**
 - [ ] **Monthly-member tier** with guaranteed spot per session

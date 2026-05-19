@@ -1,7 +1,7 @@
 # BalanceSquad — Contexto Técnico Completo
 
 > Documento de referência pra onboarding, continuação de desenvolvimento e contexto de IA.
-> Atualizado em: 2026-05-19
+> Atualizado em: 2026-05-19 (Presença bundle: sessões + RSVP + waitlist + ranking de assiduidade)
 
 ---
 
@@ -33,8 +33,12 @@ HomeScreen
         │                 └── TeamsScreen
         ├── DrawHistoryScreen
         │     └── TeamsScreen                (retomar histórico)
-        └── RankingScreen
-              └── PlayerProfileScreen
+        ├── RankingScreen
+        │     └── PlayerProfileScreen
+        └── SessionsCalendarScreen
+              ├── SessionCreateScreen
+              └── SessionDetailScreen
+                    └── DrawConfigScreen     (Sortear agora, pré-marca RSVPs)
 
 TeamsScreen
   └── MatchesScreen
@@ -98,6 +102,20 @@ interface DrawRecord {
   matches?: Match[];                       // fonte de verdade do ranking
 }
 
+type SessionStatus = 'scheduled' | 'completed' | 'cancelled';
+
+interface PeladaSession {
+  id: string;
+  date: string;                            // YYYY-MM-DD
+  time?: string;                           // HH:mm (opcional)
+  maxPlayers: number;                      // capacidade antes da waitlist
+  rsvps: string[];                         // player IDs confirmados (até maxPlayers)
+  waitlist: string[];                      // FIFO; auto-promove ao cancelar RSVP
+  status: SessionStatus;
+  drawHistoryIndex?: number;               // link pro DrawRecord depois do sorteio
+  notes?: string;
+}
+
 interface Pelada {
   id: string;
   name: string;
@@ -105,6 +123,7 @@ interface Pelada {
   players: Player[];
   lastDraw?: Team[];                       // legado — migrado em loadPeladas
   drawHistory?: DrawRecord[];              // até 20, mais recente no índice 0
+  sessions?: PeladaSession[];              // sessões agendadas (Presença bundle)
 }
 ```
 
@@ -135,6 +154,9 @@ type RootStackParamList = {
     prefillAwayTeamId?: number;
   };
   PlayerProfile:   { peladaId: string; playerId: string };
+  SessionsCalendar:{ peladaId: string };
+  SessionCreate:   { peladaId: string };
+  SessionDetail:   { peladaId: string; sessionId: string };
 };
 ```
 
@@ -172,6 +194,15 @@ setDrawResult(peladaId, index, result?)
 addMatch(peladaId, historyIndex, match)
 updateMatch(peladaId, historyIndex, match)
 removeMatch(peladaId, historyIndex, matchId)
+
+// Sessões agendadas (Presença bundle)
+createSession(peladaId, { date, time?, maxPlayers, notes? })
+updateSession(peladaId, sessionId, patch)        // só campos não-lifecycle
+setSessionStatus(peladaId, sessionId, status)    // 'scheduled' | 'completed' | 'cancelled'
+removeSession(peladaId, sessionId)
+rsvpToSession(peladaId, sessionId, playerId)     // retorna RsvpOutcome
+cancelRsvp(peladaId, sessionId, playerId)        // promove waitlist[0] se aplicável
+linkSessionToDraw(peladaId, sessionId, drawIdx)  // status='completed' + link
 
 // Preferências
 getHideRatings() / setHideRatings()
@@ -243,6 +274,7 @@ Todas iteram `drawHistory[].matches[]`, filtram por período opcional e retornam
 | `aggregateScorers(pelada, range)` | `ScorerStat[]` ordenado por goals desc, então perMatch |
 | `aggregateMvps(pelada, range)` | `MvpStat[]` ordenado por count desc |
 | `aggregateTeamChampions(pelada, range)` | `TeamChampionEntry[]` — pra cada sorteio do período, o time com mais vitórias |
+| `aggregateAttendance(pelada, range)` | `AttendanceStat[]` — % de game days que cada player apareceu no lineup (DrawRecord = sessão) |
 | `buildPlayerProfile(pelada, playerId, range)` | `PlayerProfile` com head-to-head + parceiros + lista de matches do jogador |
 | `periodMatchCount(pelada, range)` | número total de partidas dentro do período |
 
@@ -379,10 +411,11 @@ BalanceSquad/
     │   ├── balancer.ts
     │   ├── periods.ts
     │   ├── rankings.ts
+    │   ├── sessions.ts              # transições puras applyRsvp / applyCancel
     │   ├── stars.ts
     │   ├── drawShare.ts             # wrappers que dependem de FS/Sharing
     │   ├── drawSharePayload.ts      # pure helpers, testáveis
-    │   └── __tests__/{balancer,rankings,drawShare}.test.ts
+    │   └── __tests__/{balancer,rankings,drawShare,periods,sessions}.test.ts
     ├── components/
     │   ├── StarRating.tsx
     │   ├── PodiumCard.tsx
@@ -401,5 +434,8 @@ BalanceSquad/
         ├── MatchesScreen.tsx
         ├── MatchEditorScreen.tsx
         ├── RankingScreen.tsx
-        └── PlayerProfileScreen.tsx
+        ├── PlayerProfileScreen.tsx
+        ├── SessionsCalendarScreen.tsx   # lista cronológica passado/futuro
+        ├── SessionCreateScreen.tsx      # agendar sessão (date/time/cap)
+        └── SessionDetailScreen.tsx      # detalhe + RSVP + waitlist
 ```

@@ -197,7 +197,7 @@ Cobertura: algoritmo de balanceamento (greedy + round-robin por gênero + preser
 
 ### Curto prazo (pequenas melhorias)
 
-- [ ] Navegar prev/next no filtro de período (outros meses, outras semanas)
+- [x] Navegar prev/next no filtro de período (outros meses, outras semanas)
 - [ ] Notificação de "dia da pelada"
 - [ ] Foto/avatar do jogador
 - [ ] Sincronização entre dispositivos (Firebase ou similar)
@@ -206,21 +206,21 @@ Cobertura: algoritmo de balanceamento (greedy + round-robin por gênero + preser
 
 Repescagem rápida quando um time fica abaixo do limite de jogadores — em vez de adicionar manualmente, o app sorteia quem vem do "time perdedor" pra completar a vaga.
 
-- [ ] Botão **"Completar Time"** no `TeamsScreen`, visível apenas nos times com menos jogadores que o limite configurado
-- [ ] Modal de repescagem: seleção do **"Time Perdedor"** (origem) de onde os jogadores serão puxados
-- [ ] **Sorteio Aleatório**: escolhe os jogadores do time perdedor de forma 100% aleatória, na quantidade exata que falta
-- [ ] **Sorteio Balanceado**: analisa as estrelas dos jogadores que faltam e puxa do time perdedor o(s) jogador(es) que melhor aproximem a pontuação do time incompleto da média geral (comparando com o outro time completo)
-- [ ] Ao confirmar, move os jogadores escolhidos pro time incompleto e atualiza as estrelas/totais na interface
+- [x] Botão **"Completar Time"** no `TeamsScreen`, visível apenas nos times com menos jogadores que o limite configurado
+- [x] Modal de repescagem: seleção do **"Time Perdedor"** (origem) de onde os jogadores serão puxados
+- [x] **Sorteio Aleatório**: escolhe os jogadores do time perdedor de forma 100% aleatória, na quantidade exata que falta
+- [x] **Sorteio Balanceado**: analisa as estrelas dos jogadores que faltam e puxa do time perdedor o(s) jogador(es) que melhor aproximem a pontuação do time incompleto da média geral (comparando com o outro time completo)
+- [x] Ao confirmar, move os jogadores escolhidos pro time incompleto e atualiza as estrelas/totais na interface
 
 ### Substituição por Lesão
 
 Quando um jogador precisa sair no meio da pelada (geralmente lesão), o app sugere um substituto **do mesmo nível** pra preservar o equilíbrio sem ter que rebalancear tudo.
 
-- [ ] **Long-press** no jogador abre menu com **"Substituir (lesão)"** e "Remover"
-- [ ] Modal de substituição lista candidatos (jogadores não escalados + jogadores de outros times) ordenados por **proximidade de estrelas** ao lesionado
-- [ ] Destaque **"Mesmo nível ✓"** quando o nível bate exatamente
-- [ ] Ao confirmar, troca o lesionado pelo sub no time; se o sub veio de outro time, o time doador fica com uma vaga aberta (e pode usar "Completar Time" pra repor)
-- [ ] Snackbar **"Desfazer"** pós-substituição (5s, reaproveita o padrão atual de remoção)
+- [x] **Long-press** no jogador abre menu com **"Substituir (lesão)"** e "Remover"
+- [x] Modal de substituição lista candidatos (jogadores não escalados + jogadores de outros times) ordenados por **proximidade de estrelas** ao lesionado
+- [x] Destaque **"Mesmo nível ✓"** quando o nível bate exatamente
+- [x] Ao confirmar, troca o lesionado pelo sub no time; se o sub veio de outro time, o time doador fica com uma vaga aberta (e pode usar "Completar Time" pra repor)
+- [x] Snackbar **"Desfazer"** pós-substituição (5s, reaproveita o padrão atual de remoção)
 
 ### Visão: de sorteador a **plataforma de administração de pelada**
 
@@ -240,11 +240,11 @@ A próxima fase transforma o BalanceSquad numa ferramenta completa de gestão pr
 - [ ] Exportar histórico financeiro completo em CSV / JSON
 
 **Presença e convocação**
-- [ ] RSVP pras próximas peladas (confirmação antecipada)
-- [ ] Lista de espera da partida quando passa do limite
-- [ ] Histórico de presença por jogador (% de comparecimento)
-- [ ] **Ranking de assiduidade** com card Top 3 compartilhável (mais fiéis da galera)
-- [ ] Visão de calendário (peladas passadas + futuras)
+- [x] RSVP pras próximas peladas (confirmação antecipada)
+- [x] Lista de espera da partida quando passa do limite
+- [x] Histórico de presença por jogador (% de comparecimento)
+- [x] **Ranking de assiduidade** com card Top 3 compartilhável (mais fiéis da galera)
+- [x] Visão de calendário (peladas passadas + futuras)
 
 **Mensalistas e fila de espera**
 - [ ] **Tier "mensalista"** com vaga garantida em toda sessão
