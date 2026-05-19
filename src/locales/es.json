@@ -320,6 +320,8 @@
     "minMatches": "≥{{count}} partidos",
     "matchesInPeriod_one": "{{count}} partido en el período",
     "matchesInPeriod_other": "{{count}} partidos en el período",
+    "periodPrev": "Período anterior",
+    "periodNext": "Próximo período",
     "emptyAfterFilter": "Ningún jugador cumple el filtro.",
     "goalsUnit": "goles",
     "matchesUnit": "partidos",

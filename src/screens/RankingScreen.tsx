@@ -11,7 +11,7 @@ import { getPeladaById } from '../storage';
 import EmptyState from '../components/EmptyState';
 import PodiumCard, { PodiumEntry } from '../components/PodiumCard';
 import { useTheme, ThemeColors } from '../theme';
-import { PeriodKind, computePeriodRange, PeriodRange } from '../utils/periods';
+import { PeriodKind, computePeriodRange, PeriodRange, addDays, addMonths } from '../utils/periods';
 import {
   aggregatePlayerStats,
   aggregateScorers,
@@ -45,6 +45,11 @@ export default function RankingScreen() {
 
   const [pelada, setPelada] = useState<Pelada | null>(null);
   const [period, setPeriod] = useState<PeriodKind>('all');
+  // Reference date for the current period window. Defaults to "now"; updated by
+  // the prev/next arrows. Reset to a fresh `new Date()` whenever the user
+  // switches the period kind (week → month, etc) so "Month" always starts on
+  // the current month.
+  const [periodRef, setPeriodRef] = useState<Date>(() => new Date());
   const [tab, setTab] = useState<Tab>('wins');
   const [minFilter, setMinFilter] = useState(false);
 
@@ -54,7 +59,27 @@ export default function RankingScreen() {
     }, [params.peladaId])
   );
 
-  const range: PeriodRange | null = useMemo(() => computePeriodRange(period), [period]);
+  function selectPeriod(p: PeriodKind) {
+    setPeriod(p);
+    setPeriodRef(new Date());
+  }
+
+  function shiftPeriod(direction: -1 | 1) {
+    if (period === 'all') return;
+    setPeriodRef(prev => {
+      if (period === 'week') return addDays(prev, 7 * direction);
+      if (period === 'month') return addMonths(prev, 1 * direction);
+      if (period === 'quarter') return addMonths(prev, 3 * direction);
+      if (period === 'semester') return addMonths(prev, 6 * direction);
+      if (period === 'year') return addMonths(prev, 12 * direction);
+      return prev;
+    });
+  }
+
+  const range: PeriodRange | null = useMemo(
+    () => computePeriodRange(period, periodRef),
+    [period, periodRef],
+  );
 
   const players = useMemo(() => pelada ? aggregatePlayerStats(pelada, range) : [], [pelada, range]);
   const scorers = useMemo(() => pelada ? aggregateScorers(pelada, range) : [], [pelada, range]);
@@ -151,7 +176,7 @@ export default function RankingScreen() {
             <TouchableOpacity
               key={p}
               style={[styles.periodChip, active && styles.periodChipActive]}
-              onPress={() => setPeriod(p)}
+              onPress={() => selectPeriod(p)}
               activeOpacity={0.8}
             >
               <Text style={[styles.periodChipText, active && styles.periodChipTextActive]}>
@@ -162,9 +187,27 @@ export default function RankingScreen() {
         })}
       </ScrollView>
 
-      {range && (
-        <Text style={styles.rangeLabel}>{range.label}</Text>
-      )}
+      {range ? (
+        <View style={styles.rangeNavRow}>
+          <TouchableOpacity
+            style={styles.rangeNavBtn}
+            onPress={() => shiftPeriod(-1)}
+            accessibilityLabel={t('ranking.periodPrev')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Feather name="chevron-left" size={18} color={colors.primary} />
+          </TouchableOpacity>
+          <Text style={styles.rangeLabel}>{range.label}</Text>
+          <TouchableOpacity
+            style={styles.rangeNavBtn}
+            onPress={() => shiftPeriod(1)}
+            accessibilityLabel={t('ranking.periodNext')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Feather name="chevron-right" size={18} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
+      ) : null}
       <Text style={styles.matchesCount}>
         {t('ranking.matchesInPeriod', { count: totalMatches })}
       </Text>
@@ -450,8 +493,23 @@ function createStyles(c: ThemeColors) {
     periodChipActive: { borderColor: c.primary, backgroundColor: c.primaryLight },
     periodChipText: { fontSize: 12, fontWeight: '700', color: c.textSecondary },
     periodChipTextActive: { color: c.primary },
-    rangeLabel: { fontSize: 12, color: c.textSecondary, fontWeight: '600', marginTop: 10 },
-    matchesCount: { fontSize: 11, color: c.textMuted, marginTop: 2, marginBottom: 10 },
+    rangeNavRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 12,
+      marginTop: 10,
+    },
+    rangeNavBtn: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: c.surfaceVariant,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    rangeLabel: { fontSize: 13, color: c.textSecondary, fontWeight: '700' },
+    matchesCount: { fontSize: 11, color: c.textMuted, marginTop: 2, marginBottom: 10, textAlign: 'center' },
 
     tabBar: {
       flexDirection: 'row',

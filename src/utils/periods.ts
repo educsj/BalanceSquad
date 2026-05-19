@@ -28,9 +28,20 @@ function startOfWeek(ref: Date): Date {
   return d;
 }
 
-function addDays(d: Date, n: number): Date {
+export function addDays(d: Date, n: number): Date {
   const out = new Date(d);
   out.setDate(out.getDate() + n);
+  return out;
+}
+
+// Shifts `d` by `n` months. To avoid JS rolling Jan 31 + 1 month into March,
+// we snap the day to 1 before applying the offset. The result is always at
+// day=1 of the target month — fine for period navigation since callers
+// (computePeriodRange) only read year/month anyway.
+export function addMonths(d: Date, n: number): Date {
+  const out = new Date(d);
+  out.setDate(1);
+  out.setMonth(out.getMonth() + n);
   return out;
 }
 
