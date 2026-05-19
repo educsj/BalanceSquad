@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, FlatList, StyleSheet,
-  Modal, TextInput, Alert, KeyboardAvoidingView, Platform,
+  Modal, TextInput, Alert, KeyboardAvoidingView, Platform, ScrollView, Switch,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -16,7 +16,18 @@ import {
   loadPeladas, savePeladas, getHideRatings, setHideRatings,
   exportData, importData, setLanguage, setThemeMode, ThemeMode,
   getOnboardingSeen, setOnboardingSeen,
+  getNotifSessionEnabled, setNotifSessionEnabled,
+  getNotifLeadHours, setNotifLeadHours,
+  getNotifAdminEnabled, setNotifAdminEnabled,
+  getNotifAdminDayOfWeek, setNotifAdminDayOfWeek,
+  getNotifAdminTime, setNotifAdminTime,
+  getNotifAdminId, setNotifAdminId,
 } from '../storage';
+import {
+  ensureNotifPermission,
+  cancelNotification,
+  scheduleWeeklyAdminReminder,
+} from '../utils/notifications';
 import { parseDrawPayload, importDrawAsPelada } from '../utils/drawShare';
 import EmptyState from '../components/EmptyState';
 import i18n, { SUPPORTED_LANGUAGES, SupportedLanguage } from '../i18n';
@@ -50,11 +61,23 @@ export default function HomeScreen() {
   const [langModalVisible, setLangModalVisible] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
+  // Notification preferences — loaded on focus when the settings modal opens.
+  const [notifSessionEnabled, setNotifSessionEnabledState] = useState(false);
+  const [notifLeadHours, setNotifLeadHoursState] = useState(2);
+  const [notifAdminEnabled, setNotifAdminEnabledState] = useState(false);
+  const [notifAdminDow, setNotifAdminDowState] = useState(4);
+  const [notifAdminTime, setNotifAdminTimeState] = useState('18:00');
+
   useFocusEffect(
     useCallback(() => {
       loadPeladas().then(setPeladas);
       getHideRatings().then(setHideRatingsState);
       getOnboardingSeen().then(seen => setShowOnboarding(!seen));
+      getNotifSessionEnabled().then(setNotifSessionEnabledState);
+      getNotifLeadHours().then(setNotifLeadHoursState);
+      getNotifAdminEnabled().then(setNotifAdminEnabledState);
+      getNotifAdminDayOfWeek().then(setNotifAdminDowState);
+      getNotifAdminTime().then(setNotifAdminTimeState);
     }, [])
   );
 
@@ -67,6 +90,71 @@ export default function HomeScreen() {
     const next = !hideRatings;
     setHideRatingsState(next);
     await setHideRatings(next);
+  }
+
+  // Session reminder toggle — asks permission on enable; saves regardless so
+  // the user can flip it back on later without surprises.
+  async function handleToggleNotifSession() {
+    const next = !notifSessionEnabled;
+    if (next) {
+      const granted = await ensureNotifPermission();
+      if (!granted) return; // permission denied; keep toggle off
+    }
+    setNotifSessionEnabledState(next);
+    await setNotifSessionEnabled(next);
+  }
+
+  async function handleLeadHoursChange(hours: number) {
+    setNotifLeadHoursState(hours);
+    await setNotifLeadHours(hours);
+  }
+
+  // Admin weekly toggle — schedules/replaces the recurring notification.
+  async function handleToggleNotifAdmin() {
+    const next = !notifAdminEnabled;
+    const existingId = await getNotifAdminId();
+    if (existingId) {
+      await cancelNotification(existingId);
+      await setNotifAdminId(null);
+    }
+    if (next) {
+      const granted = await ensureNotifPermission();
+      if (!granted) return;
+      const id = await scheduleWeeklyAdminReminder(notifAdminDow, notifAdminTime);
+      if (id) await setNotifAdminId(id);
+    }
+    setNotifAdminEnabledState(next);
+    await setNotifAdminEnabled(next);
+  }
+
+  // When the user shifts day/time and the admin toggle is ON, replace the
+  // scheduled notification so it fires at the new slot.
+  async function handleAdminDowChange(dow: number) {
+    setNotifAdminDowState(dow);
+    await setNotifAdminDayOfWeek(dow);
+    if (notifAdminEnabled) {
+      await rescheduleAdmin(dow, notifAdminTime);
+    }
+  }
+
+  async function handleAdminTimeChange(time: string) {
+    setNotifAdminTimeState(time);
+    if (/^\d{2}:\d{2}$/.test(time)) {
+      await setNotifAdminTime(time);
+      if (notifAdminEnabled) {
+        await rescheduleAdmin(notifAdminDow, time);
+      }
+    }
+  }
+
+  async function rescheduleAdmin(dow: number, time: string) {
+    const existingId = await getNotifAdminId();
+    if (existingId) {
+      await cancelNotification(existingId);
+      await setNotifAdminId(null);
+    }
+    const id = await scheduleWeeklyAdminReminder(dow, time);
+    if (id) await setNotifAdminId(id);
   }
 
   function openCreateModal() {
@@ -388,10 +476,11 @@ export default function HomeScreen() {
       {/* Backup modal */}
       <Modal visible={backupModalVisible} transparent animationType="fade" onRequestClose={() => setBackupModalVisible(false)}>
         <View style={styles.overlay}>
-          <View style={styles.modal}>
+          <View style={[styles.modal, { maxHeight: '90%' }]}>
             <Text style={styles.modalTitle}>{t('home.backupTitle')}</Text>
             <Text style={styles.modalSub}>{t('home.backupDesc')}</Text>
 
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
             <Text style={styles.sectionLabel}>{t('home.themeLabel')}</Text>
             <View style={styles.themeRow}>
               {(['system', 'light', 'dark'] as ThemeMode[]).map(m => {
@@ -412,6 +501,93 @@ export default function HomeScreen() {
                 );
               })}
             </View>
+
+            {/* ─── Notifications block ─────────────────────────────────────── */}
+            <Text style={styles.sectionLabel}>{t('home.notifLabel')}</Text>
+
+            <View style={styles.notifRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.notifTitle}>{t('home.notifSessionTitle')}</Text>
+                <Text style={styles.notifDesc}>{t('home.notifSessionDesc')}</Text>
+              </View>
+              <Switch
+                value={notifSessionEnabled}
+                onValueChange={handleToggleNotifSession}
+                trackColor={{ false: colors.borderLight, true: colors.primary }}
+              />
+            </View>
+
+            {notifSessionEnabled && (
+              <View style={styles.notifSub}>
+                <Text style={styles.notifSubLabel}>{t('home.notifLeadLabel')}</Text>
+                <View style={styles.notifChipRow}>
+                  {[1, 2, 4, 24].map(h => {
+                    const active = notifLeadHours === h;
+                    return (
+                      <TouchableOpacity
+                        key={h}
+                        style={[styles.notifChip, active && styles.notifChipActive]}
+                        onPress={() => handleLeadHoursChange(h)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.notifChipText, active && styles.notifChipTextActive]}>
+                          {h === 24 ? t('home.notifLeadDay') : t('home.notifLeadHours', { count: h })}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            <View style={styles.notifRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.notifTitle}>{t('home.notifAdminTitle')}</Text>
+                <Text style={styles.notifDesc}>{t('home.notifAdminDesc')}</Text>
+              </View>
+              <Switch
+                value={notifAdminEnabled}
+                onValueChange={handleToggleNotifAdmin}
+                trackColor={{ false: colors.borderLight, true: colors.primary }}
+              />
+            </View>
+
+            {notifAdminEnabled && (
+              <View style={styles.notifSub}>
+                <Text style={styles.notifSubLabel}>{t('home.notifDowLabel')}</Text>
+                <View style={styles.notifChipRow}>
+                  {[0, 1, 2, 3, 4, 5, 6].map(d => {
+                    const active = notifAdminDow === d;
+                    return (
+                      <TouchableOpacity
+                        key={d}
+                        style={[styles.notifDowChip, active && styles.notifChipActive]}
+                        onPress={() => handleAdminDowChange(d)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.notifChipText, active && styles.notifChipTextActive]}>
+                          {t(`calendar.weekday.${d}`)}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                <Text style={[styles.notifSubLabel, { marginTop: 10 }]}>
+                  {t('home.notifTimeLabel')}
+                </Text>
+                <TextInput
+                  style={styles.notifTimeInput}
+                  value={notifAdminTime}
+                  onChangeText={handleAdminTimeChange}
+                  placeholder="HH:MM"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="numbers-and-punctuation"
+                  maxLength={5}
+                />
+              </View>
+            )}
+
+            {/* ────────────────────────────────────────────────────────────── */}
 
             <TouchableOpacity style={styles.backupBtn} onPress={handleExport}>
               <Feather name="upload" size={22} color="#fff" />
@@ -434,6 +610,8 @@ export default function HomeScreen() {
                 <Text style={[styles.backupBtnSub, { color: colors.textSecondary }]}>{t('home.importDrawDesc')}</Text>
               </View>
             </TouchableOpacity>
+            </ScrollView>
+
             <TouchableOpacity style={styles.btnSecondary} onPress={() => setBackupModalVisible(false)}>
               <Text style={styles.btnSecondaryText}>{t('common.close')}</Text>
             </TouchableOpacity>
@@ -622,6 +800,54 @@ function createStyles(c: ThemeColors) {
     themeBtnActive: { borderColor: c.primary, backgroundColor: c.primaryLight },
     themeBtnText: { color: c.textSecondary, fontWeight: '600', fontSize: 13 },
     themeBtnTextActive: { color: c.primary, fontWeight: '700' },
+
+    notifRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 8,
+    },
+    notifTitle: { fontSize: 14, fontWeight: '700', color: c.text },
+    notifDesc: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
+    notifSub: {
+      backgroundColor: c.surfaceVariant,
+      borderRadius: 10,
+      padding: 12,
+      gap: 6,
+    },
+    notifSubLabel: { fontSize: 12, fontWeight: '600', color: c.textSecondary },
+    notifChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    notifChip: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: c.borderLight,
+      backgroundColor: c.surface,
+    },
+    notifDowChip: {
+      width: 38,
+      paddingVertical: 6,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: c.borderLight,
+      backgroundColor: c.surface,
+      alignItems: 'center',
+    },
+    notifChipActive: { borderColor: c.primary, backgroundColor: c.primaryLight },
+    notifChipText: { fontSize: 12, fontWeight: '700', color: c.textSecondary },
+    notifChipTextActive: { color: c.primary },
+    notifTimeInput: {
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+      fontSize: 14,
+      color: c.inputText,
+      backgroundColor: c.inputBg,
+      width: 100,
+    },
     backupBtn: {
       flexDirection: 'row',
       alignItems: 'center',

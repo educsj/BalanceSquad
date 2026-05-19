@@ -9,7 +9,14 @@ const HIDE_RATINGS_KEY = '@balancesquad:hideRatings';
 const LANGUAGE_KEY = '@balancesquad:language';
 const THEME_MODE_KEY = '@balancesquad:themeMode';
 const ONBOARDING_SEEN_KEY = '@balancesquad:onboardingSeen';
+const NOTIF_SESSION_ENABLED_KEY = '@balancesquad:notifSessionEnabled';
+const NOTIF_LEAD_HOURS_KEY = '@balancesquad:notifLeadHours';
+const NOTIF_ADMIN_ENABLED_KEY = '@balancesquad:notifAdminEnabled';
+const NOTIF_ADMIN_DOW_KEY = '@balancesquad:notifAdminDayOfWeek';
+const NOTIF_ADMIN_TIME_KEY = '@balancesquad:notifAdminTime';
+const NOTIF_ADMIN_ID_KEY = '@balancesquad:notifAdminId';
 const DRAW_HISTORY_LIMIT = 20;
+const DEFAULT_LEAD_HOURS = 2;
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 
@@ -345,6 +352,78 @@ export async function getOnboardingSeen(): Promise<boolean> {
 
 export async function setOnboardingSeen(value: boolean): Promise<void> {
   await AsyncStorage.setItem(ONBOARDING_SEEN_KEY, value ? 'true' : 'false');
+}
+
+// ─── Notifications preferences ────────────────────────────────────────────────
+
+export async function getNotifSessionEnabled(): Promise<boolean> {
+  const raw = await AsyncStorage.getItem(NOTIF_SESSION_ENABLED_KEY);
+  return raw === 'true';
+}
+
+export async function setNotifSessionEnabled(value: boolean): Promise<void> {
+  await AsyncStorage.setItem(NOTIF_SESSION_ENABLED_KEY, value ? 'true' : 'false');
+}
+
+// Allowed lead times: 1, 2, 4, 24 hours. Returns 2h when nothing is stored
+// (sensible default since it's what most users would expect on first toggle).
+export async function getNotifLeadHours(): Promise<number> {
+  const raw = await AsyncStorage.getItem(NOTIF_LEAD_HOURS_KEY);
+  const n = raw ? parseInt(raw, 10) : NaN;
+  if (n === 1 || n === 2 || n === 4 || n === 24) return n;
+  return DEFAULT_LEAD_HOURS;
+}
+
+export async function setNotifLeadHours(value: number): Promise<void> {
+  await AsyncStorage.setItem(NOTIF_LEAD_HOURS_KEY, String(value));
+}
+
+export async function getNotifAdminEnabled(): Promise<boolean> {
+  const raw = await AsyncStorage.getItem(NOTIF_ADMIN_ENABLED_KEY);
+  return raw === 'true';
+}
+
+export async function setNotifAdminEnabled(value: boolean): Promise<void> {
+  await AsyncStorage.setItem(NOTIF_ADMIN_ENABLED_KEY, value ? 'true' : 'false');
+}
+
+// 0..6, JS Date.getDay() convention (0=Sunday). Default Thursday (4) — most
+// "weekly list" peladas hit the group chat mid-week.
+export async function getNotifAdminDayOfWeek(): Promise<number> {
+  const raw = await AsyncStorage.getItem(NOTIF_ADMIN_DOW_KEY);
+  const n = raw ? parseInt(raw, 10) : NaN;
+  if (n >= 0 && n <= 6) return n;
+  return 4;
+}
+
+export async function setNotifAdminDayOfWeek(value: number): Promise<void> {
+  await AsyncStorage.setItem(NOTIF_ADMIN_DOW_KEY, String(value));
+}
+
+// HH:mm 24h format. Default 18:00.
+export async function getNotifAdminTime(): Promise<string> {
+  const raw = await AsyncStorage.getItem(NOTIF_ADMIN_TIME_KEY);
+  if (raw && /^\d{2}:\d{2}$/.test(raw)) return raw;
+  return '18:00';
+}
+
+export async function setNotifAdminTime(value: string): Promise<void> {
+  await AsyncStorage.setItem(NOTIF_ADMIN_TIME_KEY, value);
+}
+
+// The OS-level id of the currently-scheduled weekly admin notification.
+// Stored so we can cancel/replace it when the user changes day/time or
+// disables the toggle.
+export async function getNotifAdminId(): Promise<string | null> {
+  return AsyncStorage.getItem(NOTIF_ADMIN_ID_KEY);
+}
+
+export async function setNotifAdminId(value: string | null): Promise<void> {
+  if (value === null) {
+    await AsyncStorage.removeItem(NOTIF_ADMIN_ID_KEY);
+  } else {
+    await AsyncStorage.setItem(NOTIF_ADMIN_ID_KEY, value);
+  }
 }
 
 export async function exportData(): Promise<string> {
