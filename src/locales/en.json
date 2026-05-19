@@ -260,6 +260,7 @@
     "played": "P",
     "wins": "W",
     "draws": "D",
-    "losses": "L"
+    "losses": "L",
+    "minMatches": "≥{{count}} games"
   }
 }

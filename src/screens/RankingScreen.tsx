@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { RouteProp, useRoute, useFocusEffect } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -97,6 +97,7 @@ export default function RankingScreen() {
 
   const [stats, setStats] = useState<Stat[]>([]);
   const [draws, setDraws] = useState(0);
+  const [minMatchesFilter, setMinMatchesFilter] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -107,6 +108,11 @@ export default function RankingScreen() {
       });
     }, [params.peladaId])
   );
+
+  const MIN_MATCHES = 3;
+  const visibleStats = minMatchesFilter
+    ? stats.filter(s => s.played >= MIN_MATCHES)
+    : stats;
 
   if (stats.length === 0) {
     return (
@@ -122,7 +128,19 @@ export default function RankingScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.hint}>{t('ranking.hint', { count: draws })}</Text>
+      <View style={styles.hintRow}>
+        <Text style={styles.hint}>{t('ranking.hint', { count: draws })}</Text>
+        <TouchableOpacity
+          style={[styles.minChip, minMatchesFilter && styles.minChipOn]}
+          onPress={() => setMinMatchesFilter(v => !v)}
+          activeOpacity={0.7}
+        >
+          <Feather name="filter" size={11} color={minMatchesFilter ? colors.primary : colors.textMuted} />
+          <Text style={[styles.minChipText, minMatchesFilter && styles.minChipTextOn]}>
+            {t('ranking.minMatches', { count: MIN_MATCHES })}
+          </Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.headerRow}>
         <Text style={[styles.headerCell, styles.rankColText]}>#</Text>
         <Text style={[styles.headerCell, styles.nameColText]}>{t('ranking.player')}</Text>
@@ -133,7 +151,7 @@ export default function RankingScreen() {
         <Text style={[styles.headerCell, styles.rateColText]}>%</Text>
       </View>
       <FlatList
-        data={stats}
+        data={visibleStats}
         keyExtractor={s => s.id}
         contentContainerStyle={{ paddingBottom: 32 }}
         renderItem={({ item, index }) => {
@@ -167,7 +185,22 @@ export default function RankingScreen() {
 function createStyles(c: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.background, padding: 16 },
-    hint: { color: c.textSecondary, fontSize: 13, marginBottom: 10, fontWeight: '500' },
+    hintRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+    hint: { flex: 1, color: c.textSecondary, fontSize: 13, fontWeight: '500' },
+    minChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      backgroundColor: c.surfaceVariant,
+      borderRadius: 999,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderWidth: 1,
+      borderColor: c.borderLight,
+    },
+    minChipOn: { borderColor: c.primary, backgroundColor: c.primaryLight },
+    minChipText: { fontSize: 11, fontWeight: '700', color: c.textMuted, textTransform: 'uppercase' },
+    minChipTextOn: { color: c.primary },
     headerRow: {
       flexDirection: 'row',
       alignItems: 'center',

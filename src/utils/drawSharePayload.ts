@@ -1,11 +1,12 @@
-import { Pelada, DrawRecord, Team, Player } from '../types';
+import { Pelada, DrawRecord, Team, Player, Match, MatchResult } from '../types';
 
 const FORMAT_TAG = 'balancesquad-draw';
 const FORMAT_VERSION = 1;
 
 // Wire format for a single draw, designed to be opened on another phone.
 // Carries every detail needed to rebuild the draw: player identity (name +
-// level + optional gender), the team composition and the source group context.
+// level + optional gender), team composition, source group context, and the
+// session's recorded matches (so receivers see the full history too).
 export interface DrawPayload {
   _format: typeof FORMAT_TAG;
   version: number;
@@ -14,6 +15,21 @@ export interface DrawPayload {
   timestamp: string;
   balanceByGender?: boolean;
   teams: Team[];
+  matches?: Match[];
+}
+
+function copyMatch(m: Match): Match {
+  return {
+    id: m.id,
+    timestamp: m.timestamp,
+    homeTeamId: m.homeTeamId,
+    awayTeamId: m.awayTeamId,
+    homePlayerIds: [...m.homePlayerIds],
+    awayPlayerIds: [...m.awayPlayerIds],
+    result: m.result,
+    ...(m.goals && m.goals.length > 0 ? { goals: m.goals.map(g => ({ ...g })) } : {}),
+    ...(m.mvpPlayerId ? { mvpPlayerId: m.mvpPlayerId } : {}),
+  };
 }
 
 export function buildDrawPayload(
@@ -38,7 +54,39 @@ export function buildDrawPayload(
         ...(p.gender ? { gender: p.gender } : {}),
       })),
     })),
+    ...(record.matches && record.matches.length > 0
+      ? { matches: record.matches.map(copyMatch) }
+      : {}),
   };
+}
+
+function isValidMatch(raw: unknown): raw is Match {
+  if (!raw || typeof raw !== 'object') return false;
+  const m = raw as Record<string, unknown>;
+  if (typeof m.id !== 'string') return false;
+  if (typeof m.timestamp !== 'string') return false;
+  if (typeof m.homeTeamId !== 'number') return false;
+  if (typeof m.awayTeamId !== 'number') return false;
+  if (!Array.isArray(m.homePlayerIds) || !m.homePlayerIds.every(x => typeof x === 'string')) return false;
+  if (!Array.isArray(m.awayPlayerIds) || !m.awayPlayerIds.every(x => typeof x === 'string')) return false;
+  const r = m.result as MatchResult | undefined;
+  if (!r || typeof r !== 'object') return false;
+  if (r.type === 'win') {
+    if (r.winner !== 'home' && r.winner !== 'away') return false;
+  } else if (r.type !== 'draw') {
+    return false;
+  }
+  if (m.goals !== undefined) {
+    if (!Array.isArray(m.goals)) return false;
+    for (const g of m.goals) {
+      if (!g || typeof g !== 'object') return false;
+      const goal = g as Record<string, unknown>;
+      if (typeof goal.playerId !== 'string') return false;
+      if (typeof goal.count !== 'number') return false;
+    }
+  }
+  if (m.mvpPlayerId !== undefined && typeof m.mvpPlayerId !== 'string') return false;
+  return true;
 }
 
 // Type guard + structural validation: rejects anything that does not look like
@@ -73,6 +121,10 @@ export function parseDrawPayload(raw: string): DrawPayload | null {
       if (pl.gender !== undefined && pl.gender !== 'M' && pl.gender !== 'F') return null;
     }
   }
+  if (obj.matches !== undefined) {
+    if (!Array.isArray(obj.matches)) return null;
+    if (!obj.matches.every(isValidMatch)) return null;
+  }
   return obj as unknown as DrawPayload;
 }
 
@@ -81,9 +133,8 @@ function generateId(): string {
 }
 
 // Builds a fresh Pelada from a payload, deduplicating players across teams by
-// id (a player could only appear once anyway, but the dedup is defensive) and
-// keeping their identity stable inside the new group so the draw history still
-// references the same player ids.
+// id and keeping their identity stable inside the new group so the imported
+// matches still reference the same player ids.
 export function payloadToPelada(payload: DrawPayload, importedSuffix: string): Pelada {
   const allPlayers = new Map<string, Player>();
   payload.teams.forEach(team => {
@@ -96,6 +147,9 @@ export function payloadToPelada(payload: DrawPayload, importedSuffix: string): P
     teams: payload.teams,
     timestamp: payload.timestamp || new Date().toISOString(),
     ...(payload.balanceByGender ? { balanceByGender: true } : {}),
+    ...(payload.matches && payload.matches.length > 0
+      ? { matches: payload.matches.map(copyMatch) }
+      : {}),
   };
 
   return {

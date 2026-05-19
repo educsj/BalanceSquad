@@ -31,6 +31,11 @@ export type MatchResult =
   | { type: 'win'; winner: 'home' | 'away' }
   | { type: 'draw' };
 
+export interface GoalEntry {
+  playerId: string;
+  count: number;
+}
+
 export interface Match {
   id: string;
   timestamp: string;        // ISO 8601
@@ -39,6 +44,8 @@ export interface Match {
   homePlayerIds: string[];  // actual lineup for this match (defaults to team roster)
   awayPlayerIds: string[];
   result: MatchResult;
+  goals?: GoalEntry[];      // optional per-player goal counts for this match
+  mvpPlayerId?: string;     // optional standout player of this match
 }
 
 export interface DrawRecord {
