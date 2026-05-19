@@ -12,117 +12,117 @@ Built with **React Native + Expo SDK 54** (TypeScript).
 
 A typical Sunday with BalanceSquad:
 
-1. **Cadastra os jogadores** uma vez, com meia-estrela (0.5–5) e gênero opcional.
-2. **Sorteia** marcando quem foi e configurando número de times. Algoritmo greedy + otimização local garante times equilibrados; opcionalmente equilibra também por gênero.
-3. **Joga várias partidas na mesma pelada** — registra cada uma com lineup real (quem entrou em campo), placar, gols por jogador e MVP.
-4. **Vê o ranking** filtrado por semana, mês, trimestre, semestre, ano ou histórico todo. Compartilha o pódio Top 3 como imagem direto no grupo.
+1. **Register players** once, with half-star ratings (0.5–5) and optional gender.
+2. **Draw teams** by picking who showed up and configuring the number of teams. Greedy + local-search algorithm keeps teams balanced; optionally also balances by gender.
+3. **Play several matches** in the same session — log each one with the real lineup (who was on the field), winner, goals per player, and MVP.
+4. **Check the ranking** filtered by week, month, quarter, semester, year, or all-time. Share the Top 3 podium as an image straight into the group chat.
 
 ---
 
 ## Highlights
 
-- ⭐ **Meia-estrela** nas notas dos jogadores (0.5 a 5.0)
-- ⚖️ **Balanceamento por gênero opcional** com round-robin que garante distribuição proporcional
-- 🥅 **Partidas com lineup real**: várias partidas por sorteio, jogadores podem trocar de lado, gols e MVP por partida
-- 🏆 **Ranking multi-view**: Vitórias / Artilharia / Destaques / Times campeões, com filtros temporais (semana/mês/trimestre/semestre/ano)
-- 📸 **Compartilhamento de pódio em PNG** + perfil individual do jogador (head-to-head, parceiros frequentes)
-- 🔁 **"Quem perde sai" assistido**: após registrar vencedor, o app sugere a próxima partida com vencedor × time descansando
-- 📤 **Sorteio exportável em .json** — outro celular importa e recria a pelada inteira com partidas
-- 🌙 **Tema** automático do sistema ou forçado (claro / escuro)
-- 🌍 **Trilíngue**: PT / EN / ES com detecção automática
+- ⭐ **Half-star ratings** (0.5 to 5.0)
+- ⚖️ **Optional gender balancing** with strict round-robin to guarantee proportional distribution
+- 🥅 **Matches with real lineups**: many per draw, players can swap sides, goals and MVP tracked per match
+- 🏆 **Multi-view ranking**: Wins / Top scorers / MVPs / Champion teams, with calendar period filters
+- 📸 **Top 3 podium PNG sharing** + individual player profile (head-to-head, frequent teammates)
+- 🔁 **Winner-stays assist**: after logging a result, the app suggests the next match with the winner vs. the resting team
+- 📤 **Draw export as .json** — another phone can import it and rebuild the entire session with matches intact
+- 🌙 **Theme** follows the system or can be forced (light / dark)
+- 🌍 **Trilingual**: PT / EN / ES with automatic device detection
 
 ---
 
 ## Usage flow
 
 ```
-Home  (peladas)
-└── Pelada Hub
-      ├── 👤  Cadastrar Jogador     (nome, meia-estrela, gênero)
-      ├── 📋  Lista de Jogadores    (presença + busca + diaristas avulsos)
-      │     └── Configurar Sorteio  (times, players/time, toggle gênero)
-      │           └── Times Sorteados
-      │                 ├── ⚖  Rebalancear (mescla 2 times)
-      │                 ├── ✏  Renomear time (toque no nome)
-      │                 ├── 📤  Compartilhar (texto / imagem / .json)
-      │                 └── 🏆  Partidas
-      │                       └── Editor de Partida
-      │                             ├── Mandante × Visitante
-      │                             ├── Lineup com check-in/out
-      │                             ├── Gols (-/+ por jogador, agrupado por lado)
-      │                             ├── MVP (chips agrupados por lado)
-      │                             └── 🎉 celebração + sugestão "próxima partida"
-      ├── 📅  Histórico             (até 20 sorteios, métricas, retomar)
-      └── 🏅  Ranking               (4 abas × 6 filtros temporais)
-            └── Perfil do Jogador   (head-to-head + parceiros + share)
+Home  (squads list)
+└── Squad Hub
+      ├── 👤  Register Player        (name, half-star rating, gender)
+      ├── 📋  Player List             (attendance + search + one-off guests)
+      │     └── Draw Config          (teams, players/team, gender toggle)
+      │           └── Sorted Teams
+      │                 ├── ⚖  Rebalance (merge 2 teams)
+      │                 ├── ✏  Rename team (tap the name)
+      │                 ├── 📤  Share (text / image / .json)
+      │                 └── 🏆  Matches
+      │                       └── Match Editor
+      │                             ├── Home × Away
+      │                             ├── Lineup check-in/out
+      │                             ├── Goals (-/+ per player, grouped by side)
+      │                             ├── MVP (chips grouped by side)
+      │                             └── 🎉 celebration + "next match" prompt
+      ├── 📅  Draw History            (up to 20 sessions, metrics, resume)
+      └── 🏅  Ranking                 (4 tabs × 6 period filters)
+            └── Player Profile        (head-to-head + frequent partners + share)
 ```
 
 ---
 
 ## Features in depth
 
-### Sorteio
-- **Notas fracionadas** (0.5 a 5.0) por meia-estrela
-- **Algoritmo greedy + otimização local** O(n²) para minimizar a diferença entre as somas dos times
-- **Equilíbrio por gênero** opcional via round-robin estrito (uma jogadora por time por rodada), tratando jogadores sem gênero como masculino
-- **Sobra** quando os jogadores não dividem exatamente: time extra com os excedentes
-- **Sorteio manual** alternativo com chips por time
+### Draw
+- **Half-star ratings** (0.5 to 5.0)
+- **Greedy + local-search optimizer** (O(n²)) to minimize the spread between team star totals
+- **Optional gender balancing** via strict round-robin (one player per team per round) — treats players without a gender tag as male
+- **Overflow team** when players don't divide evenly: extra slot takes the leftovers
+- **Manual draw** alternative with per-team chips
 
-### Partidas (a coleção dentro de cada sorteio)
-- Cada partida tem **mandante, visitante, lineups próprios** (jogadores podem ser emprestados entre times), **resultado, gols por jogador e MVP**
-- **Animação celebratória** com troféu ao registrar vencedor
-- **Sugestão de próxima partida** automática: vencedor permanece, descansando entra
-- Lista todas as partidas do sorteio com hora, lineup count e vencedor
+### Matches (the collection inside each draw)
+- Each match has **home, away, its own lineups** (players can be borrowed between teams), **result, goals per player, and MVP**
+- **Celebration animation** with trophy when a winner is logged
+- **Next-match suggestion**: winner stays, resting team comes in
+- Lists every match of the session with time, lineup count, and winner
 
 ### Ranking
-- **4 abas**: Vitórias, Artilharia, Destaques (MVP), Times campeões (o time com mais vitórias em cada sorteio)
-- **6 períodos**: Semana ISO, Mês, Trimestre, Semestre, Ano, Tudo (filtro temporal por timestamp da partida)
-- **Threshold opcional** "≥3 jogos" pra esconder quem jogou pouco
-- **Pódio Top 3 compartilhável** em PNG, gerado off-screen via `react-native-view-shot`
+- **4 tabs**: Wins, Top scorers, MVPs, Champion teams (the team with most wins in each draw)
+- **6 periods**: ISO week, month, quarter, semester, year, or all-time (filter by match timestamp)
+- **Optional "≥3 games" threshold** to hide low-sample players
+- **Shareable Top 3 podium card** (PNG) generated off-screen via `react-native-view-shot`
 
-### Perfil do jogador
-- Toque em qualquer linha do ranking abre stats detalhadas
-- **Head-to-head** contra os principais oponentes (V/E/D quando jogou no outro lado)
-- **Parceiros mais frequentes** (taxa de vitória quando juntos)
-- Card próprio compartilhável em PNG
+### Player profile
+- Tap any ranking row to see detailed stats
+- **Head-to-head** vs top opponents (W/D/L when playing on the other side)
+- **Frequent teammates** (win rate when together)
+- Shareable card in PNG
 
-### Compartilhamento
-- **Texto** estilo WhatsApp (sem estrelas, ordem dos jogadores embaralhada por time)
-- **Imagem PNG** com card visual do sorteio
-- **Arquivo .json** que outro celular importa via "Importar sorteio" no menu Preferências → cria nova pelada com todos os jogadores + partidas
+### Sharing
+- **Text** in WhatsApp style (no stars, randomized player order per team)
+- **PNG image** with the visual card of the draw
+- **.json file** that another phone imports via "Import draw" in the Preferences menu → creates a new squad with all players + matches
 
-### Histórico
-- **Até 20 sorteios** por pelada, com métricas (diferença, média por time, mix de gênero)
-- **Retomar** abre o sorteio passado em modo de edição (mesma tela de Times Sorteados, full editing)
-- **Indicador no topo** mostra o tally de vitórias por time naquele sorteio
+### History
+- **Up to 20 draws** per squad, with metrics (spread, average per team, gender mix)
+- **Resume** reopens an old draw in full edit mode
+- **Top chip** shows the per-team win tally for that session
 
-### Edição pós-sorteio
-- Adicionar/remover jogador de qualquer time, com avulsos criados na hora
-- **Snackbar "Desfazer"** após cada remoção (5s)
-- Aviso visual quando o time ultrapassa o limite de jogadores
-- Toque no nome do time abre rename inline
+### Post-draw editing
+- Add/remove players from any team, with one-off guests created on the fly
+- **Undo snackbar** after each removal (5s)
+- Visual warning when a team exceeds the configured size
+- Tap the team name to rename inline
 
-### Preferências
-- **Tema** (Sistema / Claro / Escuro), persistido por dispositivo
-- **Ocultar notas** durante o jogo (botão de olho na Home)
-- **Idioma** PT / EN / ES com detecção automática do device
-- **Backup global** export/import JSON
+### Preferences
+- **Theme** (System / Light / Dark), persisted per device
+- **Hide ratings** during the game (eye toggle on Home)
+- **Language** PT / EN / ES with automatic device detection
+- **Global backup** export/import JSON
 
 ---
 
 ## Tech Stack
 
-| Camada | Tecnologia |
+| Layer | Technology |
 |---|---|
 | Framework | React Native + Expo SDK 54 |
-| Linguagem | TypeScript |
-| Navegação | React Navigation (Stack) |
-| Persistência | AsyncStorage (local, por dispositivo) |
+| Language | TypeScript |
+| Navigation | React Navigation (Stack) |
+| Storage | AsyncStorage (local, per device) |
 | i18n | react-i18next + expo-localization (PT / EN / ES) |
-| Captura de imagem | react-native-view-shot |
-| Compartilhamento | expo-sharing |
-| Arquivos | expo-file-system (.json export/import) |
-| Estilização | StyleSheet nativo, tema light/dark via Context |
+| Image capture | react-native-view-shot |
+| Sharing | expo-sharing |
+| Files | expo-file-system (.json export/import) |
+| Styling | Native StyleSheet, light/dark theme via Context |
 
 ---
 
@@ -130,36 +130,36 @@ Home  (peladas)
 
 ```
 src/
-├── types/index.ts                # Player (level: number, gender?), Team, Match, DrawRecord, RootStackParamList
-├── storage/index.ts              # Peladas CRUD, drawHistory, matches helpers, prefs
-├── theme/index.tsx               # Tema 3-state (system/light/dark) + paleta light/dark
-├── i18n/index.ts                 # Setup react-i18next com detecção de locale
-├── locales/{pt,en,es}.json       # Traduções
+├── types/index.ts                # Player (level: number, gender?), Team, Match, DrawRecord, navigation
+├── storage/index.ts              # Squads CRUD, drawHistory, matches helpers, prefs
+├── theme/index.tsx               # 3-state theme (system/light/dark) + light/dark palette
+├── i18n/index.ts                 # react-i18next setup with locale auto-detection
+├── locales/{pt,en,es}.json       # Translations
 ├── utils/
-│   ├── balancer.ts               # Greedy + otimizador local + round-robin por gênero
-│   ├── periods.ts                # Período de calendário (semana ISO, mês, tri, sem, ano)
-│   ├── rankings.ts               # Agregações: stats / scorers / mvps / team champions / player profile
-│   ├── stars.ts                  # formatStars(n), teamAverage(team), clampLevel(v)
-│   └── drawSharePayload.ts       # Build/parse do payload .json (puro, testável)
+│   ├── balancer.ts               # Greedy + local optimizer + gender round-robin
+│   ├── periods.ts                # Calendar-period filters (ISO week, month, qtr, sem, year)
+│   ├── rankings.ts               # Aggregations: stats / scorers / mvps / champions / profile
+│   ├── stars.ts                  # formatStars, teamAverage, clampLevel
+│   └── drawSharePayload.ts       # Pure helpers for .json build/parse (testable)
 ├── components/
-│   ├── StarRating.tsx            # Meia-estrela (tap em metades)
-│   ├── PodiumCard.tsx            # Card Top 3 pra share em PNG
+│   ├── StarRating.tsx            # Half-star (tap halves to pick 0.5/1.0/...)
+│   ├── PodiumCard.tsx            # Top 3 card for PNG share
 │   ├── AnimatedSplash.tsx
 │   └── EmptyState.tsx
-├── navigation/AppNavigator.tsx   # Stack com 10 telas
+├── navigation/AppNavigator.tsx   # Stack with 10 screens
 └── screens/
-    ├── HomeScreen.tsx            # Lista de peladas, prefs, onboarding
-    ├── PeladaHubScreen.tsx       # Hub com 4 ações (cadastrar, lista, histórico, ranking)
-    ├── PlayerRegisterScreen.tsx  # Nome + meia-estrela + gênero
-    ├── PlayerListScreen.tsx      # Presença + busca + diaristas
-    ├── DrawConfigScreen.tsx      # Times, jogadores/time, toggle de gênero
-    ├── TeamsScreen.tsx           # Times sorteados, edit completo, share, partidas
-    ├── ManualTeamsScreen.tsx     # Sorteio manual com chips
-    ├── DrawHistoryScreen.tsx     # Histórico (até 20) com métricas + retomar
-    ├── MatchesScreen.tsx         # Lista de partidas de um sorteio
-    ├── MatchEditorScreen.tsx     # Editor de partida (lineup, gols, MVP, resultado)
-    ├── RankingScreen.tsx         # 4 abas × 6 períodos × top 3 compartilhável
-    └── PlayerProfileScreen.tsx   # Stats individuais + head-to-head
+    ├── HomeScreen.tsx            # Squad list, prefs, onboarding
+    ├── PeladaHubScreen.tsx       # Hub with 4 actions
+    ├── PlayerRegisterScreen.tsx  # Name + half-star + gender
+    ├── PlayerListScreen.tsx      # Attendance + search + guests
+    ├── DrawConfigScreen.tsx      # Teams, players/team, gender toggle
+    ├── TeamsScreen.tsx           # Sorted teams, full editing, share, matches
+    ├── ManualTeamsScreen.tsx     # Manual draw with chips
+    ├── DrawHistoryScreen.tsx     # History (up to 20) with metrics + resume
+    ├── MatchesScreen.tsx         # Match list per draw
+    ├── MatchEditorScreen.tsx     # Match editor (lineup, goals, MVP, result)
+    ├── RankingScreen.tsx         # 4 tabs × 6 periods × shareable Top 3
+    └── PlayerProfileScreen.tsx   # Individual stats + head-to-head
 ```
 
 For internal tech reference (data shapes, algorithm details, design decisions), see [CONTEXT.md](./CONTEXT.md).
@@ -193,12 +193,47 @@ Covers the balancing algorithm (greedy + gender round-robin + size preservation)
 
 ---
 
-## Roadmap (next ideas)
+## Roadmap
 
-- [ ] Múltiplas semanas/meses no filtro de período (navegar prev/next)
-- [ ] Notificação de "dia da pelada"
-- [ ] Foto/avatar do jogador
-- [ ] Sincronização entre dispositivos (Firebase ou similar)
+### Near-term (small wins)
+
+- [ ] Navigate prev/next inside the period filter (other months, other weeks)
+- [ ] Push notification for "pelada day"
+- [ ] Player photo / avatar
+- [ ] Cloud sync across devices (Firebase or similar)
+
+### Vision: from team-balancer to **pelada admin platform**
+
+The next phase turns BalanceSquad into a full management tool for pelada organizers — handling money, attendance, and accountability alongside the existing matches and ranking. The aim is to be the only app the organizer needs every Sunday.
+
+**Money — income and expenses**
+- [ ] Recurring fee (monthly) and per-session fee per player
+- [ ] Receivables: who paid, who's behind, due dates
+- [ ] Expenses by category: court rental, ball, bibs, water, referee
+- [ ] Per-player payment timeline + outstanding balance
+- [ ] Pelada cash register: running balance with one-tap entry
+
+**Reports and accountability**
+- [ ] Monthly / quarterly statement (income vs expenses, category breakdown)
+- [ ] Individual invoice / receipt per player (shareable PNG)
+- [ ] End-of-period report card for the group (shareable image)
+- [ ] Export full financial history to CSV / JSON
+
+**Attendance and scheduling**
+- [ ] RSVP for upcoming sessions (confirm presence in advance)
+- [ ] Waiting list when capacity is exceeded
+- [ ] Attendance history per player (% participation over time)
+- [ ] Calendar view of past + upcoming sessions
+
+**Notifications**
+- [ ] Pelada-day reminder (X hours before)
+- [ ] Payment-due reminder
+- [ ] Cancellation / schedule-change broadcast
+
+**Other organizer tools**
+- [ ] Multi-organizer (admin shared between 2+ people)
+- [ ] Game-type presets (futsal, society, fut7) with different default rules
+- [ ] Automatic cloud backup of the squad data
 
 ---
 

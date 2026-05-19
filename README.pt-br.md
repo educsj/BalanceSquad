@@ -193,12 +193,47 @@ Cobertura: algoritmo de balanceamento (greedy + round-robin por gênero + preser
 
 ---
 
-## Roadmap (próximas ideias)
+## Roadmap
 
-- [ ] Navegar entre meses/semanas no filtro de período
+### Curto prazo (pequenas melhorias)
+
+- [ ] Navegar prev/next no filtro de período (outros meses, outras semanas)
 - [ ] Notificação de "dia da pelada"
 - [ ] Foto/avatar do jogador
 - [ ] Sincronização entre dispositivos (Firebase ou similar)
+
+### Visão: de sorteador a **plataforma de administração de pelada**
+
+A próxima fase transforma o BalanceSquad numa ferramenta completa de gestão pra organizadores de pelada — controle financeiro, presença e prestação de contas convivendo com as partidas e o ranking que já existem. Objetivo: ser o único app que o organizador precisa abrir no domingo.
+
+**Financeiro — entradas e saídas**
+- [ ] Mensalidade fixa e taxa por sessão por jogador
+- [ ] Recebimentos: quem pagou, quem está em atraso, vencimento
+- [ ] Despesas por categoria: aluguel de quadra, bola, coletes, água, juiz
+- [ ] Linha do tempo de pagamentos por jogador + saldo devedor
+- [ ] Caixa da pelada: saldo corrente com lançamento em um toque
+
+**Relatórios e prestação de contas**
+- [ ] Demonstrativo mensal / trimestral (receitas vs despesas, por categoria)
+- [ ] Recibo / fatura individual por jogador (PNG compartilhável)
+- [ ] Balanço de período pro grupo (imagem compartilhável)
+- [ ] Exportar histórico financeiro completo em CSV / JSON
+
+**Presença e convocação**
+- [ ] RSVP pras próximas peladas (confirmação antecipada)
+- [ ] Lista de espera quando passa do limite
+- [ ] Histórico de presença por jogador (% de comparecimento)
+- [ ] Visão de calendário (peladas passadas + futuras)
+
+**Notificações**
+- [ ] Lembrete de dia da pelada (X horas antes)
+- [ ] Lembrete de pagamento pendente
+- [ ] Aviso de cancelamento ou mudança de horário
+
+**Outras ferramentas do organizador**
+- [ ] Multi-organizador (admin compartilhado entre 2+ pessoas)
+- [ ] Presets de tipo de jogo (futsal, society, fut7) com regras default diferentes
+- [ ] Backup automático na nuvem dos dados da pelada
 
 ---
 
