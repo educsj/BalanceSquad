@@ -457,6 +457,8 @@
     "guestModalTitle": "Novo jogador avulso",
     "guestModalSubtitle": "Entra direto nesta sessão sem virar membro permanente da pelada.",
     "guestNamePlaceholder": "Nome do avulso",
-    "guestLevelLabel": "Nível"
+    "guestLevelLabel": "Nível",
+    "shareListCta": "Compartilhar lista",
+    "noConfirmedShort": "ninguém confirmou ainda"
   }
 }

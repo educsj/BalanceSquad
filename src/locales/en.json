@@ -457,6 +457,8 @@
     "guestModalTitle": "New one-off guest",
     "guestModalSubtitle": "Joins this session only — doesn't become a permanent squad member.",
     "guestNamePlaceholder": "Guest name",
-    "guestLevelLabel": "Level"
+    "guestLevelLabel": "Level",
+    "shareListCta": "Share list",
+    "noConfirmedShort": "no one confirmed yet"
   }
 }

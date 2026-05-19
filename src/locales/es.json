@@ -457,6 +457,8 @@
     "guestModalTitle": "Nuevo invitado",
     "guestModalSubtitle": "Solo entra en esta sesión — no se vuelve miembro permanente del squad.",
     "guestNamePlaceholder": "Nombre del invitado",
-    "guestLevelLabel": "Nivel"
+    "guestLevelLabel": "Nivel",
+    "shareListCta": "Compartir lista",
+    "noConfirmedShort": "nadie confirmó aún"
   }
 }

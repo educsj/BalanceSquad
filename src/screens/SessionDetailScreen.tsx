@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Alert,
-  TextInput, KeyboardAvoidingView, Platform,
+  TextInput, KeyboardAvoidingView, Platform, Share,
 } from 'react-native';
 import { RouteProp, useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -188,6 +188,40 @@ export default function SessionDetailScreen() {
     });
   }
 
+  // Builds a WhatsApp-friendly text with the session's confirmados +
+  // waitlist and fires the native share sheet. Organizer can pick WhatsApp
+  // (or any other share target) from there.
+  async function handleShareList() {
+    if (!session || !pelada) return;
+    const dateLabel = formatDateLong(session.date, t);
+    const header = `⚽ ${pelada.name} — ${dateLabel}${session.time ? ` ${session.time}` : ''}`;
+    const confirmedNames = session.rsvps
+      .map(id => playerById.get(id)?.name ?? '—')
+      .map((n, i) => `${i + 1}. ${n}`)
+      .join('\n');
+    const waitlistNames = session.waitlist
+      .map(id => playerById.get(id)?.name ?? '—')
+      .map((n, i) => `${i + 1}. ${n}`)
+      .join('\n');
+    const parts = [
+      header,
+      '',
+      `${t('sessions.confirmedSection')} (${session.rsvps.length}/${session.maxPlayers}):`,
+      confirmedNames || `— ${t('sessions.noConfirmedShort')} —`,
+    ];
+    if (session.waitlist.length > 0) {
+      parts.push('', `${t('sessions.waitlistSection')}:`, waitlistNames);
+    }
+    if (session.notes) {
+      parts.push('', `📝 ${session.notes}`);
+    }
+    try {
+      await Share.share({ message: parts.join('\n') });
+    } catch {
+      // user cancelled or share unavailable — silent
+    }
+  }
+
   function openGuestModal() {
     setNewGuestName('');
     setNewGuestLevel(3);
@@ -359,6 +393,10 @@ export default function SessionDetailScreen() {
       {/* Bottom action bar */}
       {!isCancelled && !isCompleted && (
         <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
+          <TouchableOpacity style={styles.btnShareList} onPress={handleShareList} activeOpacity={0.85}>
+            <Feather name="share-2" size={15} color={colors.primary} />
+            <Text style={styles.btnShareListText}>{t('sessions.shareListCta')}</Text>
+          </TouchableOpacity>
           {(isToday || isPast) && session.rsvps.length > 0 ? (
             <TouchableOpacity style={styles.btnPrimary} onPress={handleDrawNow} activeOpacity={0.85}>
               <Feather name="shuffle" size={16} color="#fff" />
@@ -632,6 +670,19 @@ function createStyles(c: ThemeColors) {
     },
     btnPrimaryText: { color: '#fff', fontWeight: '700', fontSize: 15 },
     btnDisabled: { backgroundColor: c.disabled },
+    btnShareList: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      paddingVertical: 11,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: c.primary,
+      backgroundColor: c.primaryLight,
+      marginBottom: 8,
+    },
+    btnShareListText: { color: c.primary, fontWeight: '700', fontSize: 14 },
 
     overlay: {
       flex: 1,
