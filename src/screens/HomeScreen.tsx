@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { Pelada, RootStackParamList } from '../types';
 import {
   loadPeladas, savePeladas, getHideRatings, setHideRatings,
-  exportData, importData, setLanguage,
+  exportData, importData, setLanguage, setThemeMode, ThemeMode,
 } from '../storage';
 import { parseDrawPayload, importDrawAsPelada } from '../utils/drawShare';
 import EmptyState from '../components/EmptyState';
@@ -31,8 +31,13 @@ export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { colors, mode: themeMode, setMode: setThemeModeState } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+
+  async function handleThemeChange(next: ThemeMode) {
+    setThemeModeState(next);
+    await setThemeMode(next);
+  }
 
   const [peladas, setPeladas] = useState<Pelada[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -355,6 +360,28 @@ export default function HomeScreen() {
           <View style={styles.modal}>
             <Text style={styles.modalTitle}>{t('home.backupTitle')}</Text>
             <Text style={styles.modalSub}>{t('home.backupDesc')}</Text>
+
+            <Text style={styles.sectionLabel}>{t('home.themeLabel')}</Text>
+            <View style={styles.themeRow}>
+              {(['system', 'light', 'dark'] as ThemeMode[]).map(m => {
+                const active = themeMode === m;
+                const icon = m === 'system' ? 'smartphone' : m === 'light' ? 'sun' : 'moon';
+                return (
+                  <TouchableOpacity
+                    key={m}
+                    style={[styles.themeBtn, active && styles.themeBtnActive]}
+                    onPress={() => handleThemeChange(m)}
+                    activeOpacity={0.85}
+                  >
+                    <Feather name={icon} size={16} color={active ? colors.primary : colors.textSecondary} />
+                    <Text style={[styles.themeBtnText, active && styles.themeBtnTextActive]}>
+                      {t(`home.theme.${m}`)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
             <TouchableOpacity style={styles.backupBtn} onPress={handleExport}>
               <Feather name="upload" size={22} color="#fff" />
               <View>
@@ -517,6 +544,30 @@ function createStyles(c: ThemeColors) {
       alignItems: 'center',
     },
     btnSecondaryText: { color: c.text, fontWeight: '600', fontSize: 15 },
+    sectionLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: c.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginTop: 4,
+    },
+    themeRow: { flexDirection: 'row', gap: 8 },
+    themeBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      paddingVertical: 11,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: c.borderLight,
+      backgroundColor: c.surfaceVariant,
+    },
+    themeBtnActive: { borderColor: c.primary, backgroundColor: c.primaryLight },
+    themeBtnText: { color: c.textSecondary, fontWeight: '600', fontSize: 13 },
+    themeBtnTextActive: { color: c.primary, fontWeight: '700' },
     backupBtn: {
       flexDirection: 'row',
       alignItems: 'center',

@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
+import { getThemeMode, ThemeMode } from '../storage';
 
 export type ThemeColors = {
   background: string;
@@ -91,16 +92,38 @@ export const darkColors: ThemeColors = {
   teamColors: ['#60A5FA', '#93C5FD', '#2DD4BF', '#A78BFA', '#F87171'],
 };
 
-type Theme = { colors: ThemeColors; isDark: boolean };
+type Theme = {
+  colors: ThemeColors;
+  isDark: boolean;
+  mode: ThemeMode;
+  setMode: (m: ThemeMode) => void;
+};
 
-const ThemeContext = createContext<Theme>({ colors: lightColors, isDark: false });
+const ThemeContext = createContext<Theme>({
+  colors: lightColors,
+  isDark: false,
+  mode: 'system',
+  setMode: () => {},
+});
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const systemScheme = useColorScheme();
+  const [mode, setModeState] = useState<ThemeMode>('system');
+
+  useEffect(() => {
+    getThemeMode().then(setModeState);
+  }, []);
+
+  const isDark = mode === 'dark' || (mode === 'system' && systemScheme === 'dark');
+
   const value = useMemo<Theme>(
-    () => ({ colors: isDark ? darkColors : lightColors, isDark }),
-    [isDark],
+    () => ({
+      colors: isDark ? darkColors : lightColors,
+      isDark,
+      mode,
+      setMode: setModeState,
+    }),
+    [isDark, mode],
   );
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

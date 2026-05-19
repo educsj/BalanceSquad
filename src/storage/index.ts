@@ -4,7 +4,10 @@ import { Pelada, DrawRecord, Team } from '../types';
 const PELADAS_KEY = '@balancesquad:peladas';
 const HIDE_RATINGS_KEY = '@balancesquad:hideRatings';
 const LANGUAGE_KEY = '@balancesquad:language';
+const THEME_MODE_KEY = '@balancesquad:themeMode';
 const DRAW_HISTORY_LIMIT = 20;
+
+export type ThemeMode = 'system' | 'light' | 'dark';
 
 function migratePelada(pelada: Pelada): Pelada {
   if (pelada.lastDraw && pelada.lastDraw.length > 0 && !pelada.drawHistory) {
@@ -79,6 +82,15 @@ export async function getLanguage(): Promise<string | null> {
 
 export async function setLanguage(lang: string): Promise<void> {
   await AsyncStorage.setItem(LANGUAGE_KEY, lang);
+}
+
+export async function getThemeMode(): Promise<ThemeMode> {
+  const raw = await AsyncStorage.getItem(THEME_MODE_KEY);
+  return raw === 'light' || raw === 'dark' ? raw : 'system';
+}
+
+export async function setThemeMode(mode: ThemeMode): Promise<void> {
+  await AsyncStorage.setItem(THEME_MODE_KEY, mode);
 }
 
 export async function exportData(): Promise<string> {

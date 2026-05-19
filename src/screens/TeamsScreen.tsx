@@ -69,6 +69,9 @@ export default function TeamsScreen() {
     playerIdx: number;
   } | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [renameTeamIdx, setRenameTeamIdx] = useState<number | null>(null);
+  const [renameDraft, setRenameDraft] = useState('');
   const [addPickerTeamIdx, setAddPickerTeamIdx] = useState<number | null>(null);
   const [guestModalTeamIdx, setGuestModalTeamIdx] = useState<number | null>(null);
   const [newGuestName, setNewGuestName] = useState('');
@@ -191,6 +194,21 @@ export default function TeamsScreen() {
 
   function openAddPicker(teamIndex: number) {
     setAddPickerTeamIdx(teamIndex);
+  }
+
+  function openRename(teamIndex: number) {
+    setRenameDraft(currentTeams[teamIndex]?.name ?? '');
+    setRenameTeamIdx(teamIndex);
+  }
+
+  async function confirmRename() {
+    if (renameTeamIdx === null) return;
+    const name = renameDraft.trim();
+    if (!name) { setRenameTeamIdx(null); return; }
+    const next = currentTeams.map((t, i) => i === renameTeamIdx ? { ...t, name } : t);
+    setCurrentTeams(next);
+    setRenameTeamIdx(null);
+    await persistTeams(next);
   }
 
   async function addPlayerToTeam(player: Player, teamIndex: number) {
@@ -353,8 +371,16 @@ export default function TeamsScreen() {
               style={[styles.card, { borderLeftColor: color }, cardAnimStyle]}
             >
               <View style={styles.cardHeader}>
-                <View style={styles.teamNameRow}>
-                  <Text style={[styles.teamName, { color }]}>{team.name}</Text>
+                <TouchableOpacity
+                  style={styles.teamNameRow}
+                  onPress={() => openRename(teamIndex)}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+                >
+                  <Text style={[styles.teamName, { color }]} numberOfLines={1}>
+                    {team.name}
+                  </Text>
+                  <Feather name="edit-2" size={13} color={colors.textMuted} />
                   {team.players.length >= playersPerTeamCfg && (
                     <View style={styles.fullChip}>
                       <Text style={styles.fullChipText}>
@@ -362,7 +388,7 @@ export default function TeamsScreen() {
                       </Text>
                     </View>
                   )}
-                </View>
+                </TouchableOpacity>
                 {team.players.length > 0 && (
                   <Text style={styles.totalStars}>
                     {formatStars(teamAverage(team))} ★ {t('teams.avgSuffix')}
@@ -640,6 +666,41 @@ export default function TeamsScreen() {
             </View>
           </View>
         </View>
+      </Modal>
+
+      {/* Rename team modal */}
+      <Modal
+        visible={renameTeamIdx !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRenameTeamIdx(null)}
+      >
+        <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.modal}>
+            <Text style={styles.modalTitle}>{t('teams.renameTitle')}</Text>
+            <Text style={styles.modalSubtitle}>{t('teams.renameHint')}</Text>
+            <TextInput
+              style={styles.input}
+              value={renameDraft}
+              onChangeText={setRenameDraft}
+              autoFocus
+              maxLength={30}
+              onSubmitEditing={confirmRename}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.btnModalSecondary} onPress={() => setRenameTeamIdx(null)}>
+                <Text style={styles.btnModalSecondaryText}>{t('teams.cancelBtn')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.btnModalPrimary, !renameDraft.trim() && styles.btnModalDisabled]}
+                onPress={confirmRename}
+                disabled={!renameDraft.trim()}
+              >
+                <Text style={styles.btnModalPrimaryText}>{t('common.save')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Guest add modal */}
