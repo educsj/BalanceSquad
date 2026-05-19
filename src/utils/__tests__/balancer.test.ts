@@ -54,6 +54,33 @@ describe('balanceTeams', () => {
       expect(result).toHaveLength(3);
     });
 
+    test('underfilled: maximizes full teams, last team takes the leftover', () => {
+      // 13 players in 3 teams of 5 → expected sizes [5, 5, 3], NOT [5, 4, 4].
+      // Repeat several times to catch random tie-breaking surprises.
+      for (let run = 0; run < 20; run++) {
+        const result = balanceTeams(players(13), 3, 5);
+        expect(result).toHaveLength(3);
+        const sizes = result.map(t => t.players.length).sort((a, b) => b - a);
+        expect(sizes).toEqual([5, 5, 3]);
+      }
+    });
+
+    test('underfilled: 11 players in 3 teams of 5 → sizes [5, 5, 1]', () => {
+      for (let run = 0; run < 10; run++) {
+        const result = balanceTeams(players(11), 3, 5);
+        const sizes = result.map(t => t.players.length).sort((a, b) => b - a);
+        expect(sizes).toEqual([5, 5, 1]);
+      }
+    });
+
+    test('underfilled: 14 players in 3 teams of 5 → sizes [5, 5, 4]', () => {
+      for (let run = 0; run < 10; run++) {
+        const result = balanceTeams(players(14), 3, 5);
+        const sizes = result.map(t => t.players.length).sort((a, b) => b - a);
+        expect(sizes).toEqual([5, 5, 4]);
+      }
+    });
+
     test('teams are numbered from 1', () => {
       const result = balanceTeams(players(6), 2, 3);
       expect(result[0]).toMatchObject({ id: 1, name: 'Time 1' });
@@ -97,6 +124,24 @@ describe('balanceTeams', () => {
       const result = balanceTeams(players(11), 2, 5);
       expect(result).toHaveLength(3);
       expect(result[2].players).toHaveLength(1);
+    });
+
+    test('underfilled keeps per-player skill comparable across full teams', () => {
+      // Mixed skill, 13 players in 3 teams of 5 → sizes [5, 5, 3].
+      // Full teams should have similar star sums; short team is excluded from
+      // the optimizer pass (its average per player is what matters).
+      const ps = [
+        p('a', 5), p('b', 5), p('c', 4.5), p('d', 4), p('e', 4),
+        p('f', 3.5), p('g', 3), p('h', 3), p('i', 2.5), p('j', 2),
+        p('k', 2), p('l', 1.5), p('m', 1),
+      ];
+      const result = balanceTeams(ps, 3, 5);
+      const sizes = result.map(t => t.players.length).sort((a, b) => b - a);
+      expect(sizes).toEqual([5, 5, 3]);
+      // Among the two 5-player teams, spread should be small (≤ 1 star unit).
+      const fullTeams = result.filter(t => t.players.length === 5);
+      const stars = fullTeams.map(t => t.totalStars);
+      expect(Math.max(...stars) - Math.min(...stars)).toBeLessThanOrEqual(1);
     });
   });
 

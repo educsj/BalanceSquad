@@ -322,17 +322,56 @@ export function balanceTeams(
     totalStars: 0,
   }));
 
+  // Underfilled case: same number of teams the user asked for, but not enough
+  // players to fill them all. Default expectation: maximize the number of teams
+  // at full cap; whatever's left over goes to the LAST team.
+  //   13 players, 3 teams of 5 → caps [5, 5, 3] (not [5, 4, 4]).
+  // Stars are still distributed round-robin so the short team doesn't end up
+  // weak. The post-optimizer only touches teams that share the same cap, so it
+  // never pulls a player out of the short team to "equalize" star sums.
+  const underfilled = totalTeams === numTeams && present.length < maxMainPlayers;
+  let perTeamCaps: number[] | null = null;
+  if (underfilled) {
+    perTeamCaps = [];
+    let remaining = present.length;
+    for (let i = 0; i < numTeams; i++) {
+      const slot = Math.min(remaining, playersPerTeam);
+      perTeamCaps.push(slot);
+      remaining -= slot;
+    }
+  }
+  const numFullTeams = perTeamCaps
+    ? perTeamCaps.filter(c => c === playersPerTeam).length
+    : numTeams;
+
   if (options.balanceByGender) {
     // Strict round-robin per gender: each team gets one player from a gender
     // per round before any team gets a second. Guarantees the count of each
     // gender differs by at most 1 across teams, no matter how lopsided the
     // star totals are after men are placed.
-    applyGenderRoundRobin(teams, present, numTeams, playersPerTeam);
-    const balanced = optimizeBalance(teams, numTeams, true);
-    enforceGenderBalance(balanced, numTeams);
+    if (perTeamCaps) {
+      // Underfilled: same per-team caps logic, but split by F vs non-F to keep
+      // gender proportion across teams of equal cap.
+      const females = present.filter(isFemale);
+      const others = present.filter(p => !isFemale(p));
+      const groups = [females, others].sort((a, b) => a.length - b.length);
+      groups.forEach(g => distributeRoundRobinWithCaps(teams, g, perTeamCaps!));
+    } else {
+      applyGenderRoundRobin(teams, present, numTeams, playersPerTeam);
+    }
+    const balanced = optimizeBalance(teams, numFullTeams, true);
+    enforceGenderBalance(balanced, numFullTeams);
     // One last star pass after the safety swaps — gender count is now locked
     // and the optimizer can shuffle same-gender players to tighten the spread.
-    return optimizeBalance(balanced, numTeams, true);
+    return optimizeBalance(balanced, numFullTeams, true);
+  }
+
+  if (perTeamCaps) {
+    // Round-robin with per-team caps fills the short team in the first rounds
+    // and then continues with the full-cap teams — guarantees the short team
+    // gets a mix of strong/weak players rather than only leftovers.
+    distributeRoundRobinWithCaps(teams, present, perTeamCaps);
+    return optimizeBalance(teams, numFullTeams);
   }
 
   // Shuffle the full list so overflow candidates are chosen at random —
