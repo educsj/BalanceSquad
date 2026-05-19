@@ -10,7 +10,13 @@ import { useTranslation } from 'react-i18next';
 import { RootStackParamList, Team, Player, StarLevel, Gender, Match } from '../types';
 import { StackNavigationProp } from '@react-navigation/stack';
 import StarRating from '../components/StarRating';
-import { rematchTwoTeams, recalcTeams } from '../utils/balancer';
+import {
+  rematchTwoTeams,
+  recalcTeams,
+  pickRandomN,
+  pickBalancedN,
+  pickByLevelProximity,
+} from '../utils/balancer';
 import { updateDrawRecord, addDrawRecord, getHideRatings, getPeladaById } from '../storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
@@ -78,6 +84,14 @@ export default function TeamsScreen() {
   const navStack = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [addPickerTeamIdx, setAddPickerTeamIdx] = useState<number | null>(null);
   const [guestModalTeamIdx, setGuestModalTeamIdx] = useState<number | null>(null);
+
+  // Completar Time (repechage)
+  const [fillTargetIdx, setFillTargetIdx] = useState<number | null>(null);
+  const [fillSourceTeamId, setFillSourceTeamId] = useState<number | null>(null);
+
+  // Long-press action menu + injury substitution
+  const [actionMenuFor, setActionMenuFor] = useState<{ teamIdx: number; playerIdx: number } | null>(null);
+  const [injuryFor, setInjuryFor] = useState<{ teamIdx: number; playerIdx: number } | null>(null);
   const [newGuestName, setNewGuestName] = useState('');
   const [newGuestLevel, setNewGuestLevel] = useState<StarLevel>(3);
   const [newGuestGender, setNewGuestGender] = useState<Gender | undefined>(undefined);
@@ -269,6 +283,39 @@ export default function TeamsScreen() {
   const placedIds = new Set(currentTeams.flatMap(t => t.players.map(p => p.id)));
   const availableBasePlayers = basePlayers.filter(p => !placedIds.has(p.id));
 
+  // Injury sub pool: unassigned base players + players from OTHER teams. Each
+  // candidate carries a `donorTeamId` (null when they come from the base pool)
+  // so the modal can render a "From {team}" chip and the swap handler knows
+  // whether to also remove the sub from their donor team.
+  const injuryPool = useMemo(() => {
+    if (!injuryFor) return [] as { player: Player; donorTeamId: number | null }[];
+    const injured = currentTeams[injuryFor.teamIdx]?.players[injuryFor.playerIdx];
+    if (!injured) return [];
+    const targetTeamId = currentTeams[injuryFor.teamIdx].id;
+    const fromBase = availableBasePlayers.map(p => ({ player: p, donorTeamId: null as number | null }));
+    const fromOthers = currentTeams
+      .filter(t => t.id !== targetTeamId)
+      .flatMap(t => t.players.map(p => ({ player: p, donorTeamId: t.id })));
+    const all = [...fromBase, ...fromOthers];
+    const ordered = pickByLevelProximity(all.map(x => x.player), injured.level);
+    const lookup = new Map(all.map(x => [x.player.id, x.donorTeamId]));
+    return ordered.map(p => ({ player: p, donorTeamId: lookup.get(p.id) ?? null }));
+  }, [injuryFor, currentTeams, availableBasePlayers]);
+
+  const injuredPlayer = injuryFor
+    ? currentTeams[injuryFor.teamIdx]?.players[injuryFor.playerIdx]
+    : null;
+  const teamNameById = useMemo(() => {
+    const m = new Map<number, string>();
+    currentTeams.forEach(t => m.set(t.id, t.name));
+    return m;
+  }, [currentTeams]);
+
+  // Fill-team modal source eligibility helpers
+  const fillTarget = fillTargetIdx !== null ? currentTeams[fillTargetIdx] : null;
+  const fillMissing = fillTarget ? playersPerTeamCfg - fillTarget.players.length : 0;
+  const hasCompleteTeam = currentTeams.some(t => t.players.length >= playersPerTeamCfg);
+
   async function handleShareText() {
     setShareMenuVisible(false);
     const text = `${t('teams.sharePrefix')}\n\n${formatTeamsForShare(currentTeams)}`;
@@ -303,6 +350,89 @@ export default function TeamsScreen() {
     } catch {
       // silently ignore — the user can retry from the menu
     }
+  }
+
+  function openFillModal(teamIndex: number) {
+    setFillSourceTeamId(null);
+    setFillTargetIdx(teamIndex);
+  }
+
+  async function handleFill(mode: 'random' | 'balanced') {
+    if (fillTargetIdx === null || fillSourceTeamId === null) return;
+    const target = currentTeams[fillTargetIdx];
+    const source = currentTeams.find(t => t.id === fillSourceTeamId);
+    if (!target || !source) return;
+    const missing = playersPerTeamCfg - target.players.length;
+    if (missing <= 0 || source.players.length === 0) return;
+
+    let chosen: Player[];
+    if (mode === 'random') {
+      chosen = pickRandomN(source.players, missing);
+    } else {
+      const completes = currentTeams.filter(t => t.players.length >= playersPerTeamCfg);
+      if (completes.length === 0) return;
+      const avgCompleteTotal =
+        completes.reduce((s, t) => s + t.totalStars, 0) / completes.length;
+      const targetSum = avgCompleteTotal - target.totalStars;
+      chosen = pickBalancedN(source.players, missing, targetSum);
+    }
+    if (chosen.length === 0) return;
+
+    const chosenIds = new Set(chosen.map(p => p.id));
+    const next = currentTeams.map(t => {
+      if (t.id === target.id) return { ...t, players: [...t.players, ...chosen] };
+      if (t.id === source.id) {
+        return { ...t, players: t.players.filter(p => !chosenIds.has(p.id)) };
+      }
+      return t;
+    });
+    const recalced = recalcTeams(next);
+    setCurrentTeams(recalced);
+    setFillTargetIdx(null);
+    setFillSourceTeamId(null);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    await persistTeams(recalced);
+  }
+
+  function openInjuryModal() {
+    if (!actionMenuFor) return;
+    setInjuryFor(actionMenuFor);
+    setActionMenuFor(null);
+  }
+
+  function handleActionRemove() {
+    if (!actionMenuFor) return;
+    const { teamIdx, playerIdx } = actionMenuFor;
+    setActionMenuFor(null);
+    handleRemovePlayer(teamIdx, playerIdx);
+  }
+
+  async function handleInjurySwap(sub: Player, donorTeamId: number | null) {
+    if (!injuryFor) return;
+    const { teamIdx, playerIdx } = injuryFor;
+    const next = currentTeams.map(t => ({ ...t, players: [...t.players] }));
+    const injured = next[teamIdx]?.players[playerIdx];
+    if (!injured) return;
+
+    next[teamIdx].players[playerIdx] = sub;
+    if (donorTeamId !== null) {
+      const donorIdx = next.findIndex(t => t.id === donorTeamId);
+      if (donorIdx >= 0) {
+        next[donorIdx].players = next[donorIdx].players.filter(p => p.id !== sub.id);
+      }
+    }
+    const recalced = recalcTeams(next);
+    setCurrentTeams(recalced);
+    setInjuryFor(null);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    await persistTeams(recalced);
+
+    // Reuse the existing undo snackbar — restores the injured player to their
+    // original slot (does NOT restore the sub to their donor team; that's a
+    // documented limit of the v1 undo).
+    setPendingUndo({ player: injured, teamIdx, playerIdx });
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    undoTimerRef.current = setTimeout(() => setPendingUndo(null), 5000);
   }
 
   function toggleTeamSelection(id: number) {
@@ -448,6 +578,11 @@ export default function TeamsScreen() {
                     <TouchableOpacity
                       style={styles.playerTapZone}
                       onPress={() => handlePlayerTap(teamIndex, playerIndex)}
+                      onLongPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+                        setActionMenuFor({ teamIdx: teamIndex, playerIdx: playerIndex });
+                      }}
+                      delayLongPress={350}
                       activeOpacity={0.7}
                     >
                       <Text
@@ -486,6 +621,16 @@ export default function TeamsScreen() {
                 <Feather name="user-plus" size={14} color={color} />
                 <Text style={[styles.addPlayerBtnText, { color }]}>{t('teams.addPlayer')}</Text>
               </TouchableOpacity>
+              {team.players.length < playersPerTeamCfg && (
+                <TouchableOpacity
+                  style={[styles.fillTeamBtn, { borderColor: color, backgroundColor: colors.primaryLight }]}
+                  onPress={() => openFillModal(teamIndex)}
+                  activeOpacity={0.7}
+                >
+                  <Feather name="users" size={14} color={color} />
+                  <Text style={[styles.fillTeamBtnText, { color }]}>{t('teams.fillTeam')}</Text>
+                </TouchableOpacity>
+              )}
             </Animated.View>
           );
         })}
@@ -737,6 +882,210 @@ export default function TeamsScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
+      {/* Player long-press action menu */}
+      <Modal
+        visible={actionMenuFor !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setActionMenuFor(null)}
+      >
+        <TouchableOpacity
+          style={styles.overlay}
+          activeOpacity={1}
+          onPress={() => setActionMenuFor(null)}
+        >
+          <TouchableOpacity activeOpacity={1} style={styles.shareMenu}>
+            <Text style={styles.modalTitle}>{t('teams.playerActionsTitle')}</Text>
+            {actionMenuFor && (
+              <Text style={styles.modalSubtitle}>
+                {currentTeams[actionMenuFor.teamIdx]?.players[actionMenuFor.playerIdx]?.name ?? ''}
+              </Text>
+            )}
+            <TouchableOpacity style={styles.shareOption} onPress={openInjuryModal}>
+              <Feather name="activity" size={18} color={colors.primary} />
+              <View style={styles.shareOptionText}>
+                <Text style={styles.shareOptionLabel}>{t('teams.injurySubstitute')}</Text>
+                <Text style={styles.shareOptionDesc}>{t('teams.injurySubtitle')}</Text>
+              </View>
+              <Feather name="chevron-right" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.shareOption} onPress={handleActionRemove}>
+              <Feather name="x-circle" size={18} color={colors.danger} />
+              <View style={styles.shareOptionText}>
+                <Text style={[styles.shareOptionLabel, { color: colors.danger }]}>
+                  {t('teams.removeAction')}
+                </Text>
+              </View>
+              <Feather name="chevron-right" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Fill team (repechage) modal */}
+      <Modal
+        visible={fillTargetIdx !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFillTargetIdx(null)}
+      >
+        <View style={styles.overlay}>
+          <View style={[styles.modal, { maxHeight: '85%' }]}>
+            <Text style={styles.modalTitle}>
+              {fillTarget ? t('teams.fillTitle', { name: fillTarget.name }) : ''}
+            </Text>
+            <Text style={styles.modalSubtitle}>
+              {t('teams.fillSubtitle', { count: fillMissing })}
+            </Text>
+
+            <ScrollView style={{ maxHeight: 280 }}>
+              {currentTeams
+                .filter(team => fillTarget && team.id !== fillTarget.id)
+                .map(team => {
+                  const isSelected = fillSourceTeamId === team.id;
+                  const tooSmall = team.players.length < fillMissing;
+                  const originalIdx = currentTeams.findIndex(x => x.id === team.id);
+                  const color = TEAM_COLORS[originalIdx % TEAM_COLORS.length];
+                  return (
+                    <TouchableOpacity
+                      key={team.id}
+                      disabled={tooSmall}
+                      style={[
+                        styles.teamOption,
+                        isSelected && { borderColor: color, backgroundColor: colors.primaryLight },
+                        tooSmall && { opacity: 0.5 },
+                      ]}
+                      onPress={() => setFillSourceTeamId(team.id)}
+                      activeOpacity={0.8}
+                    >
+                      <View style={[styles.teamOptionDot, { backgroundColor: isSelected ? color : colors.border }]} />
+                      <View style={styles.teamOptionInfo}>
+                        <Text style={[styles.teamOptionName, isSelected && { color }]}>{team.name}</Text>
+                        <Text style={styles.teamOptionMeta}>
+                          {team.players.length} · {formatStars(teamAverage(team))}★ {t('teams.avgSuffix')}
+                        </Text>
+                        {tooSmall && (
+                          <Text style={[styles.teamOptionMeta, { color: colors.danger }]}>
+                            {t('teams.fillSourceTooSmall')}
+                          </Text>
+                        )}
+                      </View>
+                      {isSelected && <Feather name="check" size={18} color={color} />}
+                    </TouchableOpacity>
+                  );
+                })}
+            </ScrollView>
+
+            {!hasCompleteTeam && (
+              <View style={styles.warningBanner}>
+                <Feather name="info" size={14} color={colors.danger} />
+                <Text style={styles.warningBannerText}>{t('teams.fillBalancedHint')}</Text>
+              </View>
+            )}
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.btnModalSecondary} onPress={() => setFillTargetIdx(null)}>
+                <Text style={styles.btnModalSecondaryText}>{t('teams.cancelBtn')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.btnModalPrimary, fillSourceTeamId === null && styles.btnModalDisabled]}
+                onPress={() => handleFill('random')}
+                disabled={fillSourceTeamId === null}
+              >
+                <Feather name="shuffle" size={14} color="#fff" />
+                <Text style={styles.btnModalPrimaryText}>{t('teams.fillRandom')}</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.btnModalPrimary,
+                { marginTop: 6 },
+                (fillSourceTeamId === null || !hasCompleteTeam) && styles.btnModalDisabled,
+              ]}
+              onPress={() => handleFill('balanced')}
+              disabled={fillSourceTeamId === null || !hasCompleteTeam}
+            >
+              <Feather name="bar-chart-2" size={14} color="#fff" />
+              <Text style={styles.btnModalPrimaryText}>{t('teams.fillBalanced')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Injury substitution modal */}
+      <Modal
+        visible={injuryFor !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setInjuryFor(null)}
+      >
+        <View style={styles.overlay}>
+          <View style={[styles.modal, { maxHeight: '85%' }]}>
+            <Text style={styles.modalTitle}>
+              {injuredPlayer ? t('teams.injuryTitle', { name: injuredPlayer.name }) : ''}
+            </Text>
+            <Text style={styles.modalSubtitle}>{t('teams.injurySubtitle')}</Text>
+            {injuredPlayer && !hideRatings && (
+              <View style={styles.injuredLevelRow}>
+                <StarRating value={injuredPlayer.level} readonly size={14} />
+              </View>
+            )}
+
+            <ScrollView style={{ maxHeight: 360 }}>
+              {injuryPool.length === 0 ? (
+                <Text style={styles.emptyHint}>{t('teams.injuryEmptyPool')}</Text>
+              ) : (
+                injuryPool.map(({ player, donorTeamId }, idx) => {
+                  const sameLevel = injuredPlayer && player.level === injuredPlayer.level;
+                  const showBadge = sameLevel && idx === 0;
+                  return (
+                    <TouchableOpacity
+                      key={player.id}
+                      style={styles.pickerRow}
+                      onPress={() => handleInjurySwap(player, donorTeamId)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <View style={styles.injuryRowTop}>
+                          <Text style={styles.pickerName} numberOfLines={1}>{player.name}</Text>
+                          {showBadge && (
+                            <View style={styles.sameLevelBadge}>
+                              <Text style={styles.sameLevelBadgeText}>{t('teams.injurySameLevel')}</Text>
+                            </View>
+                          )}
+                        </View>
+                        <View style={styles.pickerMeta}>
+                          {!hideRatings && <StarRating value={player.level} readonly size={12} />}
+                          {player.gender && (
+                            <Text style={styles.pickerGender}>
+                              {player.gender === 'M' ? '♂' : '♀'}
+                            </Text>
+                          )}
+                          {donorTeamId !== null && (
+                            <View style={styles.donorChip}>
+                              <Text style={styles.donorChipText}>
+                                {t('teams.injuryFromTeam', { team: teamNameById.get(donorTeamId) ?? '' })}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                      <Feather name="repeat" size={20} color={colors.primary} />
+                    </TouchableOpacity>
+                  );
+                })
+              )}
+            </ScrollView>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.btnModalSecondary} onPress={() => setInjuryFor(null)}>
+                <Text style={styles.btnModalSecondaryText}>{t('teams.cancelBtn')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Guest add modal */}
       <Modal
         visible={guestModalTeamIdx !== null}
@@ -923,6 +1272,38 @@ function createStyles(c: ThemeColors) {
       borderStyle: 'dashed',
     },
     addPlayerBtnText: { fontWeight: '700', fontSize: 13 },
+    fillTeamBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      marginTop: 8,
+      paddingVertical: 8,
+      borderRadius: 8,
+      borderWidth: 1,
+    },
+    fillTeamBtnText: { fontWeight: '700', fontSize: 13 },
+
+    injuredLevelRow: { marginTop: -8 },
+    injuryRowTop: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    sameLevelBadge: {
+      backgroundColor: 'rgba(34, 197, 94, 0.18)',
+      borderRadius: 6,
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+    },
+    sameLevelBadgeText: { color: '#15803D', fontWeight: '800', fontSize: 11 },
+    donorChip: {
+      backgroundColor: c.primaryLight,
+      borderRadius: 6,
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+    },
+    donorChipText: { color: c.primary, fontWeight: '700', fontSize: 11 },
 
     snackbar: {
       position: 'absolute',

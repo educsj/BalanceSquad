@@ -212,6 +212,16 @@ Quick repechage when a team ends up below the player cap — instead of adding m
 - [ ] **Balanced Draw**: looks at the stars of who's missing and pulls the player(s) from the losing team that best bring the incomplete team's score closer to the overall average (compared against the other complete team)
 - [ ] On confirm, moves the chosen players to the incomplete team and updates stars/totals in the UI
 
+### Injury Substitution
+
+When a player has to leave mid-game (usually injury), the app suggests a substitute **at the same level** to keep the teams balanced without having to redraw everything.
+
+- [ ] **Long-press** on a player opens a menu with **"Substitute (injury)"** and "Remove"
+- [ ] Substitution modal lists candidates (unassigned players + players from other teams) ordered by **star proximity** to the injured player
+- [ ] Highlight **"Same level ✓"** when the level matches exactly
+- [ ] On confirm, swaps the injured player for the sub; if the sub came from another team, that donor team is left with an open slot (and can use "Fill Team" to refill)
+- [ ] **Undo** snackbar after the substitution (5s, reuses the existing remove pattern)
+
 ### Vision: from team-balancer to **pelada admin platform**
 
 The next phase turns BalanceSquad into a full management tool for pelada organizers — handling money, attendance, and accountability alongside the existing matches and ranking. The aim is to be the only app the organizer needs every Sunday.

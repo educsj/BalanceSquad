@@ -1,4 +1,10 @@
-import { balanceTeams, rematchTwoTeams } from '../balancer';
+import {
+  balanceTeams,
+  rematchTwoTeams,
+  pickRandomN,
+  pickBalancedN,
+  pickByLevelProximity,
+} from '../balancer';
 import { Player, Team } from '../../types';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -422,5 +428,139 @@ describe('rematchTwoTeams', () => {
       const [newA, newB] = rematchTwoTeams(bal1, bal2);
       expect(Math.abs(newA.totalStars - newB.totalStars)).toBeLessThanOrEqual(1);
     }
+  });
+});
+
+// ─── pickRandomN ─────────────────────────────────────────────────────────────
+
+describe('pickRandomN', () => {
+  test('returns exactly n players when n < pool.length', () => {
+    const pool = players(8);
+    const picked = pickRandomN(pool, 3);
+    expect(picked).toHaveLength(3);
+  });
+
+  test('all picked players come from the pool', () => {
+    const pool = players(8);
+    const poolIds = new Set(pool.map(p => p.id));
+    const picked = pickRandomN(pool, 4);
+    picked.forEach(p => expect(poolIds.has(p.id)).toBe(true));
+  });
+
+  test('picked players are unique', () => {
+    const pool = players(8);
+    const picked = pickRandomN(pool, 5);
+    expect(new Set(picked.map(p => p.id)).size).toBe(picked.length);
+  });
+
+  test('n >= pool.length returns the whole pool', () => {
+    const pool = players(3);
+    expect(pickRandomN(pool, 5)).toHaveLength(3);
+  });
+
+  test('n <= 0 returns empty', () => {
+    expect(pickRandomN(players(5), 0)).toEqual([]);
+    expect(pickRandomN(players(5), -1)).toEqual([]);
+  });
+});
+
+// ─── pickBalancedN ───────────────────────────────────────────────────────────
+
+describe('pickBalancedN', () => {
+  function bruteForceBestDistance(pool: Player[], n: number, target: number): number {
+    let best = Infinity;
+    const idx: number[] = [];
+    function recurse(start: number, depth: number, sum: number) {
+      if (depth === n) {
+        best = Math.min(best, Math.abs(sum - target));
+        return;
+      }
+      for (let i = start; i <= pool.length - (n - depth); i++) {
+        idx.push(i);
+        recurse(i + 1, depth + 1, sum + pool[i].level);
+        idx.pop();
+      }
+    }
+    recurse(0, 0, 0);
+    return best;
+  }
+
+  test('matches brute-force optimum for small pools (exhaustive path)', () => {
+    const pool = [p('a', 1), p('b', 2), p('c', 3), p('d', 4), p('e', 5)];
+    // Pick 2 with target=5 ⇒ best combos sum to 5: (1+4), (2+3)
+    const picked = pickBalancedN(pool, 2, 5);
+    const sum = picked.reduce((s, x) => s + x.level, 0);
+    expect(Math.abs(sum - 5)).toBe(0);
+  });
+
+  test('fuzz: chosen combo is always best across many target/pool combos', () => {
+    const levels = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+    for (let run = 0; run < 20; run++) {
+      const size = 4 + Math.floor(Math.random() * 7); // 4..10
+      const pool = Array.from({ length: size }, (_, i) =>
+        p(`${run}-${i}`, levels[Math.floor(Math.random() * levels.length)])
+      );
+      const n = 1 + Math.floor(Math.random() * Math.min(4, pool.length - 1));
+      const target = Math.random() * 15;
+      const picked = pickBalancedN(pool, n, target);
+      const dist = Math.abs(
+        picked.reduce((s, x) => s + x.level, 0) - target,
+      );
+      const optimum = bruteForceBestDistance(pool, n, target);
+      expect(dist).toBeCloseTo(optimum, 5);
+    }
+  });
+
+  test('n >= pool.length returns the whole pool', () => {
+    const pool = players(3, 2);
+    expect(pickBalancedN(pool, 5, 100)).toHaveLength(3);
+  });
+
+  test('n <= 0 returns empty', () => {
+    expect(pickBalancedN(players(5), 0, 5)).toEqual([]);
+  });
+
+  test('greedy path still produces a sensible result for large pools', () => {
+    // pool.length > 12 forces greedy
+    const pool = players(15, 3);
+    const picked = pickBalancedN(pool, 3, 9);
+    expect(picked).toHaveLength(3);
+    const sum = picked.reduce((s, x) => s + x.level, 0);
+    expect(sum).toBeCloseTo(9, 5);
+  });
+});
+
+// ─── pickByLevelProximity ────────────────────────────────────────────────────
+
+describe('pickByLevelProximity', () => {
+  test('orders ascending by |level - target|', () => {
+    const pool = [p('a', 5), p('b', 1), p('c', 3), p('d', 4)];
+    const sorted = pickByLevelProximity(pool, 3);
+    const distances = sorted.map(x => Math.abs(x.level - 3));
+    for (let i = 1; i < distances.length; i++) {
+      expect(distances[i]).toBeGreaterThanOrEqual(distances[i - 1]);
+    }
+  });
+
+  test('first item is exact match when one exists', () => {
+    const pool = [p('a', 5), p('b', 1), p('c', 3), p('d', 4)];
+    const sorted = pickByLevelProximity(pool, 3);
+    expect(sorted[0].level).toBe(3);
+  });
+
+  test('empty pool returns empty list', () => {
+    expect(pickByLevelProximity([], 3)).toEqual([]);
+  });
+
+  test('preserves all players (same length)', () => {
+    const pool = players(7, 2);
+    expect(pickByLevelProximity(pool, 3)).toHaveLength(7);
+  });
+
+  test('ties are kept adjacent (e.g. both 2 and 4 when target is 3)', () => {
+    const pool = [p('a', 2), p('b', 4), p('c', 5), p('d', 1)];
+    const sorted = pickByLevelProximity(pool, 3);
+    // First two items should be the two players at distance 1 (levels 2 and 4)
+    expect(new Set([sorted[0].level, sorted[1].level])).toEqual(new Set([2, 4]));
   });
 });

@@ -212,6 +212,16 @@ Repescagem rápida quando um time fica abaixo do limite de jogadores — em vez 
 - [ ] **Sorteio Balanceado**: analisa as estrelas dos jogadores que faltam e puxa do time perdedor o(s) jogador(es) que melhor aproximem a pontuação do time incompleto da média geral (comparando com o outro time completo)
 - [ ] Ao confirmar, move os jogadores escolhidos pro time incompleto e atualiza as estrelas/totais na interface
 
+### Substituição por Lesão
+
+Quando um jogador precisa sair no meio da pelada (geralmente lesão), o app sugere um substituto **do mesmo nível** pra preservar o equilíbrio sem ter que rebalancear tudo.
+
+- [ ] **Long-press** no jogador abre menu com **"Substituir (lesão)"** e "Remover"
+- [ ] Modal de substituição lista candidatos (jogadores não escalados + jogadores de outros times) ordenados por **proximidade de estrelas** ao lesionado
+- [ ] Destaque **"Mesmo nível ✓"** quando o nível bate exatamente
+- [ ] Ao confirmar, troca o lesionado pelo sub no time; se o sub veio de outro time, o time doador fica com uma vaga aberta (e pode usar "Completar Time" pra repor)
+- [ ] Snackbar **"Desfazer"** pós-substituição (5s, reaproveita o padrão atual de remoção)
+
 ### Visão: de sorteador a **plataforma de administração de pelada**
 
 A próxima fase transforma o BalanceSquad numa ferramenta completa de gestão pra organizadores de pelada — controle financeiro, presença e prestação de contas convivendo com as partidas e o ranking que já existem. Objetivo: ser o único app que o organizador precisa abrir no domingo.

@@ -362,3 +362,107 @@ export function recalcTeams(teams: Team[]): Team[] {
     return next;
   });
 }
+
+// Picks N players uniformly at random from a pool. Used by the "Sorteio
+// Aleatório" mode of Completar Time. If n >= pool.length, returns the whole
+// pool shuffled (fail-soft for the UI).
+export function pickRandomN(pool: Player[], n: number): Player[] {
+  if (n <= 0) return [];
+  return shuffle(pool).slice(0, n);
+}
+
+// Enumerates all C(pool.length, n) subsets and returns the one whose summed
+// level is closest to `targetSum`. Ties broken by shuffling the candidate set
+// so repeated runs don't always pick the same player. O(C(p,n)) — bounded by
+// the caller (UI gates on small N missing, small source teams).
+function bestCombinationByTarget(
+  pool: Player[],
+  n: number,
+  targetSum: number,
+): Player[] {
+  const best: { combo: Player[]; dist: number }[] = [];
+  const current: Player[] = [];
+
+  function recurse(start: number, depth: number, sumSoFar: number) {
+    if (depth === n) {
+      const dist = Math.abs(sumSoFar - targetSum);
+      if (best.length === 0 || dist < best[0].dist) {
+        best.length = 0;
+        best.push({ combo: [...current], dist });
+      } else if (dist === best[0].dist) {
+        best.push({ combo: [...current], dist });
+      }
+      return;
+    }
+    const remaining = n - depth;
+    for (let i = start; i <= pool.length - remaining; i++) {
+      current.push(pool[i]);
+      recurse(i + 1, depth + 1, sumSoFar + pool[i].level);
+      current.pop();
+    }
+  }
+
+  recurse(0, 0, 0);
+  if (best.length === 0) return [];
+  const picked = best[Math.floor(Math.random() * best.length)];
+  return picked.combo;
+}
+
+// Greedy fallback for "balanced" pick when the exhaustive search would explode
+// (large pools / large N). Picks players one at a time, each time choosing the
+// player whose level brings the running sum closest to `targetSum`.
+function greedyByTarget(pool: Player[], n: number, targetSum: number): Player[] {
+  const remaining = [...pool];
+  const chosen: Player[] = [];
+  let runningSum = 0;
+  for (let k = 0; k < n && remaining.length > 0; k++) {
+    let bestIdx = 0;
+    let bestDist = Infinity;
+    for (let i = 0; i < remaining.length; i++) {
+      const dist = Math.abs(runningSum + remaining[i].level - targetSum);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestIdx = i;
+      }
+    }
+    const [picked] = remaining.splice(bestIdx, 1);
+    chosen.push(picked);
+    runningSum += picked.level;
+  }
+  return chosen;
+}
+
+// Picks N players from `pool` whose summed levels best approach `targetSum`.
+// Used by the "Sorteio Balanceado" mode of Completar Time, where targetSum is
+// the gap the incomplete team needs to close to match the average of the
+// complete teams.
+//
+// Uses exhaustive enumeration when feasible (pool ≤ 12 and n ≤ 4 ⇒ ≤ 495
+// combinations) and greedy otherwise.
+export function pickBalancedN(
+  pool: Player[],
+  n: number,
+  targetSum: number,
+): Player[] {
+  if (n <= 0) return [];
+  if (n >= pool.length) return [...pool];
+  if (pool.length <= 12 && n <= 4) {
+    return bestCombinationByTarget(pool, n, targetSum);
+  }
+  return greedyByTarget(pool, n, targetSum);
+}
+
+// Sorts a pool by |level - targetLevel| ascending. Same-distance players are
+// shuffled so the UI doesn't always show the same first match. Used by the
+// Injury Substitution flow to surface "same-level" subs at the top of the list.
+export function pickByLevelProximity(pool: Player[], targetLevel: number): Player[] {
+  const groups = new Map<number, Player[]>();
+  pool.forEach(p => {
+    const d = Math.abs(p.level - targetLevel);
+    const arr = groups.get(d);
+    if (arr) arr.push(p);
+    else groups.set(d, [p]);
+  });
+  const distances = [...groups.keys()].sort((a, b) => a - b);
+  return distances.flatMap(d => shuffle(groups.get(d)!));
+}
