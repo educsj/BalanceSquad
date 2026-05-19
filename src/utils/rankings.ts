@@ -25,6 +25,14 @@ export interface MvpStat {
   count: number;
 }
 
+export interface AttendanceStat {
+  id: string;
+  name: string;
+  attended: number;       // number of game days the player showed up in
+  total: number;          // total game days in the period
+  percentage: number;     // attended / total (0..1)
+}
+
 export interface TeamChampionEntry {
   recordIndex: number;
   recordTimestamp: string;
@@ -200,6 +208,61 @@ export function aggregateTeamChampions(
 
 export function periodMatchCount(pelada: Pelada, range: PeriodRange | null): number {
   return collectMatches(pelada, range).matches.length;
+}
+
+// Attendance is derived from match lineups: a DrawRecord = a game day, and a
+// player "attended" it if they appear in any match's lineup. Works
+// retroactively for peladas that existed before the Presença bundle since it
+// only reads existing data.
+//
+// A DrawRecord counts towards `total` if at least one of its matches falls in
+// the period (otherwise the record is "outside" the filter window entirely).
+export function aggregateAttendance(
+  pelada: Pelada,
+  range: PeriodRange | null,
+): AttendanceStat[] {
+  const history = pelada.drawHistory ?? [];
+
+  const names = new Map<string, string>();
+  pelada.players.forEach(p => names.set(p.id, p.name));
+  history.forEach(r => r.teams.forEach(t => t.players.forEach(p => {
+    if (!names.has(p.id)) names.set(p.id, p.name);
+  })));
+
+  let totalSessions = 0;
+  const attendedByPlayer = new Map<string, number>();
+
+  for (const record of history) {
+    const matchesInPeriod = (record.matches ?? []).filter(m => isInPeriod(m.timestamp, range));
+    if (matchesInPeriod.length === 0) continue;
+    totalSessions++;
+
+    const attendees = new Set<string>();
+    for (const m of matchesInPeriod) {
+      m.homePlayerIds.forEach(id => attendees.add(id));
+      m.awayPlayerIds.forEach(id => attendees.add(id));
+    }
+    attendees.forEach(id => {
+      attendedByPlayer.set(id, (attendedByPlayer.get(id) ?? 0) + 1);
+    });
+  }
+
+  const out: AttendanceStat[] = [];
+  attendedByPlayer.forEach((attended, id) => {
+    out.push({
+      id,
+      name: names.get(id) ?? '—',
+      attended,
+      total: totalSessions,
+      percentage: totalSessions === 0 ? 0 : attended / totalSessions,
+    });
+  });
+  out.sort((a, b) => {
+    if (b.percentage !== a.percentage) return b.percentage - a.percentage;
+    if (b.attended !== a.attended) return b.attended - a.attended;
+    return a.name.localeCompare(b.name);
+  });
+  return out;
 }
 
 export interface PlayerProfileMatch {

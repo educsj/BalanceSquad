@@ -272,7 +272,9 @@
     "h2hHint": "Record when playing on the opposite side.",
     "teammateTitle": "Plays most with",
     "teammateHint": "When together on the same side.",
-    "share": "Share profile"
+    "share": "Share profile",
+    "attendance": "Attendance",
+    "attendanceDetail": "In {{attended}} of {{total}} peladas"
   },
   "matches": {
     "hint": "Log each game of the pelada — the teams and who actually played.",
@@ -346,7 +348,13 @@
       "wins": "Wins",
       "scorers": "Top scorers",
       "mvps": "MVPs",
-      "teams": "Teams"
+      "teams": "Teams",
+      "attendance": "Attendance"
+    },
+    "attendance": {
+      "emptyTitle": "No attendance data yet",
+      "emptySubtitle": "Log matches to start tracking attendance.",
+      "attendedOf": "{{attended}}/{{total}}"
     },
     "scorers": {
       "emptyTitle": "No goals logged",
@@ -367,7 +375,8 @@
       "wins": "Top 3 — Wins",
       "scorers": "Top 3 — Scorers",
       "mvps": "Top 3 — MVPs",
-      "teams": "Top 3 — Champion Teams"
+      "teams": "Top 3 — Champion Teams",
+      "attendance": "Top 3 — Attendance"
     },
     "cardUnit": {
       "winsCount_one": "{{count}} win",

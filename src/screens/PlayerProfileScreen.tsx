@@ -7,7 +7,7 @@ import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { RootStackParamList, Pelada } from '../types';
 import { getPeladaById } from '../storage';
-import { buildPlayerProfile, PlayerProfile } from '../utils/rankings';
+import { buildPlayerProfile, PlayerProfile, aggregateAttendance } from '../utils/rankings';
 import { useTheme, ThemeColors } from '../theme';
 
 type RouteProps = RouteProp<RootStackParamList, 'PlayerProfile'>;
@@ -31,6 +31,12 @@ export default function PlayerProfileScreen() {
     () => pelada ? buildPlayerProfile(pelada, params.playerId, null) : null,
     [pelada, params.playerId],
   );
+
+  // Attendance (% de sessões/game days que o jogador apareceu, all-time).
+  const attendance = useMemo(() => {
+    if (!pelada) return null;
+    return aggregateAttendance(pelada, null).find(a => a.id === params.playerId) ?? null;
+  }, [pelada, params.playerId]);
 
   async function handleShare() {
     if (!profile) return;
@@ -76,6 +82,26 @@ export default function PlayerProfileScreen() {
           <StatTile label={t('profile.goals')} value={String(profile.goals)} colors={colors} accent />
           <StatTile label={t('profile.mvps')} value={String(profile.mvps)} colors={colors} accent />
         </View>
+
+        {attendance && attendance.total > 0 && (
+          <View style={styles.attendanceCard}>
+            <View style={styles.attendanceIconCircle}>
+              <Feather name="user-check" size={18} color="#15803D" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.attendanceLabel}>{t('profile.attendance')}</Text>
+              <Text style={styles.attendanceSubtitle}>
+                {t('profile.attendanceDetail', {
+                  attended: attendance.attended,
+                  total: attendance.total,
+                })}
+              </Text>
+            </View>
+            <Text style={styles.attendancePct}>
+              {Math.round(attendance.percentage * 100)}%
+            </Text>
+          </View>
+        )}
 
         {topH2H.length > 0 && (
           <View style={styles.section}>
@@ -219,6 +245,31 @@ function createStyles(c: ThemeColors) {
     peladaName: { color: c.headerSub, fontSize: 13, fontWeight: '600', marginTop: 4 },
 
     statRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
+
+    attendanceCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      padding: 14,
+      marginVertical: 6,
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOpacity: 0.06,
+      shadowRadius: 4,
+    },
+    attendanceIconCircle: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: 'rgba(34,197,94,0.18)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    attendanceLabel: { fontSize: 14, fontWeight: '700', color: c.text },
+    attendanceSubtitle: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
+    attendancePct: { fontSize: 22, fontWeight: '800', color: '#15803D' },
 
     section: {
       backgroundColor: c.surface,

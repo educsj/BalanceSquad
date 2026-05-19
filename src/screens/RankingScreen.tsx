@@ -17,18 +17,20 @@ import {
   aggregateScorers,
   aggregateMvps,
   aggregateTeamChampions,
+  aggregateAttendance,
   periodMatchCount,
   PlayerStat,
   ScorerStat,
   MvpStat,
   TeamChampionEntry,
+  AttendanceStat,
 } from '../utils/rankings';
 
 type RouteProps = RouteProp<RootStackParamList, 'Ranking'>;
 
 const PERIODS: PeriodKind[] = ['week', 'month', 'quarter', 'semester', 'year', 'all'];
-type Tab = 'wins' | 'scorers' | 'mvps' | 'teams';
-const TABS: Tab[] = ['wins', 'scorers', 'mvps', 'teams'];
+type Tab = 'wins' | 'scorers' | 'mvps' | 'teams' | 'attendance';
+const TABS: Tab[] = ['wins', 'scorers', 'mvps', 'teams', 'attendance'];
 
 const MIN_MATCHES = 3;
 
@@ -85,6 +87,7 @@ export default function RankingScreen() {
   const scorers = useMemo(() => pelada ? aggregateScorers(pelada, range) : [], [pelada, range]);
   const mvps = useMemo(() => pelada ? aggregateMvps(pelada, range) : [], [pelada, range]);
   const teamsRanking = useMemo(() => pelada ? aggregateTeamChampions(pelada, range) : [], [pelada, range]);
+  const attendance = useMemo(() => pelada ? aggregateAttendance(pelada, range) : [], [pelada, range]);
   const totalMatches = useMemo(() => pelada ? periodMatchCount(pelada, range) : 0, [pelada, range]);
 
   const visiblePlayers = minFilter ? players.filter(p => p.played >= MIN_MATCHES) : players;
@@ -149,8 +152,21 @@ export default function RankingScreen() {
         })),
       };
     }
+    if (tab === 'attendance') {
+      const top = attendance.slice(0, 3);
+      if (top.length === 0) return null;
+      return {
+        title: t('ranking.cardTitle.attendance'),
+        subtitle: ctx,
+        entries: top.map(a => ({
+          name: a.name,
+          primary: `${Math.round(a.percentage * 100)}%`,
+          secondary: t('ranking.attendance.attendedOf', { attended: a.attended, total: a.total }),
+        })),
+      };
+    }
     return null;
-  }, [tab, range, players, visiblePlayers, scorers, mvps, teamsRanking, pelada, minFilter, t]);
+  }, [tab, range, players, visiblePlayers, scorers, mvps, teamsRanking, attendance, pelada, minFilter, t]);
 
   async function handleShareCard() {
     if (!cardData) return;
@@ -250,6 +266,9 @@ export default function RankingScreen() {
       )}
       {tab === 'teams' && (
         <TeamsTab champions={teamsRanking} styles={styles} t={t} />
+      )}
+      {tab === 'attendance' && (
+        <AttendanceTab stats={attendance} onOpenProfile={openProfile} styles={styles} t={t} />
       )}
 
       {cardData && (
@@ -470,6 +489,56 @@ function TeamsTab({ champions, styles, t }: {
               </Text>
             </View>
           </View>
+        );
+      }}
+    />
+  );
+}
+
+function AttendanceTab({ stats, onOpenProfile, styles, t }: {
+  stats: AttendanceStat[];
+  onOpenProfile: (playerId: string) => void;
+  styles: ReturnType<typeof createStyles>;
+  t: (k: string, opts?: Record<string, unknown>) => string;
+}) {
+  if (stats.length === 0) {
+    return (
+      <EmptyState
+        icon="user-check"
+        title={t('ranking.attendance.emptyTitle')}
+        subtitle={t('ranking.attendance.emptySubtitle')}
+      />
+    );
+  }
+  return (
+    <FlatList
+      data={stats}
+      keyExtractor={s => s.id}
+      contentContainerStyle={{ paddingBottom: 24 }}
+      renderItem={({ item, index }) => {
+        const isTop = index === 0;
+        const pct = Math.round(item.percentage * 100);
+        return (
+          <TouchableOpacity
+            style={[styles.row, isTop && styles.rowTop]}
+            onPress={() => onOpenProfile(item.id)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.rankCellView}>
+              {isTop
+                ? <Feather name="user-check" size={14} color="#15803D" />
+                : <Text style={styles.rankText}>{index + 1}</Text>}
+            </View>
+            <Text style={[styles.cellText, styles.nameColTextWide, styles.nameText]} numberOfLines={1}>
+              {item.name}
+            </Text>
+            <View style={styles.metricStack}>
+              <Text style={styles.goalsBigText}>{pct}%</Text>
+              <Text style={styles.metricUnit}>
+                {t('ranking.attendance.attendedOf', { attended: item.attended, total: item.total })}
+              </Text>
+            </View>
+          </TouchableOpacity>
         );
       }}
     />

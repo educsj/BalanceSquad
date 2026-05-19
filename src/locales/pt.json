@@ -272,7 +272,9 @@
     "h2hHint": "Saldo quando jogou no lado oposto.",
     "teammateTitle": "Com quem mais joga",
     "teammateHint": "Quando estiveram no mesmo lado.",
-    "share": "Compartilhar perfil"
+    "share": "Compartilhar perfil",
+    "attendance": "Assiduidade",
+    "attendanceDetail": "Em {{attended}} de {{total}} peladas"
   },
   "matches": {
     "hint": "Registre cada jogo da pelada — os times e quem entrou em campo.",
@@ -346,7 +348,13 @@
       "wins": "Vitórias",
       "scorers": "Artilharia",
       "mvps": "Destaques",
-      "teams": "Times"
+      "teams": "Times",
+      "attendance": "Presença"
+    },
+    "attendance": {
+      "emptyTitle": "Sem dados de presença",
+      "emptySubtitle": "Registre partidas pra começar a calcular a assiduidade.",
+      "attendedOf": "{{attended}}/{{total}}"
     },
     "scorers": {
       "emptyTitle": "Sem gols registrados",
@@ -367,7 +375,8 @@
       "wins": "Top 3 — Vitórias",
       "scorers": "Top 3 — Artilharia",
       "mvps": "Top 3 — Destaques",
-      "teams": "Top 3 — Times Campeões"
+      "teams": "Top 3 — Times Campeões",
+      "attendance": "Top 3 — Assiduidade"
     },
     "cardUnit": {
       "winsCount_one": "{{count}} vitória",

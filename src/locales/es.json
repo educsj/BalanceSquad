@@ -272,7 +272,9 @@
     "h2hHint": "Saldo cuando jugó en el lado opuesto.",
     "teammateTitle": "Con quién juega más",
     "teammateHint": "Cuando estuvieron en el mismo lado.",
-    "share": "Compartir perfil"
+    "share": "Compartir perfil",
+    "attendance": "Presencia",
+    "attendanceDetail": "En {{attended}} de {{total}} peladas"
   },
   "matches": {
     "hint": "Registra cada partido de la pelada — los equipos y quién jugó.",
@@ -346,7 +348,13 @@
       "wins": "Victorias",
       "scorers": "Goleadores",
       "mvps": "MVPs",
-      "teams": "Equipos"
+      "teams": "Equipos",
+      "attendance": "Presencia"
+    },
+    "attendance": {
+      "emptyTitle": "Aún sin datos de presencia",
+      "emptySubtitle": "Registra partidos para empezar a calcular asistencia.",
+      "attendedOf": "{{attended}}/{{total}}"
     },
     "scorers": {
       "emptyTitle": "Sin goles registrados",
@@ -367,7 +375,8 @@
       "wins": "Top 3 — Victorias",
       "scorers": "Top 3 — Goleadores",
       "mvps": "Top 3 — MVPs",
-      "teams": "Top 3 — Equipos Campeones"
+      "teams": "Top 3 — Equipos Campeones",
+      "attendance": "Top 3 — Presencia"
     },
     "cardUnit": {
       "winsCount_one": "{{count}} victoria",

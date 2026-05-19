@@ -3,6 +3,7 @@ import {
   aggregateScorers,
   aggregateMvps,
   aggregateTeamChampions,
+  aggregateAttendance,
   periodMatchCount,
 } from '../rankings';
 import { Pelada, Match, DrawRecord, Player } from '../../types';
@@ -168,5 +169,85 @@ describe('period filter', () => {
       expect(r).not.toBeNull();
       expect(r!.startIso < r!.endIso).toBe(true);
     }
+  });
+});
+
+describe('aggregateAttendance', () => {
+  test('% por jogador derivado das partidas do drawHistory', () => {
+    // 3 sessões. Alice em todas, Bob em 2, Carol em 1, Dave em 1.
+    const s1 = makeRecord([
+      makeMatch('m1', '2026-05-01T10:00:00Z', ['a', 'b'], ['c', 'd'],
+        { type: 'win', winner: 'home' }),
+    ], '2026-05-01T09:00:00Z');
+    const s2 = makeRecord([
+      makeMatch('m2', '2026-05-08T10:00:00Z', ['a'], ['b'],
+        { type: 'draw' }),
+    ], '2026-05-08T09:00:00Z');
+    const s3 = makeRecord([
+      makeMatch('m3', '2026-05-15T10:00:00Z', ['a', 'c'], ['d'],
+        { type: 'win', winner: 'home' }),
+    ], '2026-05-15T09:00:00Z');
+    const pelada = makePelada([s1, s2, s3]);
+    const att = aggregateAttendance(pelada, null);
+
+    const alice = att.find(x => x.id === 'a')!;
+    expect(alice.attended).toBe(3);
+    expect(alice.total).toBe(3);
+    expect(alice.percentage).toBe(1);
+
+    const bob = att.find(x => x.id === 'b')!;
+    expect(bob.attended).toBe(2);
+    expect(bob.total).toBe(3);
+    expect(bob.percentage).toBeCloseTo(2 / 3, 5);
+
+    // Alice (100%) deve estar à frente de Bob (66%)
+    expect(att[0].id).toBe('a');
+  });
+
+  test('jogador que apareceu em VÁRIAS partidas de uma sessão conta como 1 game day', () => {
+    const matches = [
+      makeMatch('m1', '2026-05-01T10:00:00Z', ['a', 'b'], ['c', 'd'],
+        { type: 'win', winner: 'home' }),
+      makeMatch('m2', '2026-05-01T11:00:00Z', ['a', 'c'], ['b', 'd'],
+        { type: 'win', winner: 'away' }),
+    ];
+    const pelada = makePelada([makeRecord(matches, '2026-05-01T09:00:00Z')]);
+    const att = aggregateAttendance(pelada, null);
+    const alice = att.find(x => x.id === 'a')!;
+    expect(alice.attended).toBe(1); // mesma sessão, conta como 1
+    expect(alice.total).toBe(1);
+  });
+
+  test('filtro de período exclui sessões fora da janela', () => {
+    const s1 = makeRecord([
+      makeMatch('m1', '2026-04-15T10:00:00Z', ['a'], ['b'],
+        { type: 'win', winner: 'home' }),
+    ], '2026-04-15T09:00:00Z');
+    const s2 = makeRecord([
+      makeMatch('m2', '2026-05-15T10:00:00Z', ['a'], ['c'],
+        { type: 'win', winner: 'home' }),
+    ], '2026-05-15T09:00:00Z');
+    const pelada = makePelada([s1, s2]);
+
+    // Filtro de maio só pega s2
+    const mayRange = computePeriodRange('month', new Date('2026-05-15T12:00:00Z'));
+    const att = aggregateAttendance(pelada, mayRange);
+    expect(att.find(x => x.id === 'a')!.total).toBe(1);
+    expect(att.find(x => x.id === 'a')!.attended).toBe(1);
+    expect(att.find(x => x.id === 'b')).toBeUndefined(); // Bob não jogou em maio
+  });
+
+  test('pelada sem matches retorna lista vazia', () => {
+    const pelada = makePelada([]);
+    expect(aggregateAttendance(pelada, null)).toEqual([]);
+  });
+
+  test('só jogadores que apareceram aparecem no ranking', () => {
+    const m1 = makeMatch('m1', '2026-05-01T10:00:00Z', ['a'], ['b'],
+      { type: 'win', winner: 'home' });
+    const pelada = makePelada([makeRecord([m1], '2026-05-01T09:00:00Z')]);
+    const att = aggregateAttendance(pelada, null);
+    // Alice e Bob jogaram, Carol e Dave não — não devem aparecer
+    expect(att.map(a => a.id).sort()).toEqual(['a', 'b']);
   });
 });
