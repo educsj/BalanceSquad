@@ -5,6 +5,7 @@ const PELADAS_KEY = '@balancesquad:peladas';
 const HIDE_RATINGS_KEY = '@balancesquad:hideRatings';
 const LANGUAGE_KEY = '@balancesquad:language';
 const THEME_MODE_KEY = '@balancesquad:themeMode';
+const ONBOARDING_SEEN_KEY = '@balancesquad:onboardingSeen';
 const DRAW_HISTORY_LIMIT = 20;
 
 export type ThemeMode = 'system' | 'light' | 'dark';
@@ -157,6 +158,15 @@ export async function getThemeMode(): Promise<ThemeMode> {
 
 export async function setThemeMode(mode: ThemeMode): Promise<void> {
   await AsyncStorage.setItem(THEME_MODE_KEY, mode);
+}
+
+export async function getOnboardingSeen(): Promise<boolean> {
+  const raw = await AsyncStorage.getItem(ONBOARDING_SEEN_KEY);
+  return raw === 'true';
+}
+
+export async function setOnboardingSeen(value: boolean): Promise<void> {
+  await AsyncStorage.setItem(ONBOARDING_SEEN_KEY, value ? 'true' : 'false');
 }
 
 export async function exportData(): Promise<string> {

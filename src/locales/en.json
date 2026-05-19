@@ -52,6 +52,13 @@
     "exportDataDesc": "Saves all groups and history",
     "importDataLabel": "Import data",
     "importDataDesc": "Replaces current data",
+    "onboarding": {
+      "title": "How it works",
+      "step1": "Create your group (+ button in the corner)",
+      "step2": "Add players with name, rating, and gender",
+      "step3": "Pick who's attending and draw the teams",
+      "step4": "Log matches and see the ranking"
+    },
     "importDrawLabel": "Import draw",
     "importDrawDesc": "Open a .json and create a new group",
     "importDrawInvalid": "Invalid draw file.",
@@ -277,7 +284,8 @@
     "nextMatchTitle": "Next match?",
     "nextMatchMsg": "Want me to prep the next match: {{winner}} (winner) × {{opponent}} (resting)?",
     "nextMatchYes": "Yes, create next",
-    "nextMatchSkip": "Back to list"
+    "nextMatchSkip": "Back to list",
+    "celebrateLabel": "Winner!"
   },
   "ranking": {
     "emptyTitle": "No ranking yet",

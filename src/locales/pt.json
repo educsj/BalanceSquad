@@ -52,6 +52,13 @@
     "exportDataDesc": "Salva todas as peladas e histórico",
     "importDataLabel": "Importar dados",
     "importDataDesc": "Substitui os dados atuais",
+    "onboarding": {
+      "title": "Como começar",
+      "step1": "Crie sua pelada (botão + no canto)",
+      "step2": "Cadastre os jogadores com nome, nota e gênero",
+      "step3": "Selecione presentes e sorteie os times",
+      "step4": "Registre as partidas e veja o ranking"
+    },
     "importDrawLabel": "Importar sorteio",
     "importDrawDesc": "Abre um .json e cria uma pelada nova",
     "importDrawInvalid": "Arquivo de sorteio inválido.",
@@ -277,7 +284,8 @@
     "nextMatchTitle": "Já vai a próxima?",
     "nextMatchMsg": "Já posso preparar a próxima partida com {{winner}} (vencedor) × {{opponent}} (descansando)?",
     "nextMatchYes": "Sim, criar próxima",
-    "nextMatchSkip": "Voltar à lista"
+    "nextMatchSkip": "Voltar à lista",
+    "celebrateLabel": "Vencedor!"
   },
   "ranking": {
     "emptyTitle": "Sem ranking ainda",

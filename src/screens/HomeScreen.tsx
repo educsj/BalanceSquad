@@ -15,6 +15,7 @@ import { Pelada, RootStackParamList } from '../types';
 import {
   loadPeladas, savePeladas, getHideRatings, setHideRatings,
   exportData, importData, setLanguage, setThemeMode, ThemeMode,
+  getOnboardingSeen, setOnboardingSeen,
 } from '../storage';
 import { parseDrawPayload, importDrawAsPelada } from '../utils/drawShare';
 import EmptyState from '../components/EmptyState';
@@ -47,13 +48,20 @@ export default function HomeScreen() {
   const [hideRatings, setHideRatingsState] = useState(false);
   const [backupModalVisible, setBackupModalVisible] = useState(false);
   const [langModalVisible, setLangModalVisible] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       loadPeladas().then(setPeladas);
       getHideRatings().then(setHideRatingsState);
+      getOnboardingSeen().then(seen => setShowOnboarding(!seen));
     }, [])
   );
+
+  async function dismissOnboarding() {
+    setShowOnboarding(false);
+    await setOnboardingSeen(true);
+  }
 
   async function toggleHideRatings() {
     const next = !hideRatings;
@@ -268,6 +276,29 @@ export default function HomeScreen() {
           : t('home.peladasCount', { count: peladas.length })}
       </Text>
 
+      {showOnboarding && (
+        <View style={styles.onboardCard}>
+          <View style={styles.onboardHeader}>
+            <Feather name="info" size={16} color={colors.primary} />
+            <Text style={styles.onboardTitle}>{t('home.onboarding.title')}</Text>
+            <TouchableOpacity
+              onPress={dismissOnboarding}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Feather name="x" size={16} color={colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+          {['step1', 'step2', 'step3', 'step4'].map((k, i) => (
+            <View key={k} style={styles.onboardStep}>
+              <View style={styles.onboardStepBadge}>
+                <Text style={styles.onboardStepBadgeText}>{i + 1}</Text>
+              </View>
+              <Text style={styles.onboardStepText}>{t(`home.onboarding.${k}`)}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
       <FlatList
         data={peladas}
         keyExtractor={p => p.id}
@@ -463,6 +494,29 @@ function createStyles(c: ThemeColors) {
     },
     flagEmoji: { fontSize: 20 },
     sectionTitle: { color: c.textSecondary, fontSize: 13, fontWeight: '500', margin: 16, marginBottom: 8 },
+    onboardCard: {
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      marginHorizontal: 16,
+      marginBottom: 12,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: c.borderLight,
+      gap: 8,
+    },
+    onboardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    onboardTitle: { flex: 1, fontSize: 14, fontWeight: '800', color: c.text },
+    onboardStep: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    onboardStepBadge: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      backgroundColor: c.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    onboardStepBadgeText: { color: '#fff', fontWeight: '800', fontSize: 11 },
+    onboardStepText: { flex: 1, fontSize: 13, color: c.textSecondary, lineHeight: 18 },
     card: {
       backgroundColor: c.surface,
       borderRadius: 12,

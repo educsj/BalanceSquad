@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Animated, Easing } from 'react-native';
 import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Feather } from '@expo/vector-icons';
@@ -42,6 +42,19 @@ export default function MatchEditorScreen() {
   const [mvpPlayerId, setMvpPlayerId] = useState<string | undefined>(undefined);
   const [goalsExpanded, setGoalsExpanded] = useState(false);
   const [mvpExpanded, setMvpExpanded] = useState(false);
+  const [celebrating, setCelebrating] = useState<string | null>(null);
+  const celebrateScale = useRef(new Animated.Value(0)).current;
+  const celebrateOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!celebrating) return;
+    celebrateScale.setValue(0);
+    celebrateOpacity.setValue(0);
+    Animated.parallel([
+      Animated.spring(celebrateScale, { toValue: 1, friction: 4, tension: 80, useNativeDriver: true }),
+      Animated.timing(celebrateOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+    ]).start();
+  }, [celebrating, celebrateScale, celebrateOpacity]);
 
   useFocusEffect(
     useCallback(() => {
@@ -159,34 +172,41 @@ export default function MatchEditorScreen() {
     if (isEdit) await updateMatch(params.peladaId, params.historyIndex, match);
     else await addMatch(params.peladaId, params.historyIndex, match);
 
-    // After a fresh save with a clear winner and a resting team, offer the
-    // "quem perde sai" follow-up: winner stays, loser sits, rested team comes
-    // in. This is the most common pelada flow.
-    if (!isEdit && result.type === 'win' && restingTeams.length > 0) {
+    // Celebration overlay only for fresh wins — feels weird when editing.
+    if (!isEdit && result.type === 'win') {
       const winnerId = result.winner === 'home' ? homeTeamId : awayTeamId;
-      const nextOpponent = restingTeams[0];
       const winnerTeam = teams.find(team => team.id === winnerId);
-      Alert.alert(
-        t('matchEditor.nextMatchTitle'),
-        t('matchEditor.nextMatchMsg', {
-          winner: winnerTeam?.name ?? '',
-          opponent: nextOpponent.name,
-        }),
-        [
-          { text: t('matchEditor.nextMatchSkip'), style: 'cancel', onPress: () => navigation.goBack() },
-          {
-            text: t('matchEditor.nextMatchYes'),
-            onPress: () => {
-              navigation.replace('MatchEditor', {
-                peladaId: params.peladaId,
-                historyIndex: params.historyIndex,
-                prefillHomeTeamId: winnerId,
-                prefillAwayTeamId: nextOpponent.id,
-              });
-            },
-          },
-        ],
-      );
+      setCelebrating(winnerTeam?.name ?? '');
+      const hasRest = restingTeams.length > 0;
+      setTimeout(() => {
+        setCelebrating(null);
+        if (hasRest) {
+          const nextOpponent = restingTeams[0];
+          Alert.alert(
+            t('matchEditor.nextMatchTitle'),
+            t('matchEditor.nextMatchMsg', {
+              winner: winnerTeam?.name ?? '',
+              opponent: nextOpponent.name,
+            }),
+            [
+              { text: t('matchEditor.nextMatchSkip'), style: 'cancel', onPress: () => navigation.goBack() },
+              {
+                text: t('matchEditor.nextMatchYes'),
+                onPress: () => {
+                  navigation.replace('MatchEditor', {
+                    peladaId: params.peladaId,
+                    historyIndex: params.historyIndex,
+                    prefillHomeTeamId: winnerId,
+                    prefillAwayTeamId: nextOpponent.id,
+                  });
+                },
+              },
+            ],
+          );
+        } else {
+          navigation.goBack();
+        }
+      }, 1700);
       return;
     }
 
@@ -498,6 +518,19 @@ export default function MatchEditorScreen() {
           {isEdit ? t('matchEditor.saveEdit') : t('matchEditor.saveCreate')}
         </Text>
       </TouchableOpacity>
+
+      {celebrating && (
+        <Animated.View style={[styles.celebrationOverlay, { opacity: celebrateOpacity }]}>
+          <Animated.View style={[
+            styles.celebrationTrophy,
+            { transform: [{ scale: celebrateScale }] },
+          ]}>
+            <Feather name="award" size={84} color="#F59E0B" />
+          </Animated.View>
+          <Text style={styles.celebrationLabel}>{t('matchEditor.celebrateLabel')}</Text>
+          <Text style={styles.celebrationName} numberOfLines={1}>{celebrating}</Text>
+        </Animated.View>
+      )}
     </View>
   );
 }
@@ -664,5 +697,37 @@ function createStyles(c: ThemeColors) {
     },
     saveBtnDisabled: { backgroundColor: c.disabled, elevation: 0, shadowOpacity: 0 },
     saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+
+    celebrationOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(15, 23, 42, 0.92)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 14,
+    },
+    celebrationTrophy: {
+      width: 140,
+      height: 140,
+      borderRadius: 70,
+      backgroundColor: 'rgba(245, 158, 11, 0.15)',
+      borderWidth: 3,
+      borderColor: '#F59E0B',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    celebrationLabel: {
+      fontSize: 14,
+      fontWeight: '800',
+      color: '#F59E0B',
+      letterSpacing: 2,
+      textTransform: 'uppercase',
+    },
+    celebrationName: {
+      fontSize: 32,
+      fontWeight: '900',
+      color: '#FFFFFF',
+      paddingHorizontal: 24,
+      textAlign: 'center',
+    },
   });
 }

@@ -52,6 +52,13 @@
     "exportDataDesc": "Guarda todos los grupos e historial",
     "importDataLabel": "Importar datos",
     "importDataDesc": "Reemplaza los datos actuales",
+    "onboarding": {
+      "title": "Cómo empezar",
+      "step1": "Crea tu grupo (botón + en la esquina)",
+      "step2": "Registra jugadores con nombre, nota y género",
+      "step3": "Selecciona presentes y sortea los equipos",
+      "step4": "Registra partidos y mira el ranking"
+    },
     "importDrawLabel": "Importar sorteo",
     "importDrawDesc": "Abre un .json y crea un grupo nuevo",
     "importDrawInvalid": "Archivo de sorteo inválido.",
@@ -277,7 +284,8 @@
     "nextMatchTitle": "¿Próximo partido?",
     "nextMatchMsg": "¿Preparo el siguiente: {{winner}} (ganador) × {{opponent}} (descansando)?",
     "nextMatchYes": "Sí, crear",
-    "nextMatchSkip": "Volver"
+    "nextMatchSkip": "Volver",
+    "celebrateLabel": "¡Ganador!"
   },
   "ranking": {
     "emptyTitle": "Sin ranking aún",
