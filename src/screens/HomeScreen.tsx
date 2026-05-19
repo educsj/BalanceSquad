@@ -28,6 +28,10 @@ import {
   cancelNotification,
   scheduleWeeklyAdminReminder,
 } from '../utils/notifications';
+import {
+  rescheduleAllSessions,
+  cancelAllSessionReminders,
+} from '../utils/sessionScheduling';
 import { parseDrawPayload, importDrawAsPelada } from '../utils/drawShare';
 import EmptyState from '../components/EmptyState';
 import i18n, { SUPPORTED_LANGUAGES, SupportedLanguage } from '../i18n';
@@ -93,7 +97,9 @@ export default function HomeScreen() {
   }
 
   // Session reminder toggle — asks permission on enable; saves regardless so
-  // the user can flip it back on later without surprises.
+  // the user can flip it back on later without surprises. Schedules (or
+  // cancels) every upcoming session across every pelada so the toggle flip
+  // has immediate effect on already-created sessions.
   async function handleToggleNotifSession() {
     const next = !notifSessionEnabled;
     if (next) {
@@ -102,11 +108,21 @@ export default function HomeScreen() {
     }
     setNotifSessionEnabledState(next);
     await setNotifSessionEnabled(next);
+    if (next) {
+      await rescheduleAllSessions();
+    } else {
+      await cancelAllSessionReminders();
+    }
   }
 
   async function handleLeadHoursChange(hours: number) {
     setNotifLeadHoursState(hours);
     await setNotifLeadHours(hours);
+    // Reagenda tudo com o novo lead — sessions já criadas precisam disparar
+    // no novo horário.
+    if (notifSessionEnabled) {
+      await rescheduleAllSessions();
+    }
   }
 
   // Admin weekly toggle — schedules/replaces the recurring notification.

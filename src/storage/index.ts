@@ -231,6 +231,22 @@ export async function setSessionStatus(
   return updateSessionInternal(peladaId, sessionId, s => ({ ...s, status }));
 }
 
+// Stores (or clears, when passed null) the OS-level notification id for a
+// session. Called by the scheduling layer after schedule/cancel calls.
+export async function setSessionNotificationId(
+  peladaId: string,
+  sessionId: string,
+  notificationId: string | null,
+): Promise<PeladaSession | null> {
+  return updateSessionInternal(peladaId, sessionId, s => {
+    if (notificationId === null) {
+      const { notificationId: _omit, ...rest } = s;
+      return rest;
+    }
+    return { ...s, notificationId };
+  });
+}
+
 export async function removeSession(peladaId: string, sessionId: string): Promise<void> {
   const pelada = await getPeladaById(peladaId);
   if (!pelada) return;

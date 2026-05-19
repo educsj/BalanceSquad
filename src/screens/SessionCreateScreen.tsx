@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 import { RootStackParamList } from '../types';
 import { createSession, getPeladaById } from '../storage';
+import { scheduleSessionReminderIfEnabled } from '../utils/sessionScheduling';
 import { useTheme, ThemeColors } from '../theme';
 
 type RouteProps = RouteProp<RootStackParamList, 'SessionCreate'>;
@@ -105,11 +106,14 @@ export default function SessionCreateScreen() {
       maxPlayers: parsedMax,
       notes: notes.trim() || undefined,
     });
-    setSaving(false);
     if (!session) {
+      setSaving(false);
       Alert.alert(t('sessions.createErrorTitle'), t('sessions.createErrorMsg'));
       return;
     }
+    // Best-effort schedule — fails silently if perms denied, no time set, etc.
+    await scheduleSessionReminderIfEnabled(params.peladaId, session.id);
+    setSaving(false);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     navigation.goBack();
   }

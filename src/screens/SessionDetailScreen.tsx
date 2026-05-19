@@ -13,6 +13,7 @@ import { RootStackParamList, Pelada, PeladaSession, Player, StarLevel, Gender } 
 import {
   getPeladaById, rsvpToSession, cancelRsvp, setSessionStatus, removeSession, addSessionGuest,
 } from '../storage';
+import { cancelSessionReminderIfScheduled } from '../utils/sessionScheduling';
 import { useTheme, ThemeColors } from '../theme';
 import StarRating from '../components/StarRating';
 
@@ -142,6 +143,7 @@ export default function SessionDetailScreen() {
           text: t('common.yes'),
           style: 'destructive',
           onPress: async () => {
+            await cancelSessionReminderIfScheduled(params.peladaId, session.id);
             await setSessionStatus(params.peladaId, session.id, 'cancelled');
             await reload();
           },
@@ -161,6 +163,7 @@ export default function SessionDetailScreen() {
           text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
+            await cancelSessionReminderIfScheduled(params.peladaId, session.id);
             await removeSession(params.peladaId, session.id);
             navigation.goBack();
           },

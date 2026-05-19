@@ -77,6 +77,10 @@ export interface PeladaSession {
   // rsvps/waitlist may reference these. Carried through to DrawConfig via
   // the existing `guestPlayers` param when the draw runs.
   guestPlayers?: Player[];
+  // OS-level id of the scheduled local notification for this session.
+  // Stored so we can cancel/replace it when the session is cancelled,
+  // deleted, or rescheduled.
+  notificationId?: string;
 }
 
 export interface Pelada {
