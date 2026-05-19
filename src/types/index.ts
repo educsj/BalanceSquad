@@ -56,6 +56,24 @@ export interface DrawRecord {
   matches?: Match[];
 }
 
+// A scheduled pelada session: organizers create one for an upcoming date,
+// players RSVP, and on game day the session links to a DrawRecord once the
+// actual draw happens. Past sessions stay around for the calendar view and
+// attendance history.
+export type SessionStatus = 'scheduled' | 'completed' | 'cancelled';
+
+export interface PeladaSession {
+  id: string;
+  date: string;            // ISO date YYYY-MM-DD
+  time?: string;           // HH:mm (optional)
+  maxPlayers: number;      // capacity (defaults to numTeams * playersPerTeam)
+  rsvps: string[];         // confirmed player IDs (up to maxPlayers)
+  waitlist: string[];      // queued player IDs (FIFO)
+  status: SessionStatus;
+  drawHistoryIndex?: number; // link to drawHistory[i] once the draw happens
+  notes?: string;
+}
+
 export interface Pelada {
   id: string;
   name: string;
@@ -63,6 +81,7 @@ export interface Pelada {
   players: Player[];
   lastDraw?: Team[]; // legacy — migrated to drawHistory on load
   drawHistory?: DrawRecord[];
+  sessions?: PeladaSession[];
 }
 
 export type RootStackParamList = {
