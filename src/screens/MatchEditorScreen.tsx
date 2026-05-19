@@ -242,6 +242,60 @@ export default function MatchEditorScreen() {
     return p?.name ?? null;
   }, [mvpPlayerId, allPlayers]);
 
+  // Resolve the colored badge per side using the team's index in the sorteio
+  // (same palette used everywhere else in the app).
+  const homeIdx = teams.findIndex(t => t.id === homeTeamId);
+  const awayIdx = teams.findIndex(t => t.id === awayTeamId);
+  const homeColor = homeIdx >= 0 ? TEAM_COLORS[homeIdx % TEAM_COLORS.length] : colors.textMuted;
+  const awayColor = awayIdx >= 0 ? TEAM_COLORS[awayIdx % TEAM_COLORS.length] : colors.textMuted;
+
+  function renderGoalRow(pid: string) {
+    const player = allPlayers.find(pl => pl.id === pid);
+    if (!player) return null;
+    const count = goalsByPlayer.get(pid) ?? 0;
+    return (
+      <View key={pid} style={styles.goalRow}>
+        <Text style={styles.goalName} numberOfLines={1}>{player.name}</Text>
+        <View style={styles.goalControls}>
+          <TouchableOpacity
+            style={[styles.goalBtn, count === 0 && styles.goalBtnDisabled]}
+            onPress={() => adjustGoal(pid, -1)}
+            disabled={count === 0}
+            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+          >
+            <Feather name="minus" size={14} color={count === 0 ? colors.disabled : colors.primary} />
+          </TouchableOpacity>
+          <Text style={styles.goalCount}>{count}</Text>
+          <TouchableOpacity
+            style={styles.goalBtn}
+            onPress={() => adjustGoal(pid, 1)}
+            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+          >
+            <Feather name="plus" size={14} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  function renderMvpRow(pid: string) {
+    const player = allPlayers.find(pl => pl.id === pid);
+    if (!player) return null;
+    const active = mvpPlayerId === pid;
+    return (
+      <TouchableOpacity
+        key={pid}
+        style={[styles.mvpOption, active && styles.mvpOptionActive]}
+        onPress={() => setMvpPlayerId(pid)}
+      >
+        {active && <Feather name="star" size={12} color={colors.primary} />}
+        <Text style={[styles.mvpOptionText, active && styles.mvpOptionTextActive]} numberOfLines={1}>
+          {player.name}
+        </Text>
+      </TouchableOpacity>
+    );
+  }
+
   function renderTeamPicker(side: Side) {
     const selectedId = side === 'home' ? homeTeamId : awayTeamId;
     return (
@@ -386,34 +440,28 @@ export default function MatchEditorScreen() {
             {matchPlayerIds.length === 0 ? (
               <Text style={styles.lineupHint}>{t('matchEditor.noPlayersForGoals')}</Text>
             ) : (
-              matchPlayerIds.map(pid => {
-                const player = allPlayers.find(pl => pl.id === pid);
-                if (!player) return null;
-                const count = goalsByPlayer.get(pid) ?? 0;
-                return (
-                  <View key={pid} style={styles.goalRow}>
-                    <Text style={styles.goalName} numberOfLines={1}>{player.name}</Text>
-                    <View style={styles.goalControls}>
-                      <TouchableOpacity
-                        style={[styles.goalBtn, count === 0 && styles.goalBtnDisabled]}
-                        onPress={() => adjustGoal(pid, -1)}
-                        disabled={count === 0}
-                        hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-                      >
-                        <Feather name="minus" size={14} color={count === 0 ? colors.disabled : colors.primary} />
-                      </TouchableOpacity>
-                      <Text style={styles.goalCount}>{count}</Text>
-                      <TouchableOpacity
-                        style={styles.goalBtn}
-                        onPress={() => adjustGoal(pid, 1)}
-                        hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-                      >
-                        <Feather name="plus" size={14} color={colors.primary} />
-                      </TouchableOpacity>
+              <>
+                {homePlayerIds.size > 0 && (
+                  <View style={styles.sideGroup}>
+                    <View style={[styles.sideHeader, { borderLeftColor: homeColor }]}>
+                      <Text style={[styles.sideHeaderText, { color: homeColor }]} numberOfLines={1}>
+                        {t('matchEditor.sideHome', { name: homeTeam?.name ?? '' })}
+                      </Text>
                     </View>
+                    {[...homePlayerIds].map(renderGoalRow)}
                   </View>
-                );
-              })
+                )}
+                {awayPlayerIds.size > 0 && (
+                  <View style={styles.sideGroup}>
+                    <View style={[styles.sideHeader, { borderLeftColor: awayColor }]}>
+                      <Text style={[styles.sideHeaderText, { color: awayColor }]} numberOfLines={1}>
+                        {t('matchEditor.sideAway', { name: awayTeam?.name ?? '' })}
+                      </Text>
+                    </View>
+                    {[...awayPlayerIds].map(renderGoalRow)}
+                  </View>
+                )}
+              </>
             )}
           </View>
         )}
@@ -446,24 +494,31 @@ export default function MatchEditorScreen() {
                   {t('matchEditor.mvpNone')}
                 </Text>
               </TouchableOpacity>
-              {matchPlayerIds.map(pid => {
-                const player = allPlayers.find(pl => pl.id === pid);
-                if (!player) return null;
-                const active = mvpPlayerId === pid;
-                return (
-                  <TouchableOpacity
-                    key={pid}
-                    style={[styles.mvpOption, active && styles.mvpOptionActive]}
-                    onPress={() => setMvpPlayerId(pid)}
-                  >
-                    {active && <Feather name="star" size={12} color={colors.primary} />}
-                    <Text style={[styles.mvpOptionText, active && styles.mvpOptionTextActive]} numberOfLines={1}>
-                      {player.name}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
             </View>
+            {homePlayerIds.size > 0 && (
+              <View style={styles.sideGroup}>
+                <View style={[styles.sideHeader, { borderLeftColor: homeColor }]}>
+                  <Text style={[styles.sideHeaderText, { color: homeColor }]} numberOfLines={1}>
+                    {t('matchEditor.sideHome', { name: homeTeam?.name ?? '' })}
+                  </Text>
+                </View>
+                <View style={styles.mvpGrid}>
+                  {[...homePlayerIds].map(renderMvpRow)}
+                </View>
+              </View>
+            )}
+            {awayPlayerIds.size > 0 && (
+              <View style={styles.sideGroup}>
+                <View style={[styles.sideHeader, { borderLeftColor: awayColor }]}>
+                  <Text style={[styles.sideHeaderText, { color: awayColor }]} numberOfLines={1}>
+                    {t('matchEditor.sideAway', { name: awayTeam?.name ?? '' })}
+                  </Text>
+                </View>
+                <View style={styles.mvpGrid}>
+                  {[...awayPlayerIds].map(renderMvpRow)}
+                </View>
+              </View>
+            )}
           </View>
         )}
 
@@ -627,6 +682,14 @@ function createStyles(c: ThemeColors) {
       borderTopWidth: 1,
       borderTopColor: c.borderLight,
     },
+    sideGroup: { gap: 2, marginTop: 8 },
+    sideHeader: {
+      borderLeftWidth: 4,
+      paddingLeft: 10,
+      paddingVertical: 4,
+      marginBottom: 4,
+    },
+    sideHeaderText: { fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
     goalRow: {
       flexDirection: 'row',
       alignItems: 'center',

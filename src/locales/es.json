@@ -285,7 +285,9 @@
     "nextMatchMsg": "¿Preparo el siguiente: {{winner}} (ganador) × {{opponent}} (descansando)?",
     "nextMatchYes": "Sí, crear",
     "nextMatchSkip": "Volver",
-    "celebrateLabel": "¡Ganador!"
+    "celebrateLabel": "¡Ganador!",
+    "sideHome": "Local · {{name}}",
+    "sideAway": "Visitante · {{name}}"
   },
   "ranking": {
     "emptyTitle": "Sin ranking aún",

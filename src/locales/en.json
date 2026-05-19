@@ -285,7 +285,9 @@
     "nextMatchMsg": "Want me to prep the next match: {{winner}} (winner) × {{opponent}} (resting)?",
     "nextMatchYes": "Yes, create next",
     "nextMatchSkip": "Back to list",
-    "celebrateLabel": "Winner!"
+    "celebrateLabel": "Winner!",
+    "sideHome": "Home · {{name}}",
+    "sideAway": "Away · {{name}}"
   },
   "ranking": {
     "emptyTitle": "No ranking yet",
