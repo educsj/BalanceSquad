@@ -222,7 +222,23 @@
     "drawHistory": "Draw History",
     "ranking": "Ranking",
     "matches": "Matches",
-    "matchEditor": "Match"
+    "matchEditor": "Match",
+    "playerProfile": "Player"
+  },
+  "profile": {
+    "empty": "No data for this player.",
+    "played": "Matches",
+    "wins": "Wins",
+    "draws": "Draws",
+    "losses": "Losses",
+    "winRate": "Win rate",
+    "goals": "Goals",
+    "mvps": "MVPs",
+    "h2hTitle": "Versus others",
+    "h2hHint": "Record when playing on the opposite side.",
+    "teammateTitle": "Plays most with",
+    "teammateHint": "When together on the same side.",
+    "share": "Share profile"
   },
   "matches": {
     "hint": "Log each game of the pelada — the teams and who actually played.",

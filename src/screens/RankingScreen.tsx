@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { View, Text, FlatList, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { RouteProp, useRoute, useFocusEffect } from '@react-navigation/native';
+import { RouteProp, useRoute, useFocusEffect, useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { captureRef } from 'react-native-view-shot';
@@ -33,9 +34,14 @@ const MIN_MATCHES = 3;
 
 export default function RankingScreen() {
   const { params } = useRoute<RouteProps>();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const openProfile = useCallback((playerId: string) => {
+    navigation.navigate('PlayerProfile', { peladaId: params.peladaId, playerId });
+  }, [navigation, params.peladaId]);
 
   const [pelada, setPelada] = useState<Pelada | null>(null);
   const [period, setPeriod] = useState<PeriodKind>('all');
@@ -187,16 +193,17 @@ export default function RankingScreen() {
           allCount={players.length}
           minFilter={minFilter}
           onToggleFilter={() => setMinFilter(v => !v)}
+          onOpenProfile={openProfile}
           styles={styles}
           colors={colors}
           t={t}
         />
       )}
       {tab === 'scorers' && (
-        <ScorersTab stats={scorers} styles={styles} t={t} />
+        <ScorersTab stats={scorers} onOpenProfile={openProfile} styles={styles} t={t} />
       )}
       {tab === 'mvps' && (
-        <MvpsTab stats={mvps} styles={styles} t={t} />
+        <MvpsTab stats={mvps} onOpenProfile={openProfile} styles={styles} t={t} />
       )}
       {tab === 'teams' && (
         <TeamsTab champions={teamsRanking} styles={styles} t={t} />
@@ -226,12 +233,13 @@ export default function RankingScreen() {
 // ───────── Tabs ──────────────────────────────────────────────────────────────
 
 function WinsTab({
-  stats, allCount, minFilter, onToggleFilter, styles, colors, t,
+  stats, allCount, minFilter, onToggleFilter, onOpenProfile, styles, colors, t,
 }: {
   stats: PlayerStat[];
   allCount: number;
   minFilter: boolean;
   onToggleFilter: () => void;
+  onOpenProfile: (playerId: string) => void;
   styles: ReturnType<typeof createStyles>;
   colors: ThemeColors;
   t: (k: string, opts?: Record<string, unknown>) => string;
@@ -272,7 +280,11 @@ function WinsTab({
         renderItem={({ item, index }) => {
           const isTop = index === 0 && item.wins > 0;
           return (
-            <View style={[styles.row, isTop && styles.rowTop]}>
+            <TouchableOpacity
+              style={[styles.row, isTop && styles.rowTop]}
+              onPress={() => onOpenProfile(item.id)}
+              activeOpacity={0.7}
+            >
               <View style={styles.rankCellView}>
                 {isTop
                   ? <Feather name="award" size={14} color="#F59E0B" />
@@ -288,7 +300,7 @@ function WinsTab({
               <Text style={[styles.cellText, styles.rateColText, styles.rateText]}>
                 {Math.round(item.winRate * 100)}%
               </Text>
-            </View>
+            </TouchableOpacity>
           );
         }}
       />
@@ -296,8 +308,9 @@ function WinsTab({
   );
 }
 
-function ScorersTab({ stats, styles, t }: {
+function ScorersTab({ stats, onOpenProfile, styles, t }: {
   stats: ScorerStat[];
+  onOpenProfile: (playerId: string) => void;
   styles: ReturnType<typeof createStyles>;
   t: (k: string, opts?: Record<string, unknown>) => string;
 }) {
@@ -312,7 +325,11 @@ function ScorersTab({ stats, styles, t }: {
       renderItem={({ item, index }) => {
         const isTop = index === 0;
         return (
-          <View style={[styles.row, isTop && styles.rowTop]}>
+          <TouchableOpacity
+            style={[styles.row, isTop && styles.rowTop]}
+            onPress={() => onOpenProfile(item.id)}
+            activeOpacity={0.7}
+          >
             <View style={styles.rankCellView}>
               {isTop
                 ? <Feather name="award" size={14} color="#F59E0B" />
@@ -329,15 +346,16 @@ function ScorersTab({ stats, styles, t }: {
               <Text style={styles.cellText}>{item.matches}</Text>
               <Text style={styles.metricUnit}>{t('ranking.matchesUnit')}</Text>
             </View>
-          </View>
+          </TouchableOpacity>
         );
       }}
     />
   );
 }
 
-function MvpsTab({ stats, styles, t }: {
+function MvpsTab({ stats, onOpenProfile, styles, t }: {
   stats: MvpStat[];
+  onOpenProfile: (playerId: string) => void;
   styles: ReturnType<typeof createStyles>;
   t: (k: string, opts?: Record<string, unknown>) => string;
 }) {
@@ -352,7 +370,11 @@ function MvpsTab({ stats, styles, t }: {
       renderItem={({ item, index }) => {
         const isTop = index === 0;
         return (
-          <View style={[styles.row, isTop && styles.rowTop]}>
+          <TouchableOpacity
+            style={[styles.row, isTop && styles.rowTop]}
+            onPress={() => onOpenProfile(item.id)}
+            activeOpacity={0.7}
+          >
             <View style={styles.rankCellView}>
               {isTop
                 ? <Feather name="star" size={14} color="#F59E0B" />
@@ -362,7 +384,7 @@ function MvpsTab({ stats, styles, t }: {
               {item.name}
             </Text>
             <Text style={[styles.cellText, styles.goalsBigText]}>{item.count}</Text>
-          </View>
+          </TouchableOpacity>
         );
       }}
     />

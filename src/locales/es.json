@@ -222,7 +222,23 @@
     "drawHistory": "Historial de Sorteos",
     "ranking": "Ranking",
     "matches": "Partidos",
-    "matchEditor": "Partido"
+    "matchEditor": "Partido",
+    "playerProfile": "Jugador"
+  },
+  "profile": {
+    "empty": "Sin datos de este jugador.",
+    "played": "Partidos",
+    "wins": "Victorias",
+    "draws": "Empates",
+    "losses": "Derrotas",
+    "winRate": "% Victorias",
+    "goals": "Goles",
+    "mvps": "MVPs",
+    "h2hTitle": "Contra otros",
+    "h2hHint": "Saldo cuando jugó en el lado opuesto.",
+    "teammateTitle": "Con quién juega más",
+    "teammateHint": "Cuando estuvieron en el mismo lado.",
+    "share": "Compartir perfil"
   },
   "matches": {
     "hint": "Registra cada partido de la pelada — los equipos y quién jugó.",

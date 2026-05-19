@@ -201,3 +201,132 @@ export function aggregateTeamChampions(
 export function periodMatchCount(pelada: Pelada, range: PeriodRange | null): number {
   return collectMatches(pelada, range).matches.length;
 }
+
+export interface PlayerProfileMatch {
+  matchId: string;
+  timestamp: string;
+  side: 'home' | 'away';
+  opponent: 'home' | 'away';
+  outcome: 'win' | 'loss' | 'draw';
+  goalsScored: number;
+  wasMvp: boolean;
+  teammates: string[]; // player ids on the same side (excluding self)
+  opponents: string[]; // player ids on the other side
+}
+
+export interface PlayerProfile {
+  id: string;
+  name: string;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goals: number;
+  mvps: number;
+  matches: PlayerProfileMatch[];
+  // Head-to-head: against another player, how many times was the current player
+  // on the winning side vs that opponent? Includes draws.
+  headToHead: { id: string; name: string; played: number; wins: number; draws: number; losses: number }[];
+  // Teammates: how often did the current player team up with someone, and
+  // what was the win rate of those joint matches?
+  teammates: { id: string; name: string; played: number; wins: number }[];
+}
+
+export function buildPlayerProfile(
+  pelada: Pelada,
+  playerId: string,
+  range: PeriodRange | null,
+): PlayerProfile | null {
+  const data = collectMatches(pelada, range);
+  const name = data.names.get(playerId);
+  if (!name) return null;
+
+  const profile: PlayerProfile = {
+    id: playerId,
+    name,
+    played: 0,
+    wins: 0,
+    draws: 0,
+    losses: 0,
+    goals: 0,
+    mvps: 0,
+    matches: [],
+    headToHead: [],
+    teammates: [],
+  };
+
+  const h2hMap = new Map<string, { played: number; wins: number; draws: number; losses: number }>();
+  const teammateMap = new Map<string, { played: number; wins: number }>();
+  const ensureH2H = (id: string) => {
+    if (!h2hMap.has(id)) h2hMap.set(id, { played: 0, wins: 0, draws: 0, losses: 0 });
+    return h2hMap.get(id)!;
+  };
+  const ensureTm = (id: string) => {
+    if (!teammateMap.has(id)) teammateMap.set(id, { played: 0, wins: 0 });
+    return teammateMap.get(id)!;
+  };
+
+  for (const { match: m } of data.matches) {
+    let side: 'home' | 'away' | null = null;
+    if (m.homePlayerIds.includes(playerId)) side = 'home';
+    else if (m.awayPlayerIds.includes(playerId)) side = 'away';
+    if (!side) continue;
+
+    profile.played++;
+    const wonSide = m.result.type === 'win' ? m.result.winner : null;
+    const outcome: 'win' | 'loss' | 'draw' =
+      m.result.type === 'draw' ? 'draw' : (wonSide === side ? 'win' : 'loss');
+    if (outcome === 'win') profile.wins++;
+    else if (outcome === 'draw') profile.draws++;
+    else profile.losses++;
+
+    if (m.mvpPlayerId === playerId) profile.mvps++;
+    if (m.goals) {
+      const g = m.goals.find(x => x.playerId === playerId);
+      if (g) profile.goals += g.count;
+    }
+
+    const sameSide = side === 'home' ? m.homePlayerIds : m.awayPlayerIds;
+    const otherSide = side === 'home' ? m.awayPlayerIds : m.homePlayerIds;
+
+    sameSide.forEach(pid => {
+      if (pid === playerId) return;
+      const tm = ensureTm(pid);
+      tm.played++;
+      if (outcome === 'win') tm.wins++;
+    });
+
+    otherSide.forEach(pid => {
+      const h = ensureH2H(pid);
+      h.played++;
+      if (outcome === 'win') h.wins++;
+      else if (outcome === 'draw') h.draws++;
+      else h.losses++;
+    });
+
+    profile.matches.push({
+      matchId: m.id,
+      timestamp: m.timestamp,
+      side,
+      opponent: side === 'home' ? 'away' : 'home',
+      outcome,
+      goalsScored: m.goals?.find(x => x.playerId === playerId)?.count ?? 0,
+      wasMvp: m.mvpPlayerId === playerId,
+      teammates: sameSide.filter(p => p !== playerId),
+      opponents: otherSide,
+    });
+  }
+
+  h2hMap.forEach((v, id) => {
+    profile.headToHead.push({ id, name: data.names.get(id) ?? '—', ...v });
+  });
+  teammateMap.forEach((v, id) => {
+    profile.teammates.push({ id, name: data.names.get(id) ?? '—', ...v });
+  });
+
+  profile.headToHead.sort((a, b) => b.played - a.played);
+  profile.teammates.sort((a, b) => b.played - a.played);
+  profile.matches.sort((a, b) => (b.timestamp ?? '').localeCompare(a.timestamp ?? ''));
+
+  return profile;
+}

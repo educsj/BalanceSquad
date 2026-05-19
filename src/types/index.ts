@@ -83,6 +83,7 @@ export type RootStackParamList = {
   Ranking: { peladaId: string };
   Matches: { peladaId: string; historyIndex: number };
   MatchEditor: { peladaId: string; historyIndex: number; matchId?: string };
+  PlayerProfile: { peladaId: string; playerId: string };
 };
 
 // Kept for backward compatibility with legacy screen files

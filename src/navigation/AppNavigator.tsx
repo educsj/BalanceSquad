@@ -15,6 +15,7 @@ import DrawHistoryScreen from '../screens/DrawHistoryScreen';
 import RankingScreen from '../screens/RankingScreen';
 import MatchesScreen from '../screens/MatchesScreen';
 import MatchEditorScreen from '../screens/MatchEditorScreen';
+import PlayerProfileScreen from '../screens/PlayerProfileScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -42,6 +43,7 @@ export default function AppNavigator() {
         <Stack.Screen name="Ranking" component={RankingScreen} options={{ title: t('nav.ranking') }} />
         <Stack.Screen name="Matches" component={MatchesScreen} options={{ title: t('nav.matches') }} />
         <Stack.Screen name="MatchEditor" component={MatchEditorScreen} options={{ title: t('nav.matchEditor') }} />
+        <Stack.Screen name="PlayerProfile" component={PlayerProfileScreen} options={{ title: t('nav.playerProfile') }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
