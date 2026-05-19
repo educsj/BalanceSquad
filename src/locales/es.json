@@ -249,7 +249,15 @@
     "awayWon": "{{name}} ganó",
     "saveCreate": "Registrar partido",
     "saveEdit": "Guardar cambios",
-    "notEnoughTeams": "Este sorteo no tiene equipos suficientes para registrar un partido."
+    "notEnoughTeams": "Este sorteo no tiene equipos suficientes para registrar un partido.",
+    "goalsTitle": "Goles",
+    "goalsSummary_one": "{{count}} gol registrado",
+    "goalsSummary_other": "{{count}} goles registrados",
+    "goalsHint": "Marca cuántos goles hizo cada jugador. Dejar en cero está bien.",
+    "noPlayersForGoals": "Define el lineup primero para registrar goles.",
+    "mvpTitle": "MVP",
+    "mvpHint": "¿Quién brilló en este partido? Opcional.",
+    "mvpNone": "Sin MVP"
   },
   "ranking": {
     "emptyTitle": "Sin ranking aún",

@@ -6,7 +6,7 @@ import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { RootStackParamList, Team, Match, MatchResult } from '../types';
+import { RootStackParamList, Team, Match, MatchResult, GoalEntry } from '../types';
 import { getPeladaById, addMatch, updateMatch } from '../storage';
 import { useTheme, ThemeColors } from '../theme';
 
@@ -38,6 +38,10 @@ export default function MatchEditorScreen() {
   const [result, setResult] = useState<MatchResult | null>(null);
   const [expandedSide, setExpandedSide] = useState<Side | null>(null);
   const [createdAt, setCreatedAt] = useState<string>('');
+  const [goalsByPlayer, setGoalsByPlayer] = useState<Map<string, number>>(new Map());
+  const [mvpPlayerId, setMvpPlayerId] = useState<string | undefined>(undefined);
+  const [goalsExpanded, setGoalsExpanded] = useState(false);
+  const [mvpExpanded, setMvpExpanded] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -58,6 +62,10 @@ export default function MatchEditorScreen() {
           setAwayPlayerIds(new Set(existing.awayPlayerIds));
           setResult(existing.result);
           setCreatedAt(existing.timestamp);
+          const goalsMap = new Map<string, number>();
+          (existing.goals ?? []).forEach(g => goalsMap.set(g.playerId, g.count));
+          setGoalsByPlayer(goalsMap);
+          setMvpPlayerId(existing.mvpPlayerId);
         } else if (rec.teams.length >= 2 && homeTeamId === null) {
           // Sensible defaults: first two teams, full roster from each.
           const h = rec.teams[0];
@@ -128,6 +136,10 @@ export default function MatchEditorScreen() {
   async function handleSave() {
     if (!canSave || homeTeamId === null || awayTeamId === null || !result) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    const goalsArr: GoalEntry[] = [];
+    goalsByPlayer.forEach((count, playerId) => {
+      if (count > 0) goalsArr.push({ playerId, count });
+    });
     const match: Match = {
       id: params.matchId ?? generateId(),
       timestamp: createdAt || new Date().toISOString(),
@@ -136,11 +148,42 @@ export default function MatchEditorScreen() {
       homePlayerIds: [...homePlayerIds],
       awayPlayerIds: [...awayPlayerIds],
       result,
+      ...(goalsArr.length > 0 ? { goals: goalsArr } : {}),
+      ...(mvpPlayerId ? { mvpPlayerId } : {}),
     };
     if (isEdit) await updateMatch(params.peladaId, params.historyIndex, match);
     else await addMatch(params.peladaId, params.historyIndex, match);
     navigation.goBack();
   }
+
+  // Players in the match (both sides) — they can score and be MVP.
+  const matchPlayerIds = useMemo(
+    () => [...new Set([...homePlayerIds, ...awayPlayerIds])],
+    [homePlayerIds, awayPlayerIds],
+  );
+
+  function adjustGoal(playerId: string, delta: number) {
+    setGoalsByPlayer(prev => {
+      const next = new Map(prev);
+      const cur = next.get(playerId) ?? 0;
+      const newVal = Math.max(0, cur + delta);
+      if (newVal === 0) next.delete(playerId);
+      else next.set(playerId, newVal);
+      return next;
+    });
+  }
+
+  const totalGoals = useMemo(() => {
+    let sum = 0;
+    goalsByPlayer.forEach(c => { sum += c; });
+    return sum;
+  }, [goalsByPlayer]);
+
+  const mvpName = useMemo(() => {
+    if (!mvpPlayerId) return null;
+    const p = allPlayers.find(pl => pl.id === mvpPlayerId);
+    return p?.name ?? null;
+  }, [mvpPlayerId, allPlayers]);
 
   function renderTeamPicker(side: Side) {
     const selectedId = side === 'home' ? homeTeamId : awayTeamId;
@@ -263,6 +306,109 @@ export default function MatchEditorScreen() {
         <View style={{ height: 14 }} />
         {renderLineup('home')}
         {renderLineup('away')}
+
+        {/* Goals */}
+        <TouchableOpacity
+          style={styles.lineupCard}
+          onPress={() => setGoalsExpanded(v => !v)}
+          activeOpacity={0.85}
+        >
+          <View style={styles.lineupHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.lineupTitle}>{t('matchEditor.goalsTitle')}</Text>
+              <Text style={styles.lineupSub}>
+                {t('matchEditor.goalsSummary', { count: totalGoals })}
+              </Text>
+            </View>
+            <Feather name={goalsExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMuted} />
+          </View>
+        </TouchableOpacity>
+        {goalsExpanded && (
+          <View style={styles.expandedSection}>
+            <Text style={styles.lineupHint}>{t('matchEditor.goalsHint')}</Text>
+            {matchPlayerIds.length === 0 ? (
+              <Text style={styles.lineupHint}>{t('matchEditor.noPlayersForGoals')}</Text>
+            ) : (
+              matchPlayerIds.map(pid => {
+                const player = allPlayers.find(pl => pl.id === pid);
+                if (!player) return null;
+                const count = goalsByPlayer.get(pid) ?? 0;
+                return (
+                  <View key={pid} style={styles.goalRow}>
+                    <Text style={styles.goalName} numberOfLines={1}>{player.name}</Text>
+                    <View style={styles.goalControls}>
+                      <TouchableOpacity
+                        style={[styles.goalBtn, count === 0 && styles.goalBtnDisabled]}
+                        onPress={() => adjustGoal(pid, -1)}
+                        disabled={count === 0}
+                        hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                      >
+                        <Feather name="minus" size={14} color={count === 0 ? colors.disabled : colors.primary} />
+                      </TouchableOpacity>
+                      <Text style={styles.goalCount}>{count}</Text>
+                      <TouchableOpacity
+                        style={styles.goalBtn}
+                        onPress={() => adjustGoal(pid, 1)}
+                        hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                      >
+                        <Feather name="plus" size={14} color={colors.primary} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                );
+              })
+            )}
+          </View>
+        )}
+
+        {/* MVP */}
+        <TouchableOpacity
+          style={styles.lineupCard}
+          onPress={() => setMvpExpanded(v => !v)}
+          activeOpacity={0.85}
+        >
+          <View style={styles.lineupHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.lineupTitle}>{t('matchEditor.mvpTitle')}</Text>
+              <Text style={styles.lineupSub}>
+                {mvpName ?? t('matchEditor.mvpNone')}
+              </Text>
+            </View>
+            <Feather name={mvpExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMuted} />
+          </View>
+        </TouchableOpacity>
+        {mvpExpanded && (
+          <View style={styles.expandedSection}>
+            <Text style={styles.lineupHint}>{t('matchEditor.mvpHint')}</Text>
+            <View style={styles.mvpGrid}>
+              <TouchableOpacity
+                style={[styles.mvpOption, !mvpPlayerId && styles.mvpOptionActive]}
+                onPress={() => setMvpPlayerId(undefined)}
+              >
+                <Text style={[styles.mvpOptionText, !mvpPlayerId && styles.mvpOptionTextActive]}>
+                  {t('matchEditor.mvpNone')}
+                </Text>
+              </TouchableOpacity>
+              {matchPlayerIds.map(pid => {
+                const player = allPlayers.find(pl => pl.id === pid);
+                if (!player) return null;
+                const active = mvpPlayerId === pid;
+                return (
+                  <TouchableOpacity
+                    key={pid}
+                    style={[styles.mvpOption, active && styles.mvpOptionActive]}
+                    onPress={() => setMvpPlayerId(pid)}
+                  >
+                    {active && <Feather name="star" size={12} color={colors.primary} />}
+                    <Text style={[styles.mvpOptionText, active && styles.mvpOptionTextActive]} numberOfLines={1}>
+                      {player.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        )}
 
         <Text style={styles.sectionLabel}>{t('matchEditor.result')}</Text>
         <View style={styles.resultRow}>
@@ -400,6 +546,54 @@ function createStyles(c: ThemeColors) {
       fontWeight: '700',
       textTransform: 'uppercase',
     },
+
+    expandedSection: {
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      padding: 14,
+      marginTop: -6,
+      marginBottom: 10,
+      gap: 6,
+      borderTopWidth: 1,
+      borderTopColor: c.borderLight,
+    },
+    goalRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 8,
+      paddingHorizontal: 4,
+      gap: 12,
+    },
+    goalName: { flex: 1, fontSize: 14, color: c.text, fontWeight: '500' },
+    goalControls: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    goalBtn: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: c.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.surface,
+    },
+    goalBtnDisabled: { borderColor: c.disabled, backgroundColor: c.surfaceVariant },
+    goalCount: { fontSize: 15, fontWeight: '800', color: c.text, minWidth: 18, textAlign: 'center' },
+
+    mvpGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    mvpOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: c.borderLight,
+      backgroundColor: c.surfaceVariant,
+    },
+    mvpOptionActive: { borderColor: c.primary, backgroundColor: c.primaryLight },
+    mvpOptionText: { fontSize: 12, fontWeight: '600', color: c.textSecondary },
+    mvpOptionTextActive: { color: c.primary, fontWeight: '700' },
 
     resultRow: { flexDirection: 'row', gap: 6 },
     resultBtn: {

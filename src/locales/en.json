@@ -249,7 +249,15 @@
     "awayWon": "{{name}} won",
     "saveCreate": "Save match",
     "saveEdit": "Save changes",
-    "notEnoughTeams": "This draw doesn't have enough teams to log a match."
+    "notEnoughTeams": "This draw doesn't have enough teams to log a match.",
+    "goalsTitle": "Goals",
+    "goalsSummary_one": "{{count}} goal logged",
+    "goalsSummary_other": "{{count}} goals logged",
+    "goalsHint": "Mark how many goals each player on the field scored. Leaving at zero is fine.",
+    "noPlayersForGoals": "Set the lineup first to log goals.",
+    "mvpTitle": "MVP",
+    "mvpHint": "Who stood out in this match? Optional.",
+    "mvpNone": "No MVP"
   },
   "ranking": {
     "emptyTitle": "No ranking yet",

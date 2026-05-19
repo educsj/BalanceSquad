@@ -249,7 +249,15 @@
     "awayWon": "{{name}} venceu",
     "saveCreate": "Registrar partida",
     "saveEdit": "Salvar alterações",
-    "notEnoughTeams": "Esse sorteio não tem times suficientes para registrar uma partida."
+    "notEnoughTeams": "Esse sorteio não tem times suficientes para registrar uma partida.",
+    "goalsTitle": "Gols",
+    "goalsSummary_one": "{{count}} gol registrado",
+    "goalsSummary_other": "{{count}} gols registrados",
+    "goalsHint": "Marque quantos gols cada jogador da partida fez. Pode deixar zero.",
+    "noPlayersForGoals": "Defina o lineup primeiro pra registrar gols.",
+    "mvpTitle": "Destaque (MVP)",
+    "mvpHint": "Quem foi o destaque desta partida? Opcional.",
+    "mvpNone": "Sem destaque"
   },
   "ranking": {
     "emptyTitle": "Sem ranking ainda",
