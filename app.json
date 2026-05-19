@@ -34,7 +34,13 @@
     },
     "owner": "educsjr",
     "plugins": [
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-notifications",
+        {
+          "color": "#1E3A5F"
+        }
+      ]
     ]
   }
 }

@@ -10,8 +10,13 @@ import AnimatedSplash from './src/components/AnimatedSplash';
 import i18n, { initI18n } from './src/i18n';
 import { getLanguage } from './src/storage';
 import { ThemeProvider } from './src/theme';
+import { configureNotificationBehavior } from './src/utils/notifications';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// Foreground notification behavior — must be set before any notification
+// could fire. Safe to call at module scope; doesn't request permissions.
+configureNotificationBehavior();
 
 export default function App() {
   const [splashDone, setSplashDone] = useState(false);
