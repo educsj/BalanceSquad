@@ -202,6 +202,16 @@ Cobertura: algoritmo de balanceamento (greedy + round-robin por gênero + preser
 - [ ] Foto/avatar do jogador
 - [ ] Sincronização entre dispositivos (Firebase ou similar)
 
+### Completar Time (Sorteio de Repescagem)
+
+Repescagem rápida quando um time fica abaixo do limite de jogadores — em vez de adicionar manualmente, o app sorteia quem vem do "time perdedor" pra completar a vaga.
+
+- [ ] Botão **"Completar Time"** no `TeamsScreen`, visível apenas nos times com menos jogadores que o limite configurado
+- [ ] Modal de repescagem: seleção do **"Time Perdedor"** (origem) de onde os jogadores serão puxados
+- [ ] **Sorteio Aleatório**: escolhe os jogadores do time perdedor de forma 100% aleatória, na quantidade exata que falta
+- [ ] **Sorteio Balanceado**: analisa as estrelas dos jogadores que faltam e puxa do time perdedor o(s) jogador(es) que melhor aproximem a pontuação do time incompleto da média geral (comparando com o outro time completo)
+- [ ] Ao confirmar, move os jogadores escolhidos pro time incompleto e atualiza as estrelas/totais na interface
+
 ### Visão: de sorteador a **plataforma de administração de pelada**
 
 A próxima fase transforma o BalanceSquad numa ferramenta completa de gestão pra organizadores de pelada — controle financeiro, presença e prestação de contas convivendo com as partidas e o ranking que já existem. Objetivo: ser o único app que o organizador precisa abrir no domingo.

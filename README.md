@@ -202,6 +202,16 @@ Covers the balancing algorithm (greedy + gender round-robin + size preservation)
 - [ ] Player photo / avatar
 - [ ] Cloud sync across devices (Firebase or similar)
 
+### Fill Team (Repechage Draw)
+
+Quick repechage when a team ends up below the player cap — instead of adding manually, the app pulls players from the "losing team" to fill the empty slot.
+
+- [ ] **"Fill Team"** button on `TeamsScreen`, visible only on teams with fewer players than the configured cap
+- [ ] Repechage modal: pick the **"Losing Team"** (source) the players will be pulled from
+- [ ] **Random Draw**: picks players from the losing team 100% randomly, in the exact missing amount
+- [ ] **Balanced Draw**: looks at the stars of who's missing and pulls the player(s) from the losing team that best bring the incomplete team's score closer to the overall average (compared against the other complete team)
+- [ ] On confirm, moves the chosen players to the incomplete team and updates stars/totals in the UI
+
 ### Vision: from team-balancer to **pelada admin platform**
 
 The next phase turns BalanceSquad into a full management tool for pelada organizers — handling money, attendance, and accountability alongside the existing matches and ranking. The aim is to be the only app the organizer needs every Sunday.
