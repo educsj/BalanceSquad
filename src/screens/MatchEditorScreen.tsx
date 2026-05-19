@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Feather } from '@expo/vector-icons';
@@ -67,13 +67,18 @@ export default function MatchEditorScreen() {
           setGoalsByPlayer(goalsMap);
           setMvpPlayerId(existing.mvpPlayerId);
         } else if (rec.teams.length >= 2 && homeTeamId === null) {
-          // Sensible defaults: first two teams, full roster from each.
-          const h = rec.teams[0];
-          const a = rec.teams[1];
-          setHomeTeamId(h.id);
-          setAwayTeamId(a.id);
-          setHomePlayerIds(new Set(h.players.map(p => p.id)));
-          setAwayPlayerIds(new Set(a.players.map(p => p.id)));
+          // Prefer prefill (from "next match" suggestion) when present; otherwise
+          // pick the first two teams.
+          const pickHome = params.prefillHomeTeamId !== undefined
+            ? rec.teams.find(team => team.id === params.prefillHomeTeamId) ?? rec.teams[0]
+            : rec.teams[0];
+          const pickAway = params.prefillAwayTeamId !== undefined
+            ? rec.teams.find(team => team.id === params.prefillAwayTeamId) ?? rec.teams[1]
+            : rec.teams[1];
+          setHomeTeamId(pickHome.id);
+          setAwayTeamId(pickAway.id);
+          setHomePlayerIds(new Set(pickHome.players.map(p => p.id)));
+          setAwayPlayerIds(new Set(pickAway.players.map(p => p.id)));
         }
       });
     }, [params.peladaId, params.historyIndex, params.matchId])
@@ -153,6 +158,38 @@ export default function MatchEditorScreen() {
     };
     if (isEdit) await updateMatch(params.peladaId, params.historyIndex, match);
     else await addMatch(params.peladaId, params.historyIndex, match);
+
+    // After a fresh save with a clear winner and a resting team, offer the
+    // "quem perde sai" follow-up: winner stays, loser sits, rested team comes
+    // in. This is the most common pelada flow.
+    if (!isEdit && result.type === 'win' && restingTeams.length > 0) {
+      const winnerId = result.winner === 'home' ? homeTeamId : awayTeamId;
+      const nextOpponent = restingTeams[0];
+      const winnerTeam = teams.find(team => team.id === winnerId);
+      Alert.alert(
+        t('matchEditor.nextMatchTitle'),
+        t('matchEditor.nextMatchMsg', {
+          winner: winnerTeam?.name ?? '',
+          opponent: nextOpponent.name,
+        }),
+        [
+          { text: t('matchEditor.nextMatchSkip'), style: 'cancel', onPress: () => navigation.goBack() },
+          {
+            text: t('matchEditor.nextMatchYes'),
+            onPress: () => {
+              navigation.replace('MatchEditor', {
+                peladaId: params.peladaId,
+                historyIndex: params.historyIndex,
+                prefillHomeTeamId: winnerId,
+                prefillAwayTeamId: nextOpponent.id,
+              });
+            },
+          },
+        ],
+      );
+      return;
+    }
+
     navigation.goBack();
   }
 

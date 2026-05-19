@@ -82,7 +82,13 @@ export type RootStackParamList = {
   DrawHistory: { peladaId: string };
   Ranking: { peladaId: string };
   Matches: { peladaId: string; historyIndex: number };
-  MatchEditor: { peladaId: string; historyIndex: number; matchId?: string };
+  MatchEditor: {
+    peladaId: string;
+    historyIndex: number;
+    matchId?: string;
+    prefillHomeTeamId?: number;
+    prefillAwayTeamId?: number;
+  };
   PlayerProfile: { peladaId: string; playerId: string };
 };
 

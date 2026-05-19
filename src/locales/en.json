@@ -273,7 +273,11 @@
     "noPlayersForGoals": "Set the lineup first to log goals.",
     "mvpTitle": "MVP",
     "mvpHint": "Who stood out in this match? Optional.",
-    "mvpNone": "No MVP"
+    "mvpNone": "No MVP",
+    "nextMatchTitle": "Next match?",
+    "nextMatchMsg": "Want me to prep the next match: {{winner}} (winner) × {{opponent}} (resting)?",
+    "nextMatchYes": "Yes, create next",
+    "nextMatchSkip": "Back to list"
   },
   "ranking": {
     "emptyTitle": "No ranking yet",

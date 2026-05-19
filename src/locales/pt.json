@@ -273,7 +273,11 @@
     "noPlayersForGoals": "Defina o lineup primeiro pra registrar gols.",
     "mvpTitle": "Destaque (MVP)",
     "mvpHint": "Quem foi o destaque desta partida? Opcional.",
-    "mvpNone": "Sem destaque"
+    "mvpNone": "Sem destaque",
+    "nextMatchTitle": "Já vai a próxima?",
+    "nextMatchMsg": "Já posso preparar a próxima partida com {{winner}} (vencedor) × {{opponent}} (descansando)?",
+    "nextMatchYes": "Sim, criar próxima",
+    "nextMatchSkip": "Voltar à lista"
   },
   "ranking": {
     "emptyTitle": "Sem ranking ainda",
